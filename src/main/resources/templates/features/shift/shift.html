@@ -1,0 +1,52 @@
+<div th:fragment="content">
+    <div style="max-width: 800px; margin: auto;">
+        <h1>Plan–Fact</h1>
+
+        <canvas id="shiftChart" width="600" height="250"></canvas>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Time</th>
+                <th>Plan</th>
+                <th>Actual</th>
+                <th>Comment</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="hour, i : ${hours}">
+                <td th:text="${hour}">08:00</td>
+                <td th:text="${plan}">140</td>
+                <td th:text="${actual[i.index]}">0</td>
+                <td><input type="text" name="comment" /></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        const ctx = document.getElementById('shiftChart');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: /*[[${hours}]]*/,
+                datasets: [{
+                    label: 'Cans',
+                    data: /*[[${actual}]]*/,
+                    backgroundColor: '#3b82f6'
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: { enabled: true }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Time' } },
+                    y: { title: { display: true, text: 'Cans' }, beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</div>

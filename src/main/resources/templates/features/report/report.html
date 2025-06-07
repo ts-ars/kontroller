@@ -1,0 +1,82 @@
+<div th:fragment="content">
+    <h1>Shift Report</h1>
+
+    <!-- 📅 Форма выбора диапазона -->
+    <form method="get" style="margin-bottom: 1.5rem;">
+        <label>
+            From:
+            <input type="date" name="from" th:value="${startDate}" />
+        </label>
+        <label style="margin-left: 1rem;">
+            To:
+            <input type="date" name="to" th:value="${endDate}" />
+        </label>
+        <button type="submit" style="margin-left: 1rem;">Filter</button>
+    </form>
+
+    <!-- 📋 Таблица отчёта -->
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+        <tr>
+            <th style="border: 1px solid #ccc; padding: 6px;">Type</th>
+            <th style="border: 1px solid #ccc; padding: 6px;">Minutes</th>
+            <th style="border: 1px solid #ccc; padding: 6px;">Cans</th>
+            <th style="border: 1px solid #ccc; padding: 6px;">Reason</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="problem : ${problems}">
+            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.type}"></td>
+            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.minutes}"></td>
+            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.cans}"></td>
+            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.reason}"></td>
+        </tr>
+        <tr th:if="${problems.isEmpty()}">
+            <td colspan="4" style="text-align: center; padding: 12px;">No data for selected range</td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr>
+            <th style="text-align: right; padding: 6px;">Total:</th>
+            <th style="padding: 6px;" th:text="${totalMinutes}"></th>
+            <th style="padding: 6px;" th:text="${totalCans}"></th>
+            <th></th>
+        </tr>
+        </tfoot>
+    </table>
+
+    <!-- 📈 График потерь по типу -->
+    <canvas id="typeChart" width="600" height="300" style="margin-top: 2rem;"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        const rawData = /*[[${problems}]]*/ [];
+        const typeTotals = {};
+
+        rawData.forEach(p => {
+            const type = p.type;
+            const minutes = parseFloat(p.minutes || 0);
+            typeTotals[type] = (typeTotals[type] || 0) + minutes;
+        });
+
+        const ctx = document.getElementById('typeChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(typeTotals),
+                datasets: [{
+                    label: 'Lost Minutes per Type',
+                    data: Object.values(typeTotals),
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</div>

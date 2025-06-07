@@ -1,0 +1,129 @@
+<div th:fragment="content">
+  <h1>Reasons for Stoppages</h1>
+
+  <!-- 🔴 Предупреждения -->
+  <div th:each="alert : ${alerts}">
+    <p style="color: red;" th:text="${alert}"></p>
+  </div>
+
+  <!-- 📋 Таблица -->
+  <table style="border-collapse: collapse; margin-top: 1em; width: 100%;">
+    <thead>
+    <tr>
+      <th style="padding: 8px; border: 1px solid #ccc;">Time</th>
+      <th style="padding: 8px; border: 1px solid #ccc;">Min</th>
+      <th style="padding: 8px; border: 1px solid #ccc;">Cans</th>
+      <th style="padding: 8px; border: 1px solid #ccc;">Type</th>
+      <th style="padding: 8px; border: 1px solid #ccc;">Comment</th>
+    </tr>
+    </thead>
+    <tbody id="stoppage-body">
+    <tr th:each="row : ${rows}">
+      <td style="border: 1px solid #ccc; padding: 6px;" th:text="${row.time}">08:00</td>
+      <td style="border: 1px solid #ccc; padding: 6px;">
+        <input type="text" th:value="${row.minutes}" oninput="onMinChange(this)" style="width: 80px;" />
+      </td>
+      <td style="border: 1px solid #ccc; padding: 6px;">
+        <input type="text" class="cans" th:value="${row.cans}" style="width: 80px;" readonly />
+      </td>
+      <td style="border: 1px solid #ccc; padding: 6px;">
+        <select th:value="${row.type}" style="width: 120px;">
+          <option value="">–</option>
+          <option value="organization">organization</option>
+          <option value="breakdown">breakdown</option>
+          <option value="material">material</option>
+          <option value="quality">quality</option>
+        </select>
+      </td>
+      <td style="border: 1px solid #ccc; padding: 6px;">
+        <input type="text" th:value="${row.comment}" style="width: 220px;" />
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- ➕ Кнопка добавления строки -->
+  <button type="button"
+          style="margin-top: 16px; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px;"
+          onclick="addRow()">Add Reason
+  </button>
+
+  <!-- 💾 Кнопка сохранения -->
+  <button type="button"
+          style="margin-top: 16px; margin-left: 12px; padding: 6px 12px; background: green; color: white; border: none; border-radius: 4px;"
+          onclick="submitData()">Save to Database
+  </button>
+
+  <div id="save-status" style="margin-top: 10px; font-weight: bold;"></div>
+
+  <!-- ⚙️ Скрипты -->
+  <script>
+    const CANS_PER_MIN = 10;
+
+    function onMinChange(input) {
+      const row = input.closest("tr");
+      const min = parseFloat(input.value);
+      const cansInput = row.querySelector(".cans");
+      if (!isNaN(min)) {
+        cansInput.value = Math.round(min * CANS_PER_MIN);
+      } else {
+        cansInput.value = "";
+      }
+    }
+
+    function addRow() {
+      const tbody = document.getElementById("stoppage-body");
+      const newRow = document.createElement("tr");
+      newRow.innerHTML = `
+        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" value="" style="width: 60px;" /></td>
+        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" value="" style="width: 80px;" oninput="onMinChange(this)" /></td>
+        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" class="cans" value="" style="width: 80px;" readonly /></td>
+        <td style="border: 1px solid #ccc; padding: 6px;">
+          <select style="width: 120px;">
+            <option value="">–</option>
+            <option value="organization">organization</option>
+            <option value="breakdown">breakdown</option>
+            <option value="material">material</option>
+            <option value="quality">quality</option>
+          </select>
+        </td>
+        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" value="" style="width: 220px;" /></td>
+      `;
+      tbody.appendChild(newRow);
+    }
+
+    function submitData() {
+      const rows = document.querySelectorAll("#stoppage-body tr");
+      const data = Array.from(rows).map(row => {
+        const tds = row.querySelectorAll("td");
+        const inputs = row.querySelectorAll("input, select");
+        return {
+          time: tds[0]?.textContent.trim() || inputs[0]?.value,
+          minutes: parseFloat(inputs[1]?.value),
+          type: inputs[3]?.value,
+          comment: inputs[4]?.value
+        };
+      });
+
+      const statusBox = document.getElementById("save-status");
+
+      fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(res => {
+        if (res.ok) {
+          statusBox.textContent = "✅ Saved to database";
+          statusBox.style.color = "green";
+        } else {
+          statusBox.textContent = "❌ Failed to save";
+          statusBox.style.color = "red";
+        }
+
+        setTimeout(() => {
+          statusBox.textContent = "";
+        }, 3000);
+      });
+    }
+  </script>
+</div>

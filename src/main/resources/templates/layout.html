@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<nav>
+    <ul>
+        <li><a th:href="@{/page/shift}" th:classappend="${currentPage == 'shift'} ? 'active'">Plan–Fact</a></li>
+        <li><a th:href="@{/page/comment}" th:classappend="${currentPage == 'comment'} ? 'active'">Comments</a></li>
+        <li><a th:href="@{/page/settings}" th:classappend="${currentPage == 'settings'} ? 'active'">Settings</a></li>
+        <li><a th:href="@{/page/report}" th:classappend="${currentPage == 'report'} ? 'active'">Report</a></li>
+    </ul>
+</nav>
+
+
+
+<main>
+    <div th:replace="${contentTemplate} :: content"></div>
+</main>
+
+</body>
+</html>
