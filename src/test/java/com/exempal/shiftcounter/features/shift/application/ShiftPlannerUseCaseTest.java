@@ -1,65 +1,59 @@
 package com.exempal.shiftcounter.features.shift.application;
 
-import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.shift.domain.ShiftTestFactory;
+import com.exempal.shiftcounter.features.shift.infrastructure.JpaShiftAdapter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class ShiftPlannerUseCaseTest {
+@SpringBootTest
+class ShiftProductRegistrarTest {
 
-    private final SettingsPort settings = mock(SettingsPort.class);
-    private final ActualDataPort actual = mock(ActualDataPort.class);
-    private final ShiftPlannerUseCase useCase = new ShiftPlannerUseCase(settings, actual);
+    @Autowired
+    private ShiftProductRegistrar productRegistrar;
 
-    @Test
-    void shouldReturnShiftWithOK_whenActualMeetsPlan() {
-        LocalDate today = LocalDate.now();
-        when(settings.getHours()).thenReturn(List.of("08:00", "09:00", "10:00"));
-        when(settings.getHourlyPlans()).thenReturn(List.of(100));
-        when(actual.getHourlyActuals(any())).thenReturn(List.of(100, 100, 100));
+    @Autowired
+    private ShiftInitializerService shiftInitializer;
 
-        Shift expected = ShiftTestFactory.with(today, 300, 300, "OK");
-        Shift actualShift = useCase.buildShift(today);
+    @Autowired
+    private JpaShiftAdapter shiftAdapter;
 
-        assertEquals(expected.planned(), actualShift.planned());
-        assertEquals(expected.actual(), actualShift.actual());
-        assertEquals(expected.comment(), actualShift.comment());
+    private LocalDate today;
+
+    @BeforeEach
+    void setUp() {
+        today = LocalDate.now();
+        shiftInitializer.createNewShift(today);
     }
 
     @Test
-    void shouldReturnShiftWithComment_whenUnderperformed() {
-        LocalDate today = LocalDate.now();
-        when(settings.getHours()).thenReturn(List.of("08:00", "09:00"));
-        when(settings.getHourlyPlans()).thenReturn(List.of(100));
-        when(actual.getHourlyActuals(any())).thenReturn(List.of(80, 70));
+    void eachSignalShouldGoToItsOwnTimeSlot() {
+        // simulate 2 signals for hour 11:00
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 2)));
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 59)));
 
-        Shift expected = ShiftTestFactory.with(today, 200, 150, "Недовыполнение");
-        Shift actualShift = useCase.buildShift(today);
+        // simulate 2 signals for hour 12:30
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(12, 30)));
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(12, 45)));
 
-        assertEquals(expected.planned(), actualShift.planned());
-        assertEquals(expected.actual(), actualShift.actual());
-        assertEquals(expected.comment(), actualShift.comment());
-    }
+        // fetch updated shift
+        Shift shift = shiftAdapter.findByDate(today).orElseThrow();
 
-    @Test
-    void shouldHandleEmptyActualGracefully() {
-        LocalDate today = LocalDate.now();
-        when(settings.getHours()).thenReturn(List.of("08:00", "09:00"));
-        when(settings.getHourlyPlans()).thenReturn(List.of(100));
-        when(actual.getHourlyActuals(any())).thenReturn(List.of());
+        List<String> labels = shift.getHourlyLabels(); // ["08:00", "09:00", ..., "15:30"]
+        List<Integer> actuals = shift.getHourlyActualValues();
 
-        Shift expected = ShiftTestFactory.with(today, 200, 0, "Недовыполнение");
-        Shift actualShift = useCase.buildShift(today);
+        int index11 = labels.indexOf("11:00");
+        int index1230 = labels.indexOf("12:30");
 
-        assertEquals(expected.planned(), actualShift.planned());
-        assertEquals(expected.actual(), actualShift.actual());
-        assertEquals(expected.comment(), actualShift.comment());
+        assertThat(actuals.get(index11)).isEqualTo(2);
+        assertThat(actuals.get(index1230)).isEqualTo(2);
     }
 }

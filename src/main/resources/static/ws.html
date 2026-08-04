@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Shift Updates</title>
+</head>
+<body>
+<h2>WebSocket Shift Updates</h2>
+<pre id="output"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script>
+    const output = document.getElementById("output");
+
+    const socket = new SockJS("/ws");
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = null; // отключаем лог
+
+    stompClient.connect({}, function () {
+        stompClient.subscribe("/topic/shift-updates", function (message) {
+            const body = JSON.parse(message.body);
+
+            output.innerText = JSON.stringify(body, null, 2);
+        });
+    });
+</script>
+</body>
+</html>

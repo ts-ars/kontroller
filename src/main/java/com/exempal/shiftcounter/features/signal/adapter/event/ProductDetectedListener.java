@@ -1,22 +1,22 @@
 package com.exempal.shiftcounter.features.signal.adapter.event;
 
-import com.exempal.shiftcounter.features.shift.application.ShiftPlannerUseCase;
+import com.exempal.shiftcounter.features.shift.application.ShiftProductRegistrar;
 import com.exempal.shiftcounter.shared.event.ProductDetectedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.time.ZoneId;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Slf4j
 @Component
 public class ProductDetectedListener {
 
-    private final ShiftPlannerUseCase shiftPlanner;
+    private final ShiftProductRegistrar shiftProductRegistrar;
 
-    public ProductDetectedListener(ShiftPlannerUseCase shiftPlanner) {
-        this.shiftPlanner = shiftPlanner;
+    public ProductDetectedListener(ShiftProductRegistrar shiftProductRegistrar) {
+        this.shiftProductRegistrar = shiftProductRegistrar;
     }
 
     @EventListener
@@ -27,6 +27,7 @@ public class ProductDetectedListener {
 
         log.info("[EVENT] Product detected at {}", timestamp);
 
-        shiftPlanner.registerProduct(timestamp);
+        // ✅ Делегируем всю логику в единый сервис
+        shiftProductRegistrar.registerProduct(timestamp);
     }
 }

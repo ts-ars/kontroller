@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <title>Shift Counter</title>
 </head>
 <body>
 
@@ -15,10 +16,8 @@
     </ul>
 </nav>
 
-
-
 <main>
-    <div th:replace="${contentTemplate} :: content"></div>
+    <div th:replace="~{${contentTemplate} :: content}"></div>
 </main>
 
 </body>

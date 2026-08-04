@@ -1,36 +1,76 @@
 package com.exempal.shiftcounter.features.shift.domain;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.IntStream;
 
 /**
- * Test factory for creating Shift instances with default or custom values.
- * Intended to reduce boilerplate in unit and integration tests.
+ * Утилита для создания тестовых экземпляров Shift.
+ * Используется в unit, integration и WebMvc тестах.
  */
 public class ShiftTestFactory {
 
-    public static Shift ok() {
-        return new Shift(LocalDate.now(), 100, 100, "OK");
+    /**
+     * Создаёт Shift с указанным id (для моков и контролируемых сценариев).
+     */
+    public static Shift shiftWithId(Long id, LocalDate date, int actual) {
+        List<Integer> hourly = distributeActual(actual, 3);
+        List<String> labels = List.of("08:00", "09:00", "10:00");
+        List<Integer> plan = List.of(100, 100, 100);
+        return new Shift(id, date, plan, actual, hourly, labels);
     }
 
-    public static Shift underperformed() {
-        return new Shift(LocalDate.now(), 200, 150, "Недовыполнение");
+    /**
+     * Создаёт Shift без id (подходит для сохранения через JPA).
+     */
+    public static Shift shift(LocalDate date, int actual) {
+        List<Integer> hourly = distributeActual(actual, 3);
+        List<String> labels = List.of("08:00", "09:00", "10:00");
+        List<Integer> plan = List.of(100, 100, 100);
+        return new Shift(date, plan, actual, hourly, labels);
     }
 
-    public static Shift with(LocalDate date, int planned, int actual, String comment) {
-        return new Shift(date, planned, actual, comment);
+    /**
+     * Универсальный метод с полным контролем всех параметров.
+     */
+    public static Shift shiftCustom(Long id, LocalDate date, List<Integer> plan, List<Integer> actuals, List<String> labels) {
+        int totalActual = actuals.stream().mapToInt(Integer::intValue).sum();
+        return new Shift(id, date, plan, totalActual, actuals, labels);
     }
 
-    public static Shift withPlanAndActual(int planned, int actual) {
-        String comment = actual >= planned ? "OK" : "Недовыполнение";
-        return new Shift(LocalDate.now(), planned, actual, comment);
+    /**
+     * Универсальный метод без id (например, для создания новой смены).
+     */
+    public static Shift shiftCustom(LocalDate date, List<Integer> plan, List<Integer> actuals, List<String> labels) {
+        return shiftCustom(null, date, plan, actuals, labels);
     }
 
-    public static Shift empty(LocalDate date) {
-        return new Shift(date, 0, 0, "");
+    /**
+     * Генератор смены на N часов с равномерным распределением actual.
+     */
+    public static Shift shiftWithHours(LocalDate date, int actual, int hoursCount) {
+        List<String> labels = IntStream.range(0, hoursCount)
+                .mapToObj(i -> String.format("%02d:00", 8 + i))
+                .toList();
+
+        List<Integer> hourly = distributeActual(actual, hoursCount);
+        List<Integer> plan = Collections.nCopies(hoursCount, 100);
+
+        return new Shift(date, plan, actual, hourly, labels);
     }
 
-    // future potential cases:
-    public static Shift manualComment(String comment) {
-        return new Shift(LocalDate.now(), 100, 90, comment);
+    /**
+     * Распределяет общее значение actual по N интервалам.
+     */
+    private static List<Integer> distributeActual(int total, int size) {
+        int base = total / size;
+        int remainder = total % size;
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            result.add(i < remainder ? base + 1 : base);
+        }
+        return result;
     }
 }

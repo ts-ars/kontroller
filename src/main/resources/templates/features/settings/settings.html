@@ -53,15 +53,16 @@
 </head>
 <body>
 <div th:fragment="content">
-    <div style="max-width: 600px; margin: auto;">
+    <div style="max-width: 800px; margin: auto;">
         <h1>Settings Page</h1>
 
-        <!-- ✅ добавлен корректный action и method -->
         <form th:action="@{/settings}" method="post">
-
             <label for="ppm">Line Speed (PPM):</label>
-            <input id="ppm" name="ppm" type="number" th:value="${ppm}" />
-
+            <input id="ppm" name="ppm" type="text" th:value="${ppm}" />
+            <!--
+            <label for="pouchesPerCan">Pouches per Can:</label>
+            <input id="pouchesPerCan" name="pouchesPerCan" type="text" th:value="${pouchesPerCan}" />
+            -->
             <table>
                 <thead>
                 <tr>
@@ -76,7 +77,7 @@
                         <input name="hours" type="text" th:value="${hour}" />
                     </td>
                     <td>
-                        <input name="plans" type="number" th:value="${plans[i.index]}" />
+                        <input name="plans" type="text" th:value="${plans[i.index]}" />
                     </td>
                     <td>
                         <button type="button" class="delete-button" onclick="removeRow(this)">×</button>
@@ -103,7 +104,7 @@
 
             row.innerHTML = `
                 <td><input name="hours" type="text" value="" /></td>
-                <td><input name="plans" type="number" value="140" /></td>
+                <td><input name="plans" type="text" value="140" /></td>
                 <td><button type="button" class="delete-button" onclick="removeRow(this)">×</button></td>
             `;
 

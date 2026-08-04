@@ -21,7 +21,7 @@ public class ShiftAnalyticsUseCase {
      * @return количество потерянных банок
      */
     public int calculateLostCans(double downtimeMinutes, double cansPerMinute) {
-        return (int) (downtimeMinutes * cansPerMinute);
+        return (int) Math.round(downtimeMinutes * cansPerMinute);
     }
 
     /**

@@ -1,38 +1,63 @@
 package com.exempal.shiftcounter.features.shift.infrastructure;
 
 import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.shift.domain.ShiftTestFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.annotation.Rollback;
 
+import jakarta.transaction.Transactional;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-public class ShiftPersistenceCycleTest {
+@Rollback
+class ShiftPersistenceCycleTest {
 
     @Autowired
-    private JpaShiftAdapter adapter;
+    private JpaShiftAdapter jpaShiftAdapter;
 
     @Test
     void shouldPersistAndLoadExactShift() {
-        // given
-        LocalDate date = LocalDate.of(2025, 6, 4);
-        Shift original = ShiftTestFactory.with(date, 200, 180, "Недовыполнение");
+        // Arrange
+        LocalDate date = LocalDate.of(2025, 6, 5);
+        List<Integer> plan = List.of(90);
+        List<Integer> actual = List.of(90);
+        List<String> comments = List.of("autotest");
+        List<String> labels = List.of("08:00");
 
-        // when
-        adapter.save(original);
-        Shift reloaded = adapter.findByDate(date).orElseThrow();
+        Shift shift = new Shift(date, plan, 90, actual, labels);
 
-        // then
-        assertThat(reloaded.date()).isEqualTo(original.date());
-        assertThat(reloaded.planned()).isEqualTo(original.planned());
-        assertThat(reloaded.actual()).isEqualTo(original.actual());
-        assertThat(reloaded.comment()).isEqualTo(original.comment());
-        assertThat(reloaded.deviation()).isEqualTo(original.deviation());
+        // Act
+        jpaShiftAdapter.saveOrReplace(shift); // ✅ безопасная замена по дате
+        Shift loaded = jpaShiftAdapter.findByDate(date).orElseThrow();
+
+        // Assert
+        assertThat(loaded.getDate()).isEqualTo(date);
+        assertThat(loaded.getActual()).isEqualTo(90);
+        assertThat(loaded.getHourlyPlanValues()).isEqualTo(plan);
+        assertThat(loaded.getId()).isNotNull();
+    }
+
+    @Test
+    void shouldReplacePreviousShiftOnSameDate() {
+        // Arrange
+        LocalDate date = LocalDate.of(2025, 6, 6);
+
+        Shift initial = new Shift(date, List.of(80), 80, List.of(80), List.of("08:00"));
+        Shift updated = new Shift(date, List.of(120), 120, List.of(120), List.of("08:00"));
+
+        jpaShiftAdapter.saveOrReplace(initial);
+        jpaShiftAdapter.saveOrReplace(updated);
+
+        // Act
+        Shift loaded = jpaShiftAdapter.findByDate(date).orElseThrow();
+
+        // Assert
+        assertThat(loaded.getActual()).isEqualTo(120);
+        assertThat(loaded.getHourlyPlanValues()).isEqualTo(List.of(120));
     }
 }

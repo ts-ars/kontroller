@@ -1,4 +1,24 @@
-<div th:fragment="content">
+<div th:fragment="content" th:attr="data-shift-id=${shiftId}">
+  <script th:inline="javascript">
+    window.model = window.model || {};
+    // сюда Thymeleaf подставит число, если shiftId есть в модели
+    window.model.shiftId = /*[[${shiftId}]]*/ null;
+    (function guardSaveBtn(){
+      const btn = document.getElementById("saveBtn");
+      const id =
+              (window.model && window.model.shiftId) ??
+              document.querySelector("[data-shift-id]")?.getAttribute("data-shift-id") ??
+              new URLSearchParams(location.search).get("shiftId");
+      if (!id || !/^\d+$/.test(String(id))) {
+        btn.disabled = true;
+        const box = document.getElementById("save-status");
+        box.textContent = "⚠️ Shift ID is missing on page";
+        box.style.color = "red";
+      }
+    })();
+
+  </script>
+
   <h1>Reasons for Stoppages</h1>
 
   <!-- 🔴 Предупреждения -->
@@ -21,7 +41,9 @@
     <tr th:each="row : ${rows}">
       <td style="border: 1px solid #ccc; padding: 6px;" th:text="${row.time}">08:00</td>
       <td style="border: 1px solid #ccc; padding: 6px;">
-        <input type="text" th:value="${row.minutes}" oninput="onMinChange(this)" style="width: 80px;" />
+        <input type="text" th:value="${row.minutes}"
+               th:readonly="${!row.editable}"
+               style="width: 80px;" />
       </td>
       <td style="border: 1px solid #ccc; padding: 6px;">
         <input type="text" class="cans" th:value="${row.cans}" style="width: 80px;" readonly />
@@ -38,6 +60,9 @@
       <td style="border: 1px solid #ccc; padding: 6px;">
         <input type="text" th:value="${row.comment}" style="width: 220px;" />
       </td>
+      <td style="display: none;">
+        <input type="hidden" th:value="${row.hourIndex}" />
+      </td>
     </tr>
     </tbody>
   </table>
@@ -45,11 +70,11 @@
   <!-- ➕ Кнопка добавления строки -->
   <button type="button"
           style="margin-top: 16px; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px;"
-          onclick="addRow()">Add Reason
+          onclick="addReason()">Add Reason
   </button>
 
   <!-- 💾 Кнопка сохранения -->
-  <button type="button"
+  <button id="saveBtn" type="button"
           style="margin-top: 16px; margin-left: 12px; padding: 6px 12px; background: green; color: white; border: none; border-radius: 4px;"
           onclick="submitData()">Save to Database
   </button>
@@ -58,72 +83,86 @@
 
   <!-- ⚙️ Скрипты -->
   <script>
-    const CANS_PER_MIN = 10;
-
-    function onMinChange(input) {
-      const row = input.closest("tr");
-      const min = parseFloat(input.value);
-      const cansInput = row.querySelector(".cans");
-      if (!isNaN(min)) {
-        cansInput.value = Math.round(min * CANS_PER_MIN);
-      } else {
-        cansInput.value = "";
-      }
-    }
-
-    function addRow() {
+    function addReason() {
       const tbody = document.getElementById("stoppage-body");
-      const newRow = document.createElement("tr");
-      newRow.innerHTML = `
-        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" value="" style="width: 60px;" /></td>
-        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" value="" style="width: 80px;" oninput="onMinChange(this)" /></td>
-        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" class="cans" value="" style="width: 80px;" readonly /></td>
-        <td style="border: 1px solid #ccc; padding: 6px;">
-          <select style="width: 120px;">
-            <option value="">–</option>
-            <option value="organization">organization</option>
-            <option value="breakdown">breakdown</option>
-            <option value="material">material</option>
-            <option value="quality">quality</option>
-          </select>
-        </td>
-        <td style="border: 1px solid #ccc; padding: 6px;"><input type="text" value="" style="width: 220px;" /></td>
-      `;
-      tbody.appendChild(newRow);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+    <td style="border:1px solid #ccc; padding:6px;">—</td>
+    <td style="border:1px solid #ccc; padding:6px;">
+      <input type="text" value="" style="width:80px;" />
+    </td>
+    <td style="border:1px solid #ccc; padding:6px;">
+      <input type="text" class="cans" value="0" style="width:80px;" readonly />
+    </td>
+    <td style="border:1px solid #ccc; padding:6px;">
+      <select style="width:120px;">
+        <option value="">–</option>
+        <option value="organization">organization</option>
+        <option value="breakdown">breakdown</option>
+        <option value="material">material</option>
+        <option value="quality">quality</option>
+      </select>
+    </td>
+    <td style="border:1px solid #ccc; padding:6px;">
+      <input type="text" value="" style="width:220px;" />
+    </td>
+    <td style="display:none;">
+      <input type="hidden" value="" />
+    </td>
+  `;
+      tbody.appendChild(tr);
     }
 
     function submitData() {
       const rows = document.querySelectorAll("#stoppage-body tr");
       const data = Array.from(rows).map(row => {
-        const tds = row.querySelectorAll("td");
         const inputs = row.querySelectorAll("input, select");
         return {
-          time: tds[0]?.textContent.trim() || inputs[0]?.value,
-          minutes: parseFloat(inputs[1]?.value),
+          hourIndex: Number.parseInt(inputs[5]?.value),
+          minutes: Number.parseFloat(inputs[1]?.value),
+          cans: Number.parseInt(inputs[2]?.value),
           type: inputs[3]?.value,
-          comment: inputs[4]?.value
+          comment: inputs[4]?.value,
+          time: row.querySelector("td:first-child")?.textContent?.trim()
         };
       });
 
       const statusBox = document.getElementById("save-status");
 
-      fetch("/api/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      }).then(res => {
-        if (res.ok) {
-          statusBox.textContent = "✅ Saved to database";
-          statusBox.style.color = "green";
-        } else {
-          statusBox.textContent = "❌ Failed to save";
-          statusBox.style.color = "red";
-        }
+      const shiftIdRaw =
+              (window.model && window.model.shiftId) ??
+              document.querySelector("[data-shift-id]")?.getAttribute("data-shift-id") ??
+              new URLSearchParams(location.search).get("shiftId");
 
-        setTimeout(() => {
-          statusBox.textContent = "";
-        }, 3000);
-      });
+      if (!shiftIdRaw || !/^\d+$/.test(String(shiftIdRaw))) {
+        statusBox.textContent = "❌ Shift ID is missing on page";
+        statusBox.style.color = "red";
+        return;
+      }
+
+      const shiftId = Number(shiftIdRaw);
+
+      fetch(`/api/shifts/${shiftId}/comments`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      })
+              .then(res => {
+                if (res.ok) {
+                  statusBox.textContent = "✅ Saved to database";
+                  statusBox.style.color = "green";
+                } else {
+                  statusBox.textContent = "❌ Failed to save";
+                  statusBox.style.color = "red";
+                }
+                setTimeout(() => { statusBox.textContent = ""; }, 3000);
+              })
+              .catch(err => {
+                console.error(err);
+                statusBox.textContent = "❌ Network error";
+                statusBox.style.color = "red";
+                setTimeout(() => { statusBox.textContent = ""; }, 3000);
+              });
     }
   </script>
 </div>

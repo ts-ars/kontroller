@@ -1,21 +1,23 @@
 package com.exempal.shiftcounter.features.settings.infrastructure;
 
 import com.exempal.shiftcounter.core.PageModel;
+import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/settings")
 public class SettingsPage implements PageModel {
 
-    private final SettingsStorage storage;
+    private final SettingsPort settings;
 
-    public SettingsPage(SettingsStorage storage) {
-        this.storage = storage;
+    public SettingsPage(SettingsPort settings) {
+        this.settings = settings;
     }
 
     @Override
@@ -23,27 +25,32 @@ public class SettingsPage implements PageModel {
         return "settings";
     }
 
-    // Основной метод, вызывается через PageModelResolver
     @Override
     public void populateModel(Model model, Map<String, String> params) {
-        model.addAttribute("hours", storage.getHours());
-        model.addAttribute("plans", storage.getHourlyPlans());
-        model.addAttribute("ppm", storage.getPpm());
+        List<Integer> plans = settings.getHourlyPlans().stream()
+                .map(Integer::parseInt)
+                .toList();
+
+        model.addAttribute("plans", plans);
+        model.addAttribute("hours", settings.getHours());
     }
 
-    // Обязательная заглушка для старого контракта
     @Override
     public void populateModel(Model model) {
-        populateModel(model, Map.of()); // можно оставить пустым или дублировать данные
+        populateModel(model, Map.of());
     }
 
     @PostMapping
-    public String updateSettings(@RequestParam("ppm") int ppm,
-                                 @RequestParam("hours") List<String> hours,
+    public String updateSettings(@RequestParam("hours") List<String> hours,
                                  @RequestParam("plans") List<Integer> plans) {
-        storage.setPpm(ppm);
-        storage.setHours(hours);
-        storage.setHourlyPlans(plans);
+
+        settings.updateHours(hours);
+
+        List<String> planStrings = plans.stream()
+                .map(String::valueOf)
+                .toList();
+        settings.updateHourlyPlans(planStrings);
+
         return "redirect:/page/settings";
     }
 }

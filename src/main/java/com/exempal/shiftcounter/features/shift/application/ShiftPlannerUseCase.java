@@ -1,35 +1,58 @@
 package com.exempal.shiftcounter.features.shift.application;
 
-import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
-import lombok.extern.slf4j.Slf4j;
+import com.exempal.shiftcounter.common.domain.EventPublisherPort;
+import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsApplier;
+import com.exempal.shiftcounter.features.shift.domain.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Optional;
 
-@Slf4j
+@Service
 public class ShiftPlannerUseCase {
 
-    private final ActualDataPort actualDataPort;
+    private static final Logger log = LoggerFactory.getLogger(ShiftPlannerUseCase.class);
 
-    public ShiftPlannerUseCase(ActualDataPort actualDataPort) {
+    private final ActualDataPort actualDataPort;
+    private final ShiftInitializer shiftInitializer;
+    private final EventPublisherPort eventPublisherPort;
+    private final ShiftSettingsApplier shiftSettingsApplier;
+
+    public ShiftPlannerUseCase(
+            ActualDataPort actualDataPort,
+            ShiftInitializer shiftInitializer,
+            EventPublisherPort eventPublisherPort,
+            ShiftSettingsApplier shiftSettingsApplier
+    ) {
         this.actualDataPort = actualDataPort;
+        this.shiftInitializer = shiftInitializer;
+        this.eventPublisherPort = eventPublisherPort;
+        this.shiftSettingsApplier = shiftSettingsApplier;
     }
 
-    public void registerProduct(LocalDateTime detectedAt) {
-        LocalDate date = detectedAt.toLocalDate(); // используем дату из времени
+    public Shift getOrCreateShift(LocalDate date) {
+        return actualDataPort.findByDate(date)
+                .orElseGet(() -> {
+                    log.info("🆕 Создание смены на {}", date);
+                    return shiftInitializer.createNewShift(date);
+                });
+    }
 
-        Optional<Shift> current = actualDataPort.findByDate(date);
-        if (current.isEmpty()) {
-            throw new IllegalStateException("No shift for date: " + date);
-        }
-
-        Shift old = current.get();
-        Shift updated = old.withActual(old.getActual() + 1);
+    public void updateShift(Shift updated) {
         actualDataPort.save(updated);
+        log.info("💾 Смена сохранена: {}", updated.getDate());
+        eventPublisherPort.publish(new ShiftUpdatedEvent(
+                updated.getDate(),
+                updated.getHourlyActualValues(),
+                updated.getHourlyPlanValues(),
+                updated.getHourlyLabels()
+        ));
+    }
 
-        log.info("[SHIFT] Product registered at {} → shift date: {}, new actual: {}",
-                detectedAt, date, updated.getActual());
+    public void applySettingsAndUpdate(Shift shift) {
+        Shift updated = shiftSettingsApplier.apply(shift);
+        updateShift(updated);
     }
 }

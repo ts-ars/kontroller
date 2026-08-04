@@ -1,17 +1,16 @@
 package com.exempal.shiftcounter.features.shift.domain;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
 import java.util.Optional;
 
 public interface ActualDataPort {
-    void save(Shift shift);
+    Shift save(Shift shift);
 
     Optional<Shift> findByDate(LocalDate date);
 
-    List<Integer> getHourlyActuals(LocalDate date);
+    void saveOrReplace(Shift shift);
 
-    void incrementHourlyActual(LocalDate date, LocalTime time);
+    void deleteByDate(LocalDate date);
+
+    Optional<Shift> findById(long shiftId);
 }
-

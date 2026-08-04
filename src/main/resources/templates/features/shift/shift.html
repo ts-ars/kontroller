@@ -2,7 +2,7 @@
     <div style="max-width: 800px; margin: auto;">
         <h1>Plan–Fact</h1>
 
-        <canvas id="shiftChart" width="600" height="250"></canvas>
+        <canvas height="250" id="shiftChart" width="600"></canvas>
 
         <table>
             <thead>
@@ -13,40 +13,143 @@
                 <th>Comment</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="shiftTableBody">
             <tr th:each="hour, i : ${hours}">
                 <td th:text="${hour}">08:00</td>
-                <td th:text="${plan}">140</td>
-                <td th:text="${actual[i.index]}">0</td>
-                <td><input type="text" name="comment" /></td>
+                <td th:text="${plan[i.index]}">140</td>
+                <td class="actual-cell" th:text="${actual[i.index]}">0</td>
+                <td th:text="${comments != null ? comments[i.index] : ''}"></td>
             </tr>
             </tbody>
         </table>
     </div>
 
+    <!-- Chart.js и WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
     <script th:inline="javascript">
+        let labels = /*[[${hours}]]*/ [];
+        let initialActual = /*[[${actual}]]*/ [];
+        let initialPlan = /*[[${plan}]]*/ [];
+        let previousLabels = labels.slice();
+        let previousActual = initialActual.slice();
+        let previousComments = /*[[${comments}]]*/ [];
+        let previousPlan = initialPlan.slice();
+
         const ctx = document.getElementById('shiftChart');
-        new Chart(ctx, {
+        window.chart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: /*[[${hours}]]*/,
+                labels: labels,
                 datasets: [{
                     label: 'Cans',
-                    data: /*[[${actual}]]*/,
+                    data: initialActual,
                     backgroundColor: '#3b82f6'
                 }]
             },
             options: {
                 plugins: {
-                    legend: { display: true, position: 'top' },
-                    tooltip: { enabled: true }
+                    legend: {display: true, position: 'top'},
+                    tooltip: {enabled: true}
                 },
                 scales: {
-                    x: { title: { display: true, text: 'Time' } },
-                    y: { title: { display: true, text: 'Cans' }, beginAtZero: true }
+                    x: {title: {display: true, text: 'Time'}},
+                    y: {
+                        title: {display: true, text: 'Cans'},
+                        beginAtZero: true,
+                        suggestedMax: 100,
+                        ticks: {
+                            stepSize: 20,
+                            maxTicksLimit: 10
+                        }
+                    }
                 }
             }
+        });
+
+        console.log("📡 Инициализация WebSocket...");
+        const socket = new SockJS('/ws');
+        const stompClient = Stomp.over(socket);
+        stompClient.debug = str => console.log('[STOMP]', str);
+
+        stompClient.connect({}, () => {
+            console.log("🟢 WebSocket подключен");
+
+            // Подписка на общие обновления смены
+            stompClient.subscribe('/topic/shift-updates', message => {
+                console.log("📩 WS shift-updates получено");
+                try {
+                    const data = JSON.parse(message.body);
+                    const actualData = data.actual ?? [];
+                    const planData = data.plan ?? previousPlan;
+                    const newLabels = data.hours ?? labels;
+
+                    const labelsChanged = JSON.stringify(newLabels) !== JSON.stringify(previousLabels);
+                    const actualChanged = JSON.stringify(actualData) !== JSON.stringify(previousActual);
+                    const planChanged = JSON.stringify(planData) !== JSON.stringify(previousPlan);
+
+                    // Обновление графика
+                    if (labelsChanged) {
+                        window.chart.data.labels = newLabels;
+                        previousLabels = newLabels.slice();
+                    }
+                    if (actualChanged) {
+                        window.chart.data.datasets[0].data = actualData;
+                        previousActual = actualData.slice();
+                    }
+                    if (labelsChanged || actualChanged) {
+                        window.chart.update();
+                    }
+
+                    // Обновление таблицы
+                    const tableBody = document.getElementById('shiftTableBody');
+                    const actualCells = tableBody.querySelectorAll('.actual-cell');
+                    actualData.forEach((value, index) => {
+                        if (actualCells[index] && actualCells[index].textContent !== String(value)) {
+                            actualCells[index].textContent = value;
+                        }
+                    });
+
+                    if (planChanged) {
+                        const planCells = tableBody.querySelectorAll('td:nth-child(2)');
+                        planData.forEach((value, index) => {
+                            if (planCells[index] && planCells[index].textContent !== String(value)) {
+                                planCells[index].textContent = value;
+                            }
+                        });
+                        previousPlan = planData.slice();
+                    }
+
+                } catch (e) {
+                    console.error("❌ Ошибка shift-updates:", e);
+                }
+            });
+
+            // Подписка на отдельные комментарии
+            stompClient.subscribe('/topic/shift-comments', message => {
+                console.log("📩 WS shift-comments получено");
+                try {
+                    const data = JSON.parse(message.body);
+                    const comments = data.comments ?? [];
+
+                    const commentInputs = document.querySelectorAll('input[name="comment"]');
+                    comments.forEach((text, index) => {
+                        if (commentInputs[index] && commentInputs[index].value !== text) {
+                            commentInputs[index].value = text;
+                        }
+                    });
+
+                    previousComments = comments.slice();
+
+                } catch (e) {
+                    console.error("❌ Ошибка shift-comments:", e);
+                }
+            });
+
+        }, error => {
+            console.error("🔴 Ошибка подключения WebSocket:", error);
         });
     </script>
 </div>

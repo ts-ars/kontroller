@@ -1,0 +1,30 @@
+package com.exempal.shiftcounter.features.comment.calculator;
+
+import com.exempal.shiftcounter.features.shift.domain.Shift;
+import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
+import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
+import com.exempal.shiftcounter.features.comment.adapter.dto.CommentRowDto;
+import com.exempal.shiftcounter.features.signal.domain.Signal;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Контракт калькулятора остановок по сигналам и пользовательским комментариям.
+ */
+public interface StoppageCalculator {
+
+    List<StoppageEntry> recalculate(
+            Shift shift,
+            int hourIndex,
+            List<Signal> signals,
+            ShiftMetrics metrics,
+            LocalDateTime now
+    );
+
+    List<StoppageEntry> adjustForUserOverrides(
+            Shift shift,
+            List<CommentRowDto> rows,
+            ShiftMetrics metrics
+    );
+}

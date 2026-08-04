@@ -25,7 +25,7 @@ public class ProductionStoppedEvent implements DomainEvent {
     private final double minutes;
 
     public ProductionStoppedEvent(LocalDateTime time, double minutes) {
-        this.time = time;
+        this.time = LocalDateTime.from(time);
         this.minutes = minutes;
     }
 
