@@ -1,6 +1,6 @@
 # Stage 1 — Stable Test Environment
 
-Status: **APPROVED / NOT IMPLEMENTED**
+Status: **APPROVED / IMPLEMENTED**
 
 ## Target state
 

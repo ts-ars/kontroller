@@ -1,9 +1,11 @@
 package com.exempal.shiftcounter.features.signal.adapter.http;
 
 import com.exempal.shiftcounter.features.signal.domain.SignalInputPort;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@Profile("test")
 @RequestMapping("/api/signal")
 public class HttpSignalAdapter {
 
