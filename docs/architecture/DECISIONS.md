@@ -23,4 +23,9 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 19. Dependencies point `adapter → application → domain`. Transactions live at the application boundary. Domain, JPA entities and transport DTOs are separate.
 20. Test and production environments, databases and database users are separate. HTTP simulation is test-only; ADAM is production-only.
 21. Secrets are not stored in Git. Production schema changes are owned by Flyway; Hibernate validates the schema.
+22. Stage 2 introduces the minimum persisted `LossExplanation` model and the `Stoppage 1:N LossExplanation` relationship. Stable detection identity, loss state, optimistic locking and full domain/JPA separation remain Stage 3.
+23. Stage 2 preserves explanations during ordinary explanation CRUD. Stable preservation and relinking during Reconcile remain Stage 4 and are not implemented by Stage 2.
+24. Stage 2 derives partial `allocatedCans` proportionally as `round(stoppageLostCans * allocatedMinutes / stoppageRoundedMinutes)`. Deterministic largest-remainder distribution across all explanations remains Stage 4.
+25. Legacy operator-category stoppage rows are not linked automatically. V3 preserves them and records them in a migration report for later reviewed migration.
+26. Stage 2 applies integer half-up rounding wherever an exact `Duration` is available. Persisted exact start/end/duration and unified production-day time boundaries remain Stages 3 and 5.
 

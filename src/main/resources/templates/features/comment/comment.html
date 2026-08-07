@@ -1,168 +1,98 @@
-<div th:fragment="content" th:attr="data-shift-id=${shiftId}">
-  <script th:inline="javascript">
-    window.model = window.model || {};
-    // сюда Thymeleaf подставит число, если shiftId есть в модели
-    window.model.shiftId = /*[[${shiftId}]]*/ null;
-    (function guardSaveBtn(){
-      const btn = document.getElementById("saveBtn");
-      const id =
-              (window.model && window.model.shiftId) ??
-              document.querySelector("[data-shift-id]")?.getAttribute("data-shift-id") ??
-              new URLSearchParams(location.search).get("shiftId");
-      if (!id || !/^\d+$/.test(String(id))) {
-        btn.disabled = true;
-        const box = document.getElementById("save-status");
-        box.textContent = "⚠️ Shift ID is missing on page";
-        box.style.color = "red";
-      }
-    })();
+<div th:fragment="content">
+  <h1>Loss explanations</h1>
 
-  </script>
-
-  <h1>Reasons for Stoppages</h1>
-
-  <!-- 🔴 Предупреждения -->
   <div th:each="alert : ${alerts}">
-    <p style="color: red;" th:text="${alert}"></p>
+    <p class="loss-alert" th:text="${alert}"></p>
   </div>
 
-  <!-- 📋 Таблица -->
-  <table style="border-collapse: collapse; margin-top: 1em; width: 100%;">
-    <thead>
-    <tr>
-      <th style="padding: 8px; border: 1px solid #ccc;">Time</th>
-      <th style="padding: 8px; border: 1px solid #ccc;">Min</th>
-      <th style="padding: 8px; border: 1px solid #ccc;">Cans</th>
-      <th style="padding: 8px; border: 1px solid #ccc;">Type</th>
-      <th style="padding: 8px; border: 1px solid #ccc;">Comment</th>
-    </tr>
-    </thead>
-    <tbody id="stoppage-body">
-    <tr th:each="row : ${rows}">
-      <td style="border: 1px solid #ccc; padding: 6px;" th:text="${row.time}">08:00</td>
-      <td style="border: 1px solid #ccc; padding: 6px;">
-        <input type="text" th:value="${row.minutes}"
-               th:readonly="${!row.editable}"
-               style="width: 80px;" />
-      </td>
-      <td style="border: 1px solid #ccc; padding: 6px;">
-        <input type="text" class="cans" th:value="${row.cans}" style="width: 80px;" readonly />
-      </td>
-      <td style="border: 1px solid #ccc; padding: 6px;">
-        <select th:value="${row.type}" style="width: 120px;">
-          <option value="">–</option>
-          <option value="organization">organization</option>
-          <option value="breakdown">breakdown</option>
-          <option value="material">material</option>
-          <option value="quality">quality</option>
-        </select>
-      </td>
-      <td style="border: 1px solid #ccc; padding: 6px;">
-        <input type="text" th:value="${row.comment}" style="width: 220px;" />
-      </td>
-      <td style="display: none;">
-        <input type="hidden" th:value="${row.hourIndex}" />
-      </td>
-    </tr>
-    </tbody>
-  </table>
+  <div th:if="${#lists.isEmpty(losses)}">No system losses for today.</div>
 
-  <!-- ➕ Кнопка добавления строки -->
-  <button type="button"
-          style="margin-top: 16px; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 4px;"
-          onclick="addReason()">Add Reason
-  </button>
+  <section class="loss-card" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
+    <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00</h2>
+    <p>
+      <span th:text="|Loss: ${loss.roundedMinutes} min / ${loss.lostCans} cans|">Loss</span>
+      · <span class="allocation-summary"
+              th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span>
+    </p>
 
-  <!-- 💾 Кнопка сохранения -->
-  <button id="saveBtn" type="button"
-          style="margin-top: 16px; margin-left: 12px; padding: 6px 12px; background: green; color: white; border: none; border-radius: 4px;"
-          onclick="submitData()">Save to Database
-  </button>
+    <table>
+      <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th></tr></thead>
+      <tbody class="explanations">
+      <tr th:each="explanation : ${loss.explanations}" th:attr="data-explanation-id=${explanation.id}">
+        <td><select class="category">
+          <option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}"
+                  th:value="${category}" th:text="${category}"
+                  th:selected="${category == explanation.category}"></option>
+        </select></td>
+        <td><input class="comment" type="text" th:value="${explanation.comment}" /></td>
+        <td><input class="allocated-minutes" type="number" min="0" step="1"
+                   th:value="${explanation.allocatedMinutes}" /></td>
+        <td class="allocated-cans" th:text="${explanation.allocatedCans}">0</td>
+        <td><button type="button" onclick="saveExplanation(this)">Save</button>
+          <button type="button" onclick="deleteExplanation(this)">Delete</button></td>
+      </tr>
+      </tbody>
+    </table>
+    <button type="button" onclick="addExplanation(this)">Add reason</button>
+    <div class="save-status"></div>
+  </section>
 
-  <div id="save-status" style="margin-top: 10px; font-weight: bold;"></div>
-
-  <!-- ⚙️ Скрипты -->
   <script>
-    function addReason() {
-      const tbody = document.getElementById("stoppage-body");
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-    <td style="border:1px solid #ccc; padding:6px;">—</td>
-    <td style="border:1px solid #ccc; padding:6px;">
-      <input type="text" value="" style="width:80px;" />
-    </td>
-    <td style="border:1px solid #ccc; padding:6px;">
-      <input type="text" class="cans" value="0" style="width:80px;" readonly />
-    </td>
-    <td style="border:1px solid #ccc; padding:6px;">
-      <select style="width:120px;">
-        <option value="">–</option>
-        <option value="organization">organization</option>
-        <option value="breakdown">breakdown</option>
-        <option value="material">material</option>
-        <option value="quality">quality</option>
-      </select>
-    </td>
-    <td style="border:1px solid #ccc; padding:6px;">
-      <input type="text" value="" style="width:220px;" />
-    </td>
-    <td style="display:none;">
-      <input type="hidden" value="" />
-    </td>
-  `;
-      tbody.appendChild(tr);
+    const categories = ['ORGANIZATION', 'BREAKDOWN', 'MATERIAL', 'QUALITY'];
+
+    function addExplanation(button) {
+      const card = button.closest('.loss-card');
+      const row = document.createElement('tr');
+      row.innerHTML = `<td><select class="category">${categories.map(c => `<option>${c}</option>`).join('')}</select></td>
+        <td><input class="comment" type="text"></td>
+        <td><input class="allocated-minutes" type="number" min="0" step="1" value="0"></td>
+        <td class="allocated-cans">0</td>
+        <td><button type="button" onclick="saveExplanation(this)">Save</button>
+        <button type="button" onclick="deleteExplanation(this)">Delete</button></td>`;
+      card.querySelector('.explanations').appendChild(row);
     }
 
-    function submitData() {
-      const rows = document.querySelectorAll("#stoppage-body tr");
-      const data = Array.from(rows).map(row => {
-        const inputs = row.querySelectorAll("input, select");
-        return {
-          hourIndex: Number.parseInt(inputs[5]?.value),
-          minutes: Number.parseFloat(inputs[1]?.value),
-          cans: Number.parseInt(inputs[2]?.value),
-          type: inputs[3]?.value,
-          comment: inputs[4]?.value,
-          time: row.querySelector("td:first-child")?.textContent?.trim()
-        };
+    async function saveExplanation(button) {
+      const row = button.closest('tr');
+      const card = button.closest('.loss-card');
+      const stoppageId = card.dataset.stoppageId;
+      const explanationId = row.dataset.explanationId;
+      const payload = {
+        category: row.querySelector('.category').value,
+        comment: row.querySelector('.comment').value,
+        allocatedMinutes: Number(row.querySelector('.allocated-minutes').value)
+      };
+      const url = `/api/stoppages/${stoppageId}/explanations${explanationId ? `/${explanationId}` : ''}`;
+      const response = await fetch(url, {
+        method: explanationId ? 'PUT' : 'POST',
+        headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
       });
+      if (!response.ok) return showStatus(card, await errorText(response), true);
+      const saved = await response.json();
+      row.dataset.explanationId = saved.id;
+      row.querySelector('.allocated-cans').textContent = saved.allocatedCans;
+      showStatus(card, 'Saved', false);
+      window.location.reload();
+    }
 
-      const statusBox = document.getElementById("save-status");
+    async function deleteExplanation(button) {
+      const row = button.closest('tr');
+      const card = button.closest('.loss-card');
+      if (!row.dataset.explanationId) return row.remove();
+      const response = await fetch(`/api/stoppages/${card.dataset.stoppageId}/explanations/${row.dataset.explanationId}`,
+              {method: 'DELETE'});
+      if (!response.ok) return showStatus(card, await errorText(response), true);
+      window.location.reload();
+    }
 
-      const shiftIdRaw =
-              (window.model && window.model.shiftId) ??
-              document.querySelector("[data-shift-id]")?.getAttribute("data-shift-id") ??
-              new URLSearchParams(location.search).get("shiftId");
+    async function errorText(response) {
+      try { return (await response.json()).detail || 'Request failed'; } catch (_) { return 'Request failed'; }
+    }
 
-      if (!shiftIdRaw || !/^\d+$/.test(String(shiftIdRaw))) {
-        statusBox.textContent = "❌ Shift ID is missing on page";
-        statusBox.style.color = "red";
-        return;
-      }
-
-      const shiftId = Number(shiftIdRaw);
-
-      fetch(`/api/shifts/${shiftId}/comments`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
-      })
-              .then(res => {
-                if (res.ok) {
-                  statusBox.textContent = "✅ Saved to database";
-                  statusBox.style.color = "green";
-                } else {
-                  statusBox.textContent = "❌ Failed to save";
-                  statusBox.style.color = "red";
-                }
-                setTimeout(() => { statusBox.textContent = ""; }, 3000);
-              })
-              .catch(err => {
-                console.error(err);
-                statusBox.textContent = "❌ Network error";
-                statusBox.style.color = "red";
-                setTimeout(() => { statusBox.textContent = ""; }, 3000);
-              });
+    function showStatus(card, text, error) {
+      const status = card.querySelector('.save-status');
+      status.textContent = text;
+      status.style.color = error ? 'red' : 'green';
     }
   </script>
 </div>

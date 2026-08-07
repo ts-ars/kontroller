@@ -29,7 +29,7 @@ public class Shift {
         this.id = id;
         this.date = date;
         this.hourlyPlanValues = new ArrayList<>(hourlyPlanValues);
-        this.actual = actual;
+        this.actual = hourlyActualValues.stream().mapToInt(Integer::intValue).sum();
         this.hourlyActualValues = new ArrayList<>(hourlyActualValues);
         this.hourlyLabels = new ArrayList<>(hourlyLabels);
     }

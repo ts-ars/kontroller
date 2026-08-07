@@ -28,16 +28,10 @@ public class CalculatorConfig {
     }
 
     @Bean
-    public StoppageUserOverrideMapper stoppageUserOverrideMapper() {
-        return new StoppageUserOverrideMapper();
-    }
-
-    @Bean
     public StoppageCalculator stoppageCalculator(
             StoppageFixedLossCalculator fixed,
-            StoppageTempoLossCalculator tempo,
-            StoppageUserOverrideMapper mapper
+            StoppageTempoLossCalculator tempo
     ) {
-        return new StoppageCalculatorImpl(fixed, tempo, mapper);
+        return new StoppageCalculatorImpl(fixed, tempo);
     }
 }

@@ -8,7 +8,7 @@ Source of truth: this repository
 |---|---|---|
 | 0 — Business invariants | APPROVED | BASELINE FOR ALL WORK |
 | 1 — Test environment | APPROVED | DONE |
-| 2 — Comments | APPROVED | TODO |
+| 2 — Comments | APPROVED | DONE |
 | 3 — Stoppage model | APPROVED | TODO |
 | 4 — Reconcile | APPROVED | TODO |
 | 5 — Time | APPROVED | TODO |
@@ -20,5 +20,5 @@ Source of truth: this repository
 
 ## Current action
 
-Review and merge the dedicated Stage 1 pull request. Begin Stage 2 only through a separate audit and approved change set.
+Stage 2 is implemented with the approved minimum `LossExplanation` boundary. Begin Stage 3 only through a separate audit and approved change set; Reconcile preservation remains explicitly assigned to Stage 4.
 

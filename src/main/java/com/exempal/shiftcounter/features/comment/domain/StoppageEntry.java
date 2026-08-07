@@ -58,7 +58,7 @@ public class StoppageEntry {
         StoppageEntry entry = new StoppageEntry();
         entry.setType(StoppageType.FIXED);
         entry.setHourIndex(hourIndex);
-        entry.setMinutes(duration.toMinutes());
+        entry.setMinutes(roundHalfUpMinutes(duration));
         entry.setComment("");
         entry.setShift(shift);  // обязательно, чтобы получить label через shift
         return entry;
@@ -68,7 +68,7 @@ public class StoppageEntry {
         StoppageEntry entry = new StoppageEntry();
         entry.setType(StoppageType.TEMPO);
         entry.setHourIndex(hourIndex);
-        entry.setMinutes(duration.toMinutes());
+        entry.setMinutes(roundHalfUpMinutes(duration));
         entry.setComment("");
         entry.setShift(shift);  // обязательно
         return entry;
@@ -101,5 +101,12 @@ public class StoppageEntry {
     @Transient
     public boolean isUserEditable() {
         return type == null || type.isUserEditable();
+    }
+
+    private static long roundHalfUpMinutes(Duration duration) {
+        if (duration.isNegative()) {
+            throw new IllegalArgumentException("duration must not be negative");
+        }
+        return Math.addExact(duration.getSeconds(), 30L) / 60L;
     }
 }
