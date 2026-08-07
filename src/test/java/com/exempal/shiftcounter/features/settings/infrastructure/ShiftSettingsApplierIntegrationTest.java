@@ -18,6 +18,8 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@org.springframework.test.context.ActiveProfiles("test")
+@org.junit.jupiter.api.Tag("integration")
 class ShiftSettingsApplierIntegrationTest {
 
     @Autowired
@@ -30,6 +32,9 @@ class ShiftSettingsApplierIntegrationTest {
     private ShiftSettingsApplier shiftSettingsApplier;
 
     @Autowired
+    private ShiftSettingsProvider shiftSettingsProvider;
+
+    @Autowired
     private JpaShiftAdapter shiftAdapter;
 
     @Test
@@ -40,6 +45,7 @@ class ShiftSettingsApplierIntegrationTest {
         // Given: Сохраняем начальные настройки как JSON
         settingRepository.save(new SettingEntity("hours", "[\"08:00\",\"09:00\"]"));
         settingRepository.save(new SettingEntity("hourlyPlans", "[100,200]"));
+        shiftSettingsProvider.reload();
 
         LocalDate today = LocalDate.now();
         shiftInitializer.createNewShift(today);
@@ -59,4 +65,3 @@ class ShiftSettingsApplierIntegrationTest {
         assertThat(updated.getHourlyPlanValues()).containsExactly(100, 200, 300);
     }
 }
-

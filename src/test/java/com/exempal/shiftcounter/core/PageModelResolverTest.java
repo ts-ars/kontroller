@@ -15,6 +15,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@org.junit.jupiter.api.Tag("unit")
 class PageModelResolverTest {
 
     private PageModelResolver resolver;

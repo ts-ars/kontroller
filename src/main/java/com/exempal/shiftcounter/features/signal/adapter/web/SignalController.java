@@ -5,12 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.context.annotation.Profile;
 
 /**
  * Обрабатывает сигнал от сенсора и публикует событие в систему.
  */
 @RestController
 @RequestMapping("/api/signal")
+@Profile("test")
 public class SignalController {
 
     private static final Logger log = LoggerFactory.getLogger(SignalController.class);

@@ -13,6 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
+@org.springframework.test.context.ActiveProfiles("test")
+@org.junit.jupiter.api.Tag("integration")
 class JpaShiftAdapterIntegrationTest {
 
     @Autowired

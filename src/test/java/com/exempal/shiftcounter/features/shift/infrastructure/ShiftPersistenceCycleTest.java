@@ -15,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Transactional
 @Rollback
+@org.springframework.test.context.ActiveProfiles("test")
+@org.junit.jupiter.api.Tag("integration")
 class ShiftPersistenceCycleTest {
 
     @Autowired

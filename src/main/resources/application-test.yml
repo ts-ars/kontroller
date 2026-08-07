@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: ${SHIFT_TEST_DB_URL}
+    username: ${SHIFT_TEST_DB_USER}
+    password: ${SHIFT_TEST_DB_PASSWORD}
+
+shift:
+  test:
+    embedded-postgres: ${SHIFT_TEST_EMBEDDED:false}

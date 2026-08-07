@@ -12,6 +12,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+@org.junit.jupiter.api.Tag("unit")
 class SettingsPageTest {
 
     private SettingsPort settings;

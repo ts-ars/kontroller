@@ -1,13 +1,14 @@
 # Implementation Status
 
 Roadmap A: **APPROVED**  
-Implementation: **NOT STARTED**  
+Implementation: **IN PROGRESS**
+
 Source of truth: this repository
 
 | Stage | Specification | Implementation |
 |---|---|---|
 | 0 — Business invariants | APPROVED | BASELINE FOR ALL WORK |
-| 1 — Test environment | APPROVED | TODO |
+| 1 — Test environment | APPROVED | DONE |
 | 2 — Comments | APPROVED | TODO |
 | 3 — Stoppage model | APPROVED | TODO |
 | 4 — Reconcile | APPROVED | TODO |
@@ -20,5 +21,5 @@ Source of truth: this repository
 
 ## Current action
 
-Audit the existing project against Stage 1 without changing application code. Update this file only after a stage satisfies its Definition of Done and the implementation is committed.
+Implement Stage 2 only after its approved change set is confirmed. Stage 1 satisfies its Definition of Done; its observed verification is recorded in `docs/testing/TEST_STATUS.md`.
 

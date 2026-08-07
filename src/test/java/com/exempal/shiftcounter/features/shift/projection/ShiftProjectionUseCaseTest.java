@@ -1,18 +1,22 @@
 package com.exempal.shiftcounter.features.shift.projection;
 
 import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
+import com.exempal.shiftcounter.features.settings.domain.Settings;
+import com.exempal.shiftcounter.features.settings.domain.ShiftHour;
 import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+@org.junit.jupiter.api.Tag("unit")
 class ShiftProjectionUseCaseTest {
 
     private SettingsPort settings;
@@ -64,6 +68,13 @@ class ShiftProjectionUseCaseTest {
         when(actualDataPort.findByDate(date)).thenReturn(Optional.empty());
         when(settings.getHours()).thenReturn(hours);
         when(settings.getHourlyPlans()).thenReturn(planStrings);
+        when(settings.load()).thenReturn(new Settings(
+                List.of(
+                        new ShiftHour(LocalTime.of(8, 0), LocalTime.of(9, 0)),
+                        new ShiftHour(LocalTime.of(9, 0), LocalTime.of(10, 0))
+                ),
+                List.of(100, 100)
+        ));
 
         ShiftView view = useCase.buildView(date);
 

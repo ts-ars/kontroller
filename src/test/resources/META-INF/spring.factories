@@ -1,0 +1,4 @@
+org.springframework.test.context.TestExecutionListener=\
+com.exempal.shiftcounter.testsupport.DatabaseCleanupTestExecutionListener
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.exempal.shiftcounter.testsupport.EmbeddedTestDatabaseEnvironmentPostProcessor

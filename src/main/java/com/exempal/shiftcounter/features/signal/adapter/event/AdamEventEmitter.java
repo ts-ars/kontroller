@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 import com.exempal.shiftcounter.shared.event.ProductDetectedEvent;
 
 
@@ -13,6 +14,7 @@ import java.time.Instant;
 
 @Slf4j
 @Component
+@Profile("prod")
 @RequiredArgsConstructor
 public class AdamEventEmitter {
 

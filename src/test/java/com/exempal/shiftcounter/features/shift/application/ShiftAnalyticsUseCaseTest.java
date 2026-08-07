@@ -3,6 +3,7 @@ package com.exempal.shiftcounter.features.shift.application;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@org.junit.jupiter.api.Tag("unit")
 class ShiftAnalyticsUseCaseTest {
 
     private final ShiftAnalyticsUseCase analytics = new ShiftAnalyticsUseCase();
