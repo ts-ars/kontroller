@@ -1,25 +1,25 @@
-# Stage 3 вЂ” Stoppage and LossExplanation Model
+# Stage 3 — Stoppage and LossExplanation Model
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
 ## Domain model
 
 ```text
-Stoppage 1 в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ 0..N LossExplanation
+Stoppage 1 ────── 0..N LossExplanation
 ```
 
-- `DetectionType`: `FIXED`, `TEMPO` вЂ” how the backend detected loss.
-- `LossCategory`: `ORGANIZATION`, `BREAKDOWN`, `MATERIAL`, `QUALITY` вЂ” why the operator says it occurred.
+- `DetectionType`: `FIXED`, `TEMPO` — how the backend detected loss.
+- `LossCategory`: `ORGANIZATION`, `BREAKDOWN`, `MATERIAL`, `QUALITY` — why the operator says it occurred.
 - `Stoppage` owns detection identity, shift/sensor interval, exact time, rounded minutes, lost cans, state and explanations.
 - `LossExplanation` owns category, comment and allocated whole minutes; backend owns allocated cans.
 
 `ExplanationStatus` is derived:
 
 ```text
-0 allocated                         в†’ UNEXPLAINED
-0 < allocated < roundedMinutes      в†’ PARTIALLY_EXPLAINED
-allocated = roundedMinutes          в†’ FULLY_EXPLAINED
-allocated > roundedMinutes          в†’ ALLOCATION_CONFLICT
+0 allocated                         → UNEXPLAINED
+0 < allocated < roundedMinutes      → PARTIALLY_EXPLAINED
+allocated = roundedMinutes          → FULLY_EXPLAINED
+allocated > roundedMinutes          → ALLOCATION_CONFLICT
 ```
 
 If Reconcile reduces a loss below already allocated operator minutes, the system preserves those minutes and exposes `ALLOCATION_CONFLICT`. If a system loss disappears, it becomes `RESOLVED`; it is not physically deleted with its explanations.

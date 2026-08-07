@@ -1,4 +1,4 @@
-# Stage 7 вЂ” Transactions, Concurrency and ADAM Counter Input
+# Stage 7 — Transactions, Concurrency and ADAM Counter Input
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
@@ -7,8 +7,8 @@ Status: **APPROVED / NOT IMPLEMENTED**
 One signal is one business transaction:
 
 ```text
-BEGIN в†’ persist Signal в†’ update sensor Actual в†’ Reconcile
-в†’ persist losses в†’ COMMIT в†’ publish ShiftUpdatedEvent
+BEGIN → persist Signal → update sensor Actual → Reconcile
+→ persist losses → COMMIT → publish ShiftUpdatedEvent
 ```
 
 Any failure before commit rolls back the whole scenario. WebSocket, HTTP response, notifications, logging and metrics are outside the business transaction and cannot turn a committed operation into a rollback.

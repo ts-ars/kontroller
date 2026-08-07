@@ -26,8 +26,8 @@ Approved cross-stage decisions are listed in [DECISIONS.md](DECISIONS.md). Curre
 Stages are implemented in order. For each stage:
 
 ```text
-audit в†’ change plan в†’ implementation в†’ tests в†’ Definition of Done
-в†’ commit в†’ update IMPLEMENTATION_STATUS.md в†’ next stage
+audit → change plan → implementation → tests → Definition of Done
+→ commit → update IMPLEMENTATION_STATUS.md → next stage
 ```
 
 Before Stage 1 changes, inspect the existing project against Stage 1 and report what exists, conflicts, is missing, which files would change, and which tests exist or are required. Do not treat this document as authorization to rewrite the whole project at once.

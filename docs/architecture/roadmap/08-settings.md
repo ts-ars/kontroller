@@ -1,4 +1,4 @@
-# Stage 8 вЂ” Two Settings Groups
+# Stage 8 — Two Settings Groups
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
@@ -16,8 +16,8 @@ SettingsGroup
   FIXED/TEMPO/Reconcile parameters
 ```
 
-- Group 1 applies to Sensors 1вЂ“4.
-- Group 2 applies to Sensors 5вЂ“6.
+- Group 1 applies to Sensors 1–4.
+- Group 2 applies to Sensors 5–6.
 - Each sensor belongs to exactly one group.
 - Time and Plan are stored together as interval records, not as parallel arrays.
 - Duration is derived from neighboring Time values.

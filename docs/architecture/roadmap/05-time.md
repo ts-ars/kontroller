@@ -1,4 +1,4 @@
-# Stage 5 вЂ” Time and Production Day
+# Stage 5 — Time and Production Day
 
 Status: **APPROVED / NOT IMPLEMENTED**
 

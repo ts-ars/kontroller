@@ -1,4 +1,4 @@
-# Stage 10 вЂ” Production Release
+# Stage 10 — Production Release
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
@@ -34,8 +34,8 @@ Stage 10 does not change business rules. It prepares a reproducible, recoverable
 ## Build and release
 
 - CI runs compile, unit, integration, ArchUnit, migration tests and packaging; failures block release.
-- Deploy a versioned immutable artifact with version, commit and build timeвЂ”not an ad hoc production source build.
-- Release procedure: verified backup в†’ deploy в†’ Flyway в†’ start в†’ health check в†’ controlled smoke test.
+- Deploy a versioned immutable artifact with version, commit and build time—not an ad hoc production source build.
+- Release procedure: verified backup → deploy → Flyway → start → health check → controlled smoke test.
 - A rollback procedure is known before deploy; migrations are backward-compatible where practical.
 - Validate parallel input from six sensors, high concurrency on one sensor, no lost/duplicate increments, deadlocks or duplicate losses.
 - Perform application-restart-with-counter-running and temporary-database-outage tests.
@@ -43,5 +43,5 @@ Stage 10 does not change business rules. It prepares a reproducible, recoverable
 
 ## Definition of Done
 
-Production/test separation, external secrets, least-privilege DB, Flyway/validate, verified backup and recovery, safe counter restart/discontinuity, disabled production simulation, health/logging/monitoring, network protection/HTTPS, role separation, green CI, immutable artifact, rehearsed migration, six-sensor load test, restart test, smoke test, rollback procedure, operational documents and the final Stage 0вЂ“9 audit are all complete.
+Production/test separation, external secrets, least-privilege DB, Flyway/validate, verified backup and recovery, safe counter restart/discontinuity, disabled production simulation, health/logging/monitoring, network protection/HTTPS, role separation, green CI, immutable artifact, rehearsed migration, six-sensor load test, restart test, smoke test, rollback procedure, operational documents and the final Stage 0–9 audit are all complete.
 
