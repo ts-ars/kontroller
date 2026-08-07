@@ -1,12 +1,15 @@
 package com.exempal.shiftcounter.features.shift.projection;
 
 import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
+import com.exempal.shiftcounter.features.settings.domain.Settings;
+import com.exempal.shiftcounter.features.settings.domain.ShiftHour;
 import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,8 +47,7 @@ class ShiftProjectionUseCaseTest {
         );
 
         when(actualDataPort.findByDate(date)).thenReturn(Optional.of(shift));
-        when(settings.getHours()).thenReturn(hours);
-        when(settings.getHourlyPlans()).thenReturn(List.of("100", "100", "100"));
+        when(settings.load()).thenReturn(testSettings(hours, plan));
 
         ShiftView view = useCase.buildView(date);
 
@@ -62,8 +64,7 @@ class ShiftProjectionUseCaseTest {
         List<String> planStrings = List.of("100", "100");
 
         when(actualDataPort.findByDate(date)).thenReturn(Optional.empty());
-        when(settings.getHours()).thenReturn(hours);
-        when(settings.getHourlyPlans()).thenReturn(planStrings);
+        when(settings.load()).thenReturn(testSettings(hours, List.of(100, 100)));
 
         ShiftView view = useCase.buildView(date);
 
@@ -91,13 +92,20 @@ class ShiftProjectionUseCaseTest {
         );
 
         when(actualDataPort.findByDate(date)).thenReturn(Optional.of(shortShift));
-        when(settings.getHours()).thenReturn(hours);
-        when(settings.getHourlyPlans()).thenReturn(List.of("50", "0", "0", "0"));
+        when(settings.load()).thenReturn(testSettings(hours, List.of(50, 0, 0, 0)));
 
         ShiftView view = useCase.buildView(date);
 
         assertThat(view.plan()).isEqualTo(List.of(50, 0, 0, 0));
         assertThat(view.actual()).isEqualTo(List.of(10, 20, 0, 0));
         assertThat(view.hours()).isEqualTo(hours);
+    }
+
+    private Settings testSettings(List<String> labels, List<Integer> plans) {
+        List<ShiftHour> hours = labels.stream()
+                .map(LocalTime::parse)
+                .map(start -> new ShiftHour(start, start.plusHours(1)))
+                .toList();
+        return new Settings(hours, plans);
     }
 }

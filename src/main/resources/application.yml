@@ -2,14 +2,9 @@ spring:
   application:
     name: kontroller
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/shiftcounter
-    username: shift
-    password: shift
-
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
