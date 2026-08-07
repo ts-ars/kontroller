@@ -1,4 +1,4 @@
-# Stage 4 вЂ” Unified Reconcile
+# Stage 4 — Unified Reconcile
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
@@ -24,7 +24,7 @@ The current interval uses the full plan. TEMPO is the residual loss, not the res
 - At most one active TEMPO exists per sensor interval; it is updated in place or marked `RESOLVED`.
 - Multiple FIXED ranges are matched to existing ranges by overlap or a configured boundary-shift policy. Matching is deterministic; ambiguous matching is reported and not resolved by arbitrary list order.
 - Existing `detectionKey` and explanations survive an update. New ranges receive new keys; missing ranges become `RESOLVED`.
-- A FIXED crossing an interval boundary is represented as separate interval parts with the same incident identity, for example `10:55вЂ“11:00` and `11:00вЂ“11:10`. The operator enters explanations separately for each interval part.
+- A FIXED crossing an interval boundary is represented as separate interval parts with the same incident identity, for example `10:55–11:00` and `11:00–11:10`. The operator enters explanations separately for each interval part.
 - Reconcile never deletes, shortens or moves operator explanations. It recalculates allocated cans and exposes allocation conflicts.
 - Fully allocated explanation cans must sum exactly to the stoppage lost cans using deterministic largest-remainder distribution.
 - Reconcile is atomic for one interval and idempotent for identical input.

@@ -1,4 +1,4 @@
-# Stage 1 вЂ” Stable Test Environment
+# Stage 1 — Stable Test Environment
 
 Status: **APPROVED / NOT IMPLEMENTED**
 

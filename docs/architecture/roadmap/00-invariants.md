@@ -1,4 +1,4 @@
-# Stage 0 вЂ” Business Invariants
+# Stage 0 — Business Invariants
 
 Status: **APPROVED**
 

@@ -1,12 +1,12 @@
-# Stage 9 вЂ” Architectural Cleanup
+# Stage 9 — Architectural Cleanup
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
-This stage adds no business functionality. It brings the implementation into compliance with Stages 0вЂ“8.
+This stage adds no business functionality. It brings the implementation into compliance with Stages 0–8.
 
 ## Rules
 
-1. Dependencies point `adapter в†’ application в†’ domain`.
+1. Dependencies point `adapter → application → domain`.
 2. Feature internals are private; cross-feature calls use public application ports.
 3. One business scenario has one use case; one algorithm has one implementation; each aggregate has one source of truth.
 4. Domain objects, JPA entities and REST/WebSocket DTOs are separate and mapped in centralized locations.
@@ -19,11 +19,11 @@ This stage adds no business functionality. It brings the implementation into com
 
 ## Verification
 
-Every use case and adapter has appropriately scoped tests; the full unit/integration suite passes; a final audit checks compliance with Stages 0вЂ“8.
+Every use case and adapter has appropriately scoped tests; the full unit/integration suite passes; a final audit checks compliance with Stages 0–8.
 
 Security, deployment, backup, secrets, CI/CD and production infrastructure are not Stage 9 work; they belong to Stage 10.
 
 ## Definition of Done
 
-All ten rules above are satisfied, architecture tests enforce the automatable rules, all tests pass and the Stage 0вЂ“8 audit has no unresolved violation.
+All ten rules above are satisfied, architecture tests enforce the automatable rules, all tests pass and the Stage 0–8 audit has no unresolved violation.
 

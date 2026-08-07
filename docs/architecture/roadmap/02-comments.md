@@ -1,4 +1,4 @@
-# Stage 2 вЂ” Comments and Loss Explanations
+# Stage 2 — Comments and Loss Explanations
 
 Status: **APPROVED / NOT IMPLEMENTED**
 
@@ -14,7 +14,7 @@ comment
 allocatedMinutes (whole number)
 ```
 
-Backend calculates `allocatedCans`. The operator never enters cans. вЂњAdd reasonвЂќ creates another explanation, not another stoppage. FIXED and TEMPO use this same model.
+Backend calculates `allocatedCans`. The operator never enters cans. “Add reason” creates another explanation, not another stoppage. FIXED and TEMPO use this same model.
 
 ## Allocation rules
 
@@ -26,7 +26,7 @@ sum(allocatedMinutes) <= stoppage.roundedMinutes
 - A smaller sum leaves unexplained minutes.
 - A larger sum is rejected during normal editing.
 
-Exact duration is calculated with `java.time.Duration`. Whole minutes use mathematical half-up rounding: 0вЂ“29 seconds down, 30вЂ“59 seconds up. Do not calculate time using `double`, `float`, `seconds / 60.0` or floating-point `Math.round`.
+Exact duration is calculated with `java.time.Duration`. Whole minutes use mathematical half-up rounding: 0–29 seconds down, 30–59 seconds up. Do not calculate time using `double`, `float`, `seconds / 60.0` or floating-point `Math.round`.
 
 ## Boundaries
 
