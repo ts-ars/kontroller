@@ -17,10 +17,13 @@ public class CommentsReadService implements CommentsReadUseCase {
 
     private final StoppageRepository repository;
     private final ActualDataPort actualDataPort;
+    private final LossExplanationRepository explanations;
 
-    public CommentsReadService(StoppageRepository repository, ActualDataPort actualDataPort) {
+    public CommentsReadService(StoppageRepository repository, ActualDataPort actualDataPort,
+                               LossExplanationRepository explanations) {
         this.repository = repository;
         this.actualDataPort = actualDataPort;
+        this.explanations = explanations;
     }
 
     @Override
@@ -36,7 +39,7 @@ public class CommentsReadService implements CommentsReadUseCase {
         // 2) Подсветить «missing» именно для авто-строк без пояснений
         List<StoppageEntry> missing = rows.stream()
                 .filter(e -> e.getType() != null && !e.getType().isUserEditable()) // FIXED/TEMPO
-                .filter(e -> e.getComment() == null || e.getComment().isBlank())
+                .filter(e -> explanations.findByStoppageId(e.getId()).isEmpty())
                 .toList();
 
         return new Data(shift, rows, missing);

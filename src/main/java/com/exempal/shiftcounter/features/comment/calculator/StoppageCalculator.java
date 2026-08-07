@@ -3,7 +3,6 @@ package com.exempal.shiftcounter.features.comment.calculator;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
 import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.comment.adapter.dto.CommentRowDto;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 
 import java.time.LocalDateTime;
@@ -22,9 +21,4 @@ public interface StoppageCalculator {
             LocalDateTime now
     );
 
-    List<StoppageEntry> adjustForUserOverrides(
-            Shift shift,
-            List<CommentRowDto> rows,
-            ShiftMetrics metrics
-    );
 }

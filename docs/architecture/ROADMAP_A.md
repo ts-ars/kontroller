@@ -1,7 +1,7 @@
 # Roadmap A
 
 Status: **APPROVED**  
-Implementation: **NOT STARTED**
+Implementation: **IN PROGRESS**
 
 Roadmap A is the approved architectural plan for Shift. It is a specification, not evidence that the application already implements these rules. Architectural changes require explicit review.
 
