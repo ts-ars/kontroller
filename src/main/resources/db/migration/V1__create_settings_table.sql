@@ -47,8 +47,8 @@ CREATE TABLE shift_hour_labels (
 
 
 -- 💬 Комментарии к смене
-DROP TABLE IF EXISTS shift_comments;
-CREATE TABLE shift_comments (
+DROP TABLE IF EXISTS comments;
+CREATE TABLE comments (
                           id BIGSERIAL PRIMARY KEY,
                           shift_id BIGINT NOT NULL,
                           message TEXT,
