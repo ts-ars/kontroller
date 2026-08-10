@@ -1,6 +1,6 @@
 # Stage 8 — Two Settings Groups
 
-Status: **APPROVED / NOT IMPLEMENTED**
+Status: **APPROVED / IMPLEMENTED**
 
 ## Model
 
@@ -36,4 +36,21 @@ Validation rejects empty, duplicated or unordered Time values, overlapping inter
 ## Definition of Done
 
 Two independent groups exist; every sensor has one group; interval settings are the sole Time/Plan source; Time and Plan changes trigger only their approved recalculations; historical shifts remain stable; invalid settings cannot be saved; group-isolation and recalculation tests pass.
+
+## Implemented boundary
+
+- V8 replaces the global `settings` key/value table with `settings_groups` and ordered
+  `interval_settings`. It migrates the legacy Time/Plan values into both approved groups and stores
+  each Time with its Plan under database uniqueness and non-negative constraints.
+- `SettingsRepository` is the only settings source. Reads resolve the sensor's persisted group on
+  demand; the former process-local provider cache and parallel-array persistence adapter are gone.
+- `SettingsGroupService.update` is the transaction boundary. It locks the group and every member
+  sensor for the current production day, then saves settings and updates all existing current member
+  shifts or rolls the entire update back. Events are delivered only after commit.
+- Time changes use the Stage 5 correction service to redistribute persisted per-sensor signals and
+  Reconcile. Plan-only changes preserve Actual and run Reconcile. The other group and completed
+  production dates are not modified.
+- Empty, mismatched, duplicated, unordered or invalid Time values and negative plans are rejected.
+  `enabled` is persisted as group state; no operational enable/disable behavior is invented because
+  the approved Stage 8 contract does not define one. Stages 9 and 10 remain outside this change set.
 

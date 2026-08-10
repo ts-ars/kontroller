@@ -68,6 +68,12 @@ class StoppageMigrationRehearsalIT {
                     ".sensors", Integer.class)).isEqualTo(6);
             assertThat(jdbc.queryForObject("SELECT to_regclass('" + SCHEMA
                     + ".counter_states') IS NOT NULL", Boolean.class)).isTrue();
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA
+                    + ".settings_groups", Integer.class)).isEqualTo(2);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA
+                    + ".interval_settings", Integer.class)).isEqualTo(16);
+            assertThat(jdbc.queryForObject("SELECT to_regclass('" + SCHEMA
+                    + ".settings') IS NULL", Boolean.class)).isTrue();
         } finally {
             jdbc.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE");
         }

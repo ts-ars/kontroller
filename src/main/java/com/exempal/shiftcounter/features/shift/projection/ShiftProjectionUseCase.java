@@ -1,6 +1,6 @@
 package com.exempal.shiftcounter.features.shift.projection;
 
-import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
+import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsProvider;
 import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
 import org.springframework.stereotype.Component;
 
@@ -12,10 +12,10 @@ import java.util.List;
 @Component
 public class ShiftProjectionUseCase {
 
-    private final SettingsPort settings;
+    private final ShiftSettingsProvider settings;
     private final ActualDataPort actual;
 
-    public ShiftProjectionUseCase(SettingsPort settings, ActualDataPort actual) {
+    public ShiftProjectionUseCase(ShiftSettingsProvider settings, ActualDataPort actual) {
         this.settings = settings;
         this.actual = actual;
     }
@@ -25,7 +25,7 @@ public class ShiftProjectionUseCase {
     }
 
     public ShiftView buildView(LocalDate date, String sensorId) {
-        var loaded = settings.load();
+        var loaded = settings.getForSensor(sensorId);
 
         return actual.findByDateAndSensorId(date, sensorId)
                 .map(shift -> {

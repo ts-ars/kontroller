@@ -56,4 +56,10 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 39. Stage 7 persists one ADAM counter state per sensor. A new installation stores its first reading
     as a baseline; later readings produce stable counter-value signal identities. A lower reading
     records `COUNTER_DISCONTINUITY` without replacing the last trusted baseline.
+40. Stage 8 replaces the legacy global key/value settings rows with two persisted settings groups.
+    Each ordered interval row owns its Time and Plan together; settings are read from the repository
+    for the sensor's group and are not held in a process-local cache.
+41. A settings-group update locks the group and every member sensor for the current production day,
+    saves the group and recalculates existing current shifts in one transaction. Time changes
+    redistribute persisted signals; plan-only changes preserve Actual. Completed shifts are unchanged.
 

@@ -56,7 +56,14 @@
     <div style="max-width: 800px; margin: auto;">
         <h1>Settings Page</h1>
 
+        <nav>
+            <a th:each="group : ${groups}" th:href="@{/page/settings(groupId=${group})}"
+               th:text="${group}" style="margin-right: 12px"></a>
+        </nav>
+        <h2 th:text="${groupName}">Settings group</h2>
+
         <form th:action="@{/settings}" method="post">
+            <input name="groupId" type="hidden" th:value="${groupId}" />
             <label for="ppm">Line Speed (PPM):</label>
             <input id="ppm" name="ppm" type="text" th:value="${ppm}" />
             <!--

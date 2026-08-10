@@ -48,8 +48,6 @@ public class ShiftSettingsApplier {
 
     public void applySettingsToCurrentShift() {
         log.info("🔄 Перезагрузка настроек перед применением к текущей смене");
-        settingsProvider.reload();
-
         LocalDateTime now = productionDays.now();
         var today = productionDays.resolve(now).date();
         log.info("🧮 [{}] Применяем настройки к смене: {}", now, today);
@@ -76,7 +74,7 @@ public class ShiftSettingsApplier {
 
     /** Применение текущих настроек без сравнения (используется при явном аплае). */
     public Shift apply(Shift shift) {
-        Settings settings = settingsProvider.get();
+        Settings settings = settingsProvider.getForSensor(shift.getSensorId());
         ShiftMetrics metrics = metricsCalculator.calculateFor(settings);
 
         // Единый помощник: дополняем/обрезаем список факта до нужной длины
@@ -99,8 +97,7 @@ public class ShiftSettingsApplier {
     }
 
     public Shift applyIfChanged(Shift current, LocalDateTime calculationTime) {
-        settingsProvider.reload();
-        Settings settings = settingsProvider.get();
+        Settings settings = settingsProvider.getForSensor(current.getSensorId());
         ShiftMetrics metrics = metricsCalculator.calculateFor(settings); // содержит labels() и plans()
 
         List<String> oldLabels = current.getHourlyLabels();
