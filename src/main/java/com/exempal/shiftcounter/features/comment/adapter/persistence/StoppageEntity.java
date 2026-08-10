@@ -2,7 +2,6 @@ package com.exempal.shiftcounter.features.comment.adapter.persistence;
 
 import com.exempal.shiftcounter.features.comment.domain.DetectionType;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,9 +22,8 @@ public class StoppageEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "shift_id", nullable = false)
-    private ShiftEntity shift;
+    @Column(name = "shift_id", nullable = false)
+    private Long shiftId;
 
     @Column(name = "hour_index", nullable = false)
     private int intervalIndex;

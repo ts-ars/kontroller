@@ -18,7 +18,7 @@ import java.util.List;
 @RequestMapping("/api/stoppages")
 @RequiredArgsConstructor
 public class StoppageController {
-    private final StoppageRepository repository;
+    private final StoppageQueryUseCase stoppages;
     private final ReconcileStoppagesUseCase reconcile;
     private final ProductionDayService productionDays;
 
@@ -43,7 +43,7 @@ public class StoppageController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "sensor-1") String sensorId) {
-        return repository.findByShiftDateBetweenAndSensorId(from, to, sensorId).stream()
+        return stoppages.findBetween(from, to, sensorId).stream()
                 .map(StoppageViewMapper::toDto).toList();
     }
 }

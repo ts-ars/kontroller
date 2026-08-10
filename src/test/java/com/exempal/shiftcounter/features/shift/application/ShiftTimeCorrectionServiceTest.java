@@ -1,10 +1,7 @@
 package com.exempal.shiftcounter.features.shift.application;
 
-import com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesUseCase;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.signal.domain.Signal;
-import com.exempal.shiftcounter.features.signal.domain.SignalStoragePort;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -22,12 +19,12 @@ class ShiftTimeCorrectionServiceTest {
         LocalDate date = LocalDate.of(2026, 8, 10);
         Shift current = new Shift(1L, date, List.of(10, 10), 2,
                 List.of(1, 1), List.of("08:00", "09:00"));
-        SignalStoragePort signals = mock(SignalStoragePort.class);
+        ShiftSignalHistoryPort signals = mock(ShiftSignalHistoryPort.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
-        ReconcileStoppagesUseCase reconcile = mock(ReconcileStoppagesUseCase.class);
-        when(signals.findBySensorAndRange(eq("sensor-1"), any(), any())).thenReturn(List.of(
-                new Signal(LocalDateTime.of(2026, 8, 10, 8, 15)),
-                new Signal(LocalDateTime.of(2026, 8, 10, 9, 15))));
+        ShiftReconcilePort reconcile = mock(ShiftReconcilePort.class);
+        when(signals.findTimestamps(eq("sensor-1"), any(), any())).thenReturn(List.of(
+                LocalDateTime.of(2026, 8, 10, 8, 15),
+                LocalDateTime.of(2026, 8, 10, 9, 15)));
         when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var service = new ShiftTimeCorrectionService(new ShiftIntervalService(), signals, shifts, reconcile);
 
@@ -36,7 +33,7 @@ class ShiftTimeCorrectionServiceTest {
 
         assertThat(updated.getHourlyActualValues()).containsExactly(1, 0, 1);
         assertThat(updated.getActual()).isEqualTo(2);
-        verify(reconcile, times(3)).reconcile(any());
+        verify(reconcile, times(3)).reconcile(eq(date), eq("sensor-1"), anyInt(), any());
     }
 
     @Test
@@ -44,21 +41,19 @@ class ShiftTimeCorrectionServiceTest {
         LocalDate date = LocalDate.of(2026, 8, 10);
         Shift current = new Shift(1L, date, List.of(10, 10, 10), 0,
                 List.of(0, 0, 0), List.of("08:00", "09:00", "10:00"));
-        SignalStoragePort signals = mock(SignalStoragePort.class);
+        ShiftSignalHistoryPort signals = mock(ShiftSignalHistoryPort.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
-        ReconcileStoppagesUseCase reconcile = mock(ReconcileStoppagesUseCase.class);
-        when(signals.findBySensorAndRange(eq("sensor-1"), any(), any())).thenReturn(List.of());
+        ShiftReconcilePort reconcile = mock(ShiftReconcilePort.class);
+        when(signals.findTimestamps(eq("sensor-1"), any(), any())).thenReturn(List.of());
         when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var service = new ShiftTimeCorrectionService(new ShiftIntervalService(), signals, shifts, reconcile);
 
         service.apply(current, List.of("08:00", "09:00"), List.of(10, 10), true,
                 LocalDateTime.of(2026, 8, 10, 10, 0));
 
-        ArgumentCaptor<com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand> commands =
-                ArgumentCaptor.forClass(com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand.class);
-        verify(reconcile, times(3)).reconcile(commands.capture());
-        assertThat(commands.getAllValues()).anyMatch(command -> command.resolveOnly()
-                && command.intervalIndex() == 2);
+        verify(reconcile, times(2)).reconcile(eq(date), eq("sensor-1"), anyInt(), any());
+        verify(reconcile).resolveRemovedInterval(date, "sensor-1", 2,
+                LocalDateTime.of(2026, 8, 10, 10, 0));
     }
 
     @Test
@@ -66,21 +61,19 @@ class ShiftTimeCorrectionServiceTest {
         LocalDate date = LocalDate.of(2026, 8, 10);
         Shift current = new Shift(1L, date, List.of(10, 10, 10), 1,
                 List.of(0, 0, 1), List.of("08:00", "09:00", "10:00"));
-        SignalStoragePort signals = mock(SignalStoragePort.class);
+        ShiftSignalHistoryPort signals = mock(ShiftSignalHistoryPort.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
-        ReconcileStoppagesUseCase reconcile = mock(ReconcileStoppagesUseCase.class);
-        when(signals.findBySensorAndRange(eq("sensor-1"), any(), any())).thenReturn(List.of(
-                new Signal(LocalDateTime.of(2026, 8, 10, 10, 15))));
+        ShiftReconcilePort reconcile = mock(ShiftReconcilePort.class);
+        when(signals.findTimestamps(eq("sensor-1"), any(), any())).thenReturn(List.of(
+                LocalDateTime.of(2026, 8, 10, 10, 15)));
         when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var service = new ShiftTimeCorrectionService(new ShiftIntervalService(), signals, shifts, reconcile);
 
         service.apply(current, List.of("08:00", "09:00"), List.of(10, 10), true,
                 LocalDateTime.of(2026, 8, 10, 10, 30));
 
-        ArgumentCaptor<com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand> commands =
-                ArgumentCaptor.forClass(com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand.class);
-        verify(reconcile, times(3)).reconcile(commands.capture());
-        assertThat(commands.getAllValues()).anyMatch(command -> command.resolveOnly()
-                && command.intervalIndex() == 2);
+        verify(reconcile, times(2)).reconcile(eq(date), eq("sensor-1"), anyInt(), any());
+        verify(reconcile).resolveRemovedInterval(date, "sensor-1", 2,
+                LocalDateTime.of(2026, 8, 10, 10, 30));
     }
 }

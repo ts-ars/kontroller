@@ -1,4 +1,4 @@
-package com.exempal.shiftcounter.features.shift.infrastructure;
+package com.exempal.shiftcounter.features.shift.adapter.persistence;
 
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.Test;

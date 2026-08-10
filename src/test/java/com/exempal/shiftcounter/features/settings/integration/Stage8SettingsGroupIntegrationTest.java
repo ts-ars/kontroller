@@ -1,21 +1,24 @@
 package com.exempal.shiftcounter.features.settings.integration;
 
-import com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesUseCase;
+import com.exempal.shiftcounter.features.signal.application.SignalStoragePort;
+import com.exempal.shiftcounter.features.comment.application.StoppageReconcilesService;
 import com.exempal.shiftcounter.features.settings.application.SettingsGroupService;
 import com.exempal.shiftcounter.features.settings.application.UpdateSettingsGroupCommand;
-import com.exempal.shiftcounter.features.settings.domain.SettingsRepository;
+import com.exempal.shiftcounter.features.settings.application.SettingsRepository;
 import com.exempal.shiftcounter.features.settings.domain.SettingUpdatedEvent;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.application.ShiftReconcilePort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.signal.domain.*;
 import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -33,7 +36,7 @@ class Stage8SettingsGroupIntegrationTest {
     @Autowired ActualDataPort shifts;
     @Autowired ProductionDayService productionDays;
     @Autowired SignalStoragePort signals;
-    @MockBean ReconcileStoppagesUseCase reconcile;
+    @SpyBean StoppageReconcilesService reconcile;
     @Autowired ApplicationEvents applicationEvents;
 
     @Test
@@ -55,7 +58,7 @@ class Stage8SettingsGroupIntegrationTest {
         assertThat(settings.findById("settings-group-2")).isEqualTo(group2Before);
         assertThat(shifts.findByDateAndSensorId(date.minusDays(1), "sensor-1").orElseThrow()
                 .getHourlyPlanValues()).containsOnly(10);
-        verify(reconcile, never()).reconcile(argThat(command -> command.sensorKey().equals("sensor-5")));
+        verify(reconcile, never()).reconcile(any(), eq("sensor-5"), anyInt(), any());
         assertThat(applicationEvents.stream(SettingUpdatedEvent.class)).hasSize(1);
         assertThat(applicationEvents.stream(com.exempal.shiftcounter.features.shift.domain.ShiftUpdatedEvent.class))
                 .hasSize(2);
@@ -68,10 +71,10 @@ class Stage8SettingsGroupIntegrationTest {
         shifts.save(shift(date, "sensor-2", 4));
         var before = settings.findById("settings-group-1");
         doAnswer(invocation -> {
-            var command = invocation.getArgument(0, com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand.class);
-            if (command.sensorKey().equals("sensor-2")) throw new IllegalStateException("forced group failure");
+            String sensorId = invocation.getArgument(1, String.class);
+            if (sensorId.equals("sensor-2")) throw new IllegalStateException("forced group failure");
             return null;
-        }).when(reconcile).reconcile(any());
+        }).when(reconcile).reconcile(any(), anyString(), anyInt(), any());
 
         assertThatThrownBy(() -> service.update(new UpdateSettingsGroupCommand("settings-group-1",
                 "changed", true, HOURS, List.of(201, 202, 203, 204, 205, 206, 207, 208))))
@@ -86,6 +89,7 @@ class Stage8SettingsGroupIntegrationTest {
     }
 
     @Test
+    @Transactional
     void timeChangeRedistributesPersistedSignalsForMemberSensor() {
         var date = productionDays.resolve(productionDays.now()).date();
         shifts.save(shift(date, "sensor-1", 2));

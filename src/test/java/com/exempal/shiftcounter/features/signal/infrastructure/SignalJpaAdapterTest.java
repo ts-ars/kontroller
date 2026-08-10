@@ -1,4 +1,4 @@
-package com.exempal.shiftcounter.features.signal.infrastructure;
+package com.exempal.shiftcounter.features.signal.adapter.persistence;
 
 import org.junit.jupiter.api.Test;
 

@@ -3,7 +3,7 @@ package com.exempal.shiftcounter.features.shift;
 import com.exempal.shiftcounter.features.shift.application.ShiftInitializerService;
 import com.exempal.shiftcounter.features.shift.application.ShiftProductRegistrar;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.shift.infrastructure.JpaShiftAdapter;
+import com.exempal.shiftcounter.features.shift.adapter.persistence.JpaShiftAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

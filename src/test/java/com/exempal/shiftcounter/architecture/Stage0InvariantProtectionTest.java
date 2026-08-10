@@ -2,14 +2,16 @@ package com.exempal.shiftcounter.architecture;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageDetector;
 import com.exempal.shiftcounter.features.comment.application.StoppageMatcher;
-import com.exempal.shiftcounter.features.comment.calculator.*;
+import com.exempal.shiftcounter.features.comment.application.calculator.*;
 import com.exempal.shiftcounter.features.comment.domain.*;
 import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.application.SignalService;
+import com.exempal.shiftcounter.features.signal.application.SignalRegistrationLock;
+import com.exempal.shiftcounter.features.signal.application.SignalStoragePort;
 import com.exempal.shiftcounter.features.signal.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.shift.application.ProductRegistrationUseCase;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.shared.event.DomainEventPublisher;
 import org.junit.jupiter.api.Test;
 
 import java.time.*;
@@ -58,9 +60,9 @@ class Stage0InvariantProtectionTest {
     @Test
     void duplicatePhysicalSignalIncrementsActualOnce() {
         SignalStoragePort storage = mock(SignalStoragePort.class);
-        DomainEventPublisher events = mock(DomainEventPublisher.class);
+        ProductRegistrationUseCase products = mock(ProductRegistrationUseCase.class);
         when(storage.saveIfAbsent(any())).thenReturn(true, false);
-        SignalService service = new SignalService(events, storage,
+        SignalService service = new SignalService(products, storage,
                 new ProductionDayService(Clock.system(ZoneOffset.UTC)), mock(SignalRegistrationLock.class));
         RegisterSignalCommand signal = new RegisterSignalCommand(SensorId.of("sensor-1"),
                 LocalDateTime.of(2026, 8, 7, 8, 0), SignalSource.RECOVERY, "physical-1");
@@ -68,7 +70,7 @@ class Stage0InvariantProtectionTest {
         service.register(signal);
         service.register(signal);
 
-        verify(events, times(1)).publish(any());
+        verify(products, times(1)).registerProduct(eq("sensor-1"), any());
     }
 
     private StoppageCalculator calculator() {

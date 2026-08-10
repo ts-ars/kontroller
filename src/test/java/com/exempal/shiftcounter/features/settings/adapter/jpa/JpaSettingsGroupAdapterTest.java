@@ -1,5 +1,6 @@
 package com.exempal.shiftcounter.features.settings.adapter.jpa;
 
+import com.exempal.shiftcounter.features.settings.application.SettingsRepository;
 import com.exempal.shiftcounter.features.settings.domain.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -27,13 +27,11 @@ class Stage6SensorArchitectureTest {
 
     @Test
     void everyCurrentInputAdapterUsesItsSingleApplicationInput() throws IOException {
-        for (String file : new String[] {
-                "adapter/http/HttpSignalAdapter.java",
-                "adapter/web/SignalController.java"}) {
-            String source = Files.readString(Path.of(
-                    "src/main/java/com/exempal/shiftcounter/features/signal/" + file));
-            assertThat(source).contains("RegisterSignalCommand", ".register(");
-        }
+        String source = Files.readString(Path.of(
+                "src/main/java/com/exempal/shiftcounter/features/signal/adapter/http/HttpSignalAdapter.java"));
+        assertThat(source).contains("RegisterSignalCommand", ".register(");
+        assertThat(Path.of("src/main/java/com/exempal/shiftcounter/features/signal/adapter/web/SignalController.java"))
+                .doesNotExist();
         String adam = Files.readString(Path.of(
                 "src/main/java/com/exempal/shiftcounter/features/signal/adapter/event/AdamEventEmitter.java"));
         assertThat(adam).contains("CounterReadingCommand", ".process(");

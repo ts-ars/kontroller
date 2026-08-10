@@ -3,9 +3,10 @@ package com.exempal.shiftcounter.features.comment.application;
 import com.exempal.shiftcounter.features.comment.domain.ExplanationStatus;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +24,7 @@ public class CommentsReadService implements CommentsReadUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Data read(LocalDate date, String sensorId) {
         Shift shift = actualDataPort.findByDateAndSensorId(date, sensorId).orElse(null);
         if (shift == null) return new Data(null, List.of(), List.of());

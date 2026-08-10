@@ -1,8 +1,8 @@
 package com.exempal.shiftcounter.features.settings.adapter.jpa;
 
+import com.exempal.shiftcounter.features.settings.application.SettingsRepository;
 import com.exempal.shiftcounter.features.settings.domain.*;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class JpaSettingsGroupAdapter implements SettingsRepository {
@@ -13,17 +13,17 @@ public class JpaSettingsGroupAdapter implements SettingsRepository {
         this.groups = groups; this.intervals = intervals;
     }
 
-    @Override @Transactional(readOnly = true)
+    @Override
     public SettingsGroup findById(String groupId) {
         return map(groups.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Unknown settings group: " + groupId)));
     }
 
-    @Override @Transactional
+    @Override
     public SettingsGroup findByIdForUpdate(String groupId) {
         return map(groups.findByIdForUpdate(groupId).orElseThrow(() -> new IllegalArgumentException("Unknown settings group: " + groupId)));
     }
 
-    @Override @Transactional
+    @Override
     public void save(SettingsGroup group) {
         SettingsGroupEntity entity = groups.findById(group.id())
                 .orElseGet(() -> new SettingsGroupEntity(group.id(), group.name(), group.enabled()));

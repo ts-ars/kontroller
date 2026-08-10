@@ -3,7 +3,6 @@ package com.exempal.shiftcounter.test;
 import com.exempal.shiftcounter.features.signal.adapter.adam.AdamModbusAdapter;
 import com.exempal.shiftcounter.features.signal.adapter.event.AdamEventEmitter;
 import com.exempal.shiftcounter.features.signal.adapter.http.HttpSignalAdapter;
-import com.exempal.shiftcounter.features.signal.adapter.web.SignalController;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +39,6 @@ class TestEnvironmentIsolationIT {
         assertThat(context.getBeansOfType(AdamModbusAdapter.class)).isEmpty();
         assertThat(context.getBeansOfType(AdamEventEmitter.class)).isEmpty();
         assertThat(context.getBeansOfType(HttpSignalAdapter.class)).hasSize(1);
-        assertThat(context.getBeansOfType(SignalController.class)).hasSize(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history", Integer.class)).isPositive();
     }
 

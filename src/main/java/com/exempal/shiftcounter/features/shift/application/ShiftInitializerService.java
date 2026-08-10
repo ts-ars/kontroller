@@ -5,24 +5,27 @@ import com.exempal.shiftcounter.features.shift.domain.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
 
 @Service
+@Transactional
 public class ShiftInitializerService implements ShiftInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(ShiftInitializerService.class);
 
-    private final ShiftFactory shiftFactory;
+    private final ShiftSettingsPort settings;
     private final ActualDataPort actualDataPort;
     private final EventPublisherPort eventPublisher;
 
     public ShiftInitializerService(
-            ShiftFactory shiftFactory,
+            ShiftSettingsPort settings,
             ActualDataPort actualDataPort,
             EventPublisherPort eventPublisher
     ) {
-        this.shiftFactory = shiftFactory;
+        this.settings = settings;
         this.actualDataPort = actualDataPort;
         this.eventPublisher = eventPublisher;
     }
@@ -30,7 +33,9 @@ public class ShiftInitializerService implements ShiftInitializer {
     @Override
     public Shift createNewShift(LocalDate date, String sensorId) {
         return actualDataPort.findByDateAndSensorId(date, sensorId).orElseGet(() -> {
-            Shift shift = shiftFactory.createNewShift(date, sensorId);
+            ShiftSettings current = settings.getForSensor(sensorId);
+            Shift shift = new Shift(date, sensorId, current.plans(), 0,
+                    Collections.nCopies(current.labels().size(), 0), current.labels());
             actualDataPort.save(shift);
 
             log.info("✅ Смена создана: {} | План: {}", date, shift.getHourlyPlanValues());
@@ -46,12 +51,15 @@ public class ShiftInitializerService implements ShiftInitializer {
         });
     }
 
-    @Override
-    public Shift recalculateShift(LocalDate date, String sensorId) {
+    private Shift recalculateShift(LocalDate date, String sensorId) {
         Shift existing = actualDataPort.findByDateAndSensorId(date, sensorId)
                 .orElseThrow(() -> new ShiftNotFoundException(date));
 
-        Shift recalculated = shiftFactory.recalculateFrom(existing);
+        ShiftSettings current = settings.getForSensor(sensorId);
+        var actual = new java.util.ArrayList<>(existing.getHourlyActualValues());
+        while (actual.size() < current.labels().size()) actual.add(0);
+        if (actual.size() > current.labels().size()) actual = new java.util.ArrayList<>(actual.subList(0, current.labels().size()));
+        Shift recalculated = existing.withUpdatedStructure(current.labels(), current.plans(), actual);
         actualDataPort.saveOrReplace(recalculated);
 
         log.info("🔁 Смена обновлена: {} | План: {} | Факт: {}", date, recalculated.getHourlyPlanValues(), recalculated.getHourlyActualValues());

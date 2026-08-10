@@ -1,5 +1,6 @@
 package com.exempal.shiftcounter.features.signal.adapter.http;
 
+import com.exempal.shiftcounter.features.signal.application.SignalInputPort;
 import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.domain.*;
 import org.springframework.context.annotation.Profile;

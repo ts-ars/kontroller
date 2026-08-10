@@ -1,7 +1,7 @@
 package com.exempal.shiftcounter.features.signal.adapter.event;
 
 import com.exempal.shiftcounter.features.signal.adapter.adam.AdamModbusAdapter;
-import com.exempal.shiftcounter.features.signal.domain.CounterInputPort;
+import com.exempal.shiftcounter.features.signal.application.CounterInputPort;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;

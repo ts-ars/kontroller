@@ -11,7 +11,7 @@ class Stage8SettingsArchitectureTest {
     @Test
     void groupUpdateIsTransactionalAndLegacyGlobalStorageAndCacheAreGone() throws Exception {
         String service = Files.readString(ROOT.resolve("features/settings/application/SettingsGroupService.java"));
-        String provider = Files.readString(ROOT.resolve("features/settings/infrastructure/ShiftSettingsProvider.java"));
+        String provider = Files.readString(ROOT.resolve("features/settings/adapter/settings/ShiftSettingsProvider.java"));
         assertThat(service).contains("@Transactional", "findByIdForUpdate", "signalLocks.acquire");
         assertThat(provider).doesNotContain("volatile", "current =");
         assertThat(Files.exists(ROOT.resolve("features/settings/domain/SettingsPort.java"))).isFalse();

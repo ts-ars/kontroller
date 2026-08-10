@@ -2,15 +2,16 @@ package com.exempal.shiftcounter.features.comment;
 
 import com.exempal.shiftcounter.features.comment.application.*;
 import com.exempal.shiftcounter.features.comment.domain.*;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftJpaRepository;
+import com.exempal.shiftcounter.features.shift.adapter.persistence.ShiftEntity;
+import com.exempal.shiftcounter.features.shift.adapter.persistence.ShiftJpaRepository;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
-import com.exempal.shiftcounter.features.signal.domain.SignalStoragePort;
+import com.exempal.shiftcounter.features.signal.application.SignalStoragePort;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -62,6 +63,7 @@ class StoppageReconcilePersistenceIT {
     }
 
     @Test
+    @Transactional
     void updateInPlacePreservesOperatorFieldsAndExposesShrinkConflict() {
         ShiftEntity shift = savedShift();
         Stoppage first = reconcile.reconcile(command()).activeStoppages().getFirst();

@@ -1,10 +1,11 @@
 package com.exempal.shiftcounter.features.signal;
 
-import com.exempal.shiftcounter.features.comment.calculator.StoppageCalculator;
+import com.exempal.shiftcounter.features.signal.application.*;
+import com.exempal.shiftcounter.features.comment.application.calculator.StoppageCalculator;
 import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.domain.*;
-import com.exempal.shiftcounter.features.signal.infrastructure.SignalJpaRepository;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
+import com.exempal.shiftcounter.features.signal.adapter.persistence.SignalJpaRepository;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

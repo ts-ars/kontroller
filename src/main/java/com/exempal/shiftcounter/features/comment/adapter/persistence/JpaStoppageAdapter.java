@@ -4,11 +4,9 @@ import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftJpaRepository;
 import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -16,13 +14,10 @@ import java.util.*;
 
 @Component
 @RequiredArgsConstructor
-@Transactional
 public class JpaStoppageAdapter implements StoppageRepository {
     private final StoppageJpaRepository repository;
-    private final ShiftJpaRepository shifts;
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<Stoppage> findById(long id) {
         return repository.findById(id).filter(this::isSystemLoss).map(this::toDomain);
     }
@@ -33,27 +28,23 @@ public class JpaStoppageAdapter implements StoppageRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Stoppage> findByShiftDateAndSensorId(LocalDate date, String sensorId) {
         return repository.findSystemByShiftDateAndSensorId(date, sensorId).stream().map(this::toDomain).toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Stoppage> findByShiftDateBetweenAndSensorId(LocalDate from, LocalDate to, String sensorId) {
         return repository.findSystemByShiftDateBetweenAndSensorId(from, to, sensorId).stream()
                 .map(this::toDomain).toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Stoppage> findActiveByShiftAndInterval(long shiftId, int intervalIndex) {
         return repository.findActiveByShiftAndInterval(shiftId, intervalIndex, StoppageState.ACTIVE)
                 .stream().map(this::toDomain).toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Stoppage> findActiveByShiftSensorAndIntervalRange(long shiftId, String sensorKey,
                                                                    int fromInterval, int toInterval) {
         return repository.findActiveByShiftSensorAndIntervalRange(shiftId, sensorKey, fromInterval,
@@ -78,7 +69,7 @@ public class JpaStoppageAdapter implements StoppageRepository {
     }
 
     private void apply(Stoppage source, StoppageEntity target) {
-        target.setShift(shifts.getReferenceById(source.shiftId()));
+        target.setShiftId(source.shiftId());
         target.setIntervalIndex(source.intervalIndex());
         target.setLegacyMinutes(source.roundedMinutes());
         target.setLostCans(source.lostCans());
@@ -136,7 +127,7 @@ public class JpaStoppageAdapter implements StoppageRepository {
                         value.getComment(), value.getAllocatedMinutes(), value.getAllocatedCans(), value.getVersion()))
                 .toList();
         return new Stoppage(entity.getId(), entity.getDetectionKey(), entity.getIncidentKey(),
-                entity.getShift().getId(),
+                entity.getShiftId(),
                 entity.getSensorKey(), entity.getIntervalIndex(), entity.getStartedAt(),
                 Duration.ofNanos(entity.getExactDurationNanos()), entity.getRoundedMinutes(), entity.getLostCans(),
                 entity.getDetectionType(), entity.getState(), explanations, entity.getVersion());

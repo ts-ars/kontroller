@@ -1,11 +1,10 @@
 package com.exempal.shiftcounter.features.comment;
 
 import com.exempal.shiftcounter.features.comment.application.*;
-import com.exempal.shiftcounter.features.comment.calculator.*;
+import com.exempal.shiftcounter.features.comment.application.calculator.*;
 import com.exempal.shiftcounter.features.comment.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
-import com.exempal.shiftcounter.features.signal.application.SignalService;
+import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,11 +20,11 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 class StoppageReconcilesServiceTest {
-    private final SignalService signals = mock(SignalService.class);
+    private final ReconcileSignalQueryPort signals = mock(ReconcileSignalQueryPort.class);
     private final ReconcileShiftRepository shifts = mock(ReconcileShiftRepository.class);
     private final StoppageRepository stoppages = mock(StoppageRepository.class);
     private StoppageReconcilesService service;
-    private ShiftEntity shift;
+    private Shift shift;
     private LocalDate date;
     private LocalDateTime end;
 
@@ -34,16 +33,9 @@ class StoppageReconcilesServiceTest {
         reset(signals, shifts, stoppages);
         date = LocalDate.of(2026, 8, 7);
         end = LocalDateTime.of(date, java.time.LocalTime.of(9, 0));
-        shift = new ShiftEntity();
-        shift.setId(1L);
-        shift.setDate(date);
-        shift.setSensorId("sensor-1");
-        shift.setActual(20);
-        shift.setHourlyLabels(List.of("08:00"));
-        shift.setHourlyPlanValues(List.of(100));
-        shift.setHourlyActualValues(List.of(20));
-        when(shifts.findForUpdateByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift.toDomain()));
-        when(signals.getSignalsBetween(eq("sensor-1"), any(), any())).thenReturn(List.of());
+        shift = new Shift(1L, date, "sensor-1", List.of(100), 20, List.of(20), List.of("08:00"));
+        when(shifts.findForUpdateByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift));
+        when(signals.findTimestamps(eq("sensor-1"), any(), any())).thenReturn(List.of());
         StoppageCalculator calculator = new StoppageCalculatorImpl(
                 new StoppageFixedLossCalculator(new StoppageDetector(), Duration.ofHours(2)),
                 new StoppageTempoLossCalculator());
@@ -85,17 +77,16 @@ class StoppageReconcilesServiceTest {
 
     @Test
     void usesAbsoluteCrossMidnightBoundariesForSignalQuery() {
-        shift.setHourlyLabels(List.of("23:30", "00:30"));
-        shift.setHourlyPlanValues(List.of(100, 100));
-        shift.setHourlyActualValues(List.of(100, 100));
-        when(shifts.findForUpdateByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift.toDomain()));
+        shift = new Shift(1L, date, "sensor-1", List.of(100, 100), 200,
+                List.of(100, 100), List.of("23:30", "00:30"));
+        when(shifts.findForUpdateByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift));
         when(stoppages.findActiveByShiftSensorAndIntervalRange(1L, Stoppage.PRIMARY_SENSOR, 0, 2))
                 .thenReturn(List.of());
 
         service.reconcile(new ReconcileStoppagesCommand(date, Stoppage.PRIMARY_SENSOR, 1,
                 LocalDateTime.of(2026, 8, 8, 1, 0)));
 
-        verify(signals).getSignalsBetween("sensor-1", LocalDateTime.of(2026, 8, 8, 0, 30),
+        verify(signals).findTimestamps("sensor-1", LocalDateTime.of(2026, 8, 8, 0, 30),
                 LocalDateTime.of(2026, 8, 8, 1, 0));
     }
 

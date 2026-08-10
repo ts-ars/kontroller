@@ -6,9 +6,9 @@ import com.exempal.shiftcounter.features.settings.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.application.ShiftTimeCorrectionService;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.ShiftUpdatedEvent;
-import com.exempal.shiftcounter.features.signal.domain.SignalRegistrationLock;
+import com.exempal.shiftcounter.features.signal.application.SignalRegistrationLock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +37,7 @@ public class SettingsGroupService {
         this.signalLocks = signalLocks; this.events = events;
     }
 
+    @Transactional(readOnly = true)
     public SettingsGroup get(String groupId) {
         requireApprovedGroup(groupId);
         return settings.findById(groupId);
