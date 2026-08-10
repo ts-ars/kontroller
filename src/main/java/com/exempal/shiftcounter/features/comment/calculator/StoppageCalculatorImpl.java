@@ -3,7 +3,6 @@ package com.exempal.shiftcounter.features.comment.calculator;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
 import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.comment.adapter.dto.CommentRowDto;
 import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 
@@ -19,16 +18,13 @@ public class StoppageCalculatorImpl implements StoppageCalculator {
 
     private final StoppageFixedLossCalculator fixedLossCalculator;
     private final StoppageTempoLossCalculator tempoLossCalculator;
-    private final StoppageUserOverrideMapper userOverrideMapper;
 
     public StoppageCalculatorImpl(
             StoppageFixedLossCalculator fixedLossCalculator,
-            StoppageTempoLossCalculator tempoLossCalculator,
-            StoppageUserOverrideMapper userOverrideMapper
+            StoppageTempoLossCalculator tempoLossCalculator
     ) {
         this.fixedLossCalculator = fixedLossCalculator;
         this.tempoLossCalculator = tempoLossCalculator;
-        this.userOverrideMapper = userOverrideMapper;
     }
 
     @Override
@@ -60,12 +56,4 @@ public class StoppageCalculatorImpl implements StoppageCalculator {
         return result;
     }
 
-    @Override
-    public List<StoppageEntry> adjustForUserOverrides(
-            Shift shift,
-            List<CommentRowDto> rows,
-            ShiftMetrics metrics
-    ) {
-        return userOverrideMapper.map(shift, rows, metrics);
-    }
 }

@@ -1,8 +1,6 @@
 package com.exempal.shiftcounter.features.comment.adapter.web;
 
-import com.exempal.shiftcounter.features.comment.adapter.dto.CommentRowDto;
 import com.exempal.shiftcounter.features.comment.adapter.dto.StoppageViewDto;
-import com.exempal.shiftcounter.features.comment.adapter.mapper.CommentRowMapper;
 import com.exempal.shiftcounter.features.comment.adapter.mapper.StoppageViewMapper;
 import com.exempal.shiftcounter.features.comment.calculator.StoppageCalculator;
 import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
@@ -96,33 +94,4 @@ public class StoppageController {
                 .toList();
     }
 
-    @PatchMapping("/{id}/type")
-    public ResponseEntity<Void> updateType(
-            @PathVariable Long id,
-            @RequestBody String type
-    ) {
-        if (!StoppageType.isValid(type)) {
-            log.warn("⛔️ Неверный тип остановки: {}", type);
-            return ResponseEntity.badRequest().build();
-        }
-
-        StoppageEntry entry = repository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Остановка не найдена: " + id));
-
-        entry.setType(StoppageType.valueOf(type.toUpperCase()));
-        repository.save(entry);
-
-        log.info("✏️ Тип остановки [{}] изменён на {}", id, type);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/report")
-    public List<CommentRowDto> getCommentRows(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
-        return repository.findByShiftDate(date).stream()
-                .filter(entry -> entry.getType() != null && entry.getType().isUserEditable())
-                .map(CommentRowMapper::toDto)
-                .toList();
-    }
 }

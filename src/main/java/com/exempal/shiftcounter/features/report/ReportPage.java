@@ -3,6 +3,7 @@ package com.exempal.shiftcounter.features.report;
 import com.exempal.shiftcounter.core.PageModel;
 import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
 import com.exempal.shiftcounter.features.comment.domain.StoppageRepository;
+import com.exempal.shiftcounter.features.comment.application.LossExplanationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
@@ -14,9 +15,11 @@ import java.util.*;
 public class ReportPage implements PageModel {
 
     private final StoppageRepository repository;
+    private final LossExplanationRepository explanations;
 
-    public ReportPage(StoppageRepository repository) {
+    public ReportPage(StoppageRepository repository, LossExplanationRepository explanations) {
         this.repository = repository;
+        this.explanations = explanations;
     }
 
     @Override
@@ -35,7 +38,7 @@ public class ReportPage implements PageModel {
         LocalDate to = parseDateParam(params.get("to"), LocalDate.now());
 
         List<StoppageEntry> entries = repository.findByShiftDateBetween(from, to).stream()
-                .filter(entry -> entry.getType() != null && entry.getType().isUserEditable())
+                .filter(entry -> entry.getType() != null && !entry.getType().isUserEditable())
                 .toList();
 
         List<Map<String, Object>> problems = new ArrayList<>();
@@ -43,15 +46,17 @@ public class ReportPage implements PageModel {
         int totalCans = 0;
 
         for (StoppageEntry entry : entries) {
-            Map<String, Object> row = new HashMap<>();
-            row.put("minutes", entry.getMinutes());
-            row.put("cans", entry.getCans());
-            row.put("type", entry.getType());
-            row.put("reason", entry.getComment());
+            for (var explanation : explanations.findByStoppageId(entry.getId())) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("minutes", explanation.allocatedMinutes());
+                row.put("cans", explanation.allocatedCans());
+                row.put("type", explanation.category());
+                row.put("reason", explanation.comment());
 
-            problems.add(row);
-            totalMinutes += entry.getMinutes();
-            totalCans += entry.getCans();
+                problems.add(row);
+                totalMinutes += explanation.allocatedMinutes();
+                totalCans += explanation.allocatedCans();
+            }
         }
 
         model.addAttribute("problems", problems);

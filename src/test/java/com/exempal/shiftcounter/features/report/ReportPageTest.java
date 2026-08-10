@@ -2,7 +2,10 @@ package com.exempal.shiftcounter.features.report;
 
 import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
 import com.exempal.shiftcounter.features.comment.domain.StoppageRepository;
-import com.exempal.shiftcounter.features.comment.StoppageTestFactory;
+import com.exempal.shiftcounter.features.comment.application.LossExplanationRepository;
+import com.exempal.shiftcounter.features.comment.domain.LossCategory;
+import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
+import com.exempal.shiftcounter.features.comment.domain.StoppageType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
@@ -19,14 +22,20 @@ class ReportPageTest {
 
     private ReportPage page;
     private StoppageRepository repo;
+    private LossExplanationRepository explanations;
 
     @BeforeEach
     void setUp() {
         repo = mock(StoppageRepository.class);
-        StoppageEntry entry = StoppageTestFactory.defaultBreakdownToday();
+        explanations = mock(LossExplanationRepository.class);
+        StoppageEntry entry = mock(StoppageEntry.class);
+        when(entry.getId()).thenReturn(1L);
+        when(entry.getType()).thenReturn(StoppageType.FIXED);
 
         when(repo.findByShiftDateBetween(any(), any())).thenReturn(List.of(entry));
-        page = new ReportPage(repo);
+        when(explanations.findByStoppageId(anyLong())).thenReturn(List.of(
+                new LossExplanation(1L, 1L, LossCategory.BREAKDOWN, "belt", 10, 400)));
+        page = new ReportPage(repo, explanations);
     }
 
     @Test
