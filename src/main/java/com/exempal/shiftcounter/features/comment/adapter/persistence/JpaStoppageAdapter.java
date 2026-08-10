@@ -34,14 +34,15 @@ public class JpaStoppageAdapter implements StoppageRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Stoppage> findByShiftDate(LocalDate date) {
-        return repository.findSystemByShiftDate(date).stream().map(this::toDomain).toList();
+    public List<Stoppage> findByShiftDateAndSensorId(LocalDate date, String sensorId) {
+        return repository.findSystemByShiftDateAndSensorId(date, sensorId).stream().map(this::toDomain).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Stoppage> findByShiftDateBetween(LocalDate from, LocalDate to) {
-        return repository.findSystemByShiftDateBetween(from, to).stream().map(this::toDomain).toList();
+    public List<Stoppage> findByShiftDateBetweenAndSensorId(LocalDate from, LocalDate to, String sensorId) {
+        return repository.findSystemByShiftDateBetweenAndSensorId(from, to, sensorId).stream()
+                .map(this::toDomain).toList();
     }
 
     @Override

@@ -43,4 +43,11 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 34. Stage 4 allocates backend-owned cans by deterministic largest remainder. Remainder ties use
     persisted explanation id and then aggregate order; operator category, comment and minutes are never
     rewritten by Reconcile.
+35. Stage 6 replaces the historical `primary` identity with `sensor-1`. Stable sensor identifiers are
+    `sensor-1` through `sensor-6`; persisted shifts are unique by production date and sensor.
+36. Stage 6 signal identity is `(sensorId, source, sourceIdentity)`. Sequential reprocessing is a no-op
+    before increment and Reconcile. Concurrent atomicity and recovery after a partial failure remain
+    Stage 7.
+37. Stage 6 persists sensor ownership of `settings-group-1` (Sensors 1–4) or `settings-group-2`
+    (Sensors 5–6). Settings storage and reactions to group changes remain Stage 8.
 

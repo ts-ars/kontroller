@@ -31,7 +31,8 @@ class ReportPageTest {
         Stoppage stoppage = new Stoppage(1L, UUID.randomUUID(), 1L, Stoppage.PRIMARY_SENSOR, 0,
                 LocalDateTime.of(2026, 8, 7, 8, 0), Duration.ofMinutes(10), 10, 400,
                 DetectionType.FIXED, StoppageState.ACTIVE, List.of(explanation), 0L);
-        when(repository.findByShiftDateBetween(any(), any())).thenReturn(List.of(stoppage));
+        when(repository.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-1")))
+                .thenReturn(List.of(stoppage));
         page = new ReportPage(repository, new ProductionDayService(
                 Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)));
     }

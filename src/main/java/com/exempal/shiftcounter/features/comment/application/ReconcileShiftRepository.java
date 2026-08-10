@@ -6,5 +6,9 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 public interface ReconcileShiftRepository {
-    Optional<Shift> findForUpdateByDate(LocalDate date);
+    Optional<Shift> findForUpdateByDateAndSensorId(LocalDate date, String sensorId);
+
+    default Optional<Shift> findForUpdateByDate(LocalDate date) {
+        return findForUpdateByDateAndSensorId(date, "sensor-1");
+    }
 }

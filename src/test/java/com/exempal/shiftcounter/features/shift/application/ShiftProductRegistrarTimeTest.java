@@ -38,7 +38,7 @@ class ShiftProductRegistrarTimeTest {
         LocalDate productionDate = LocalDate.of(2026, 8, 9);
         Shift shift = shift(productionDate, List.of(10, 10, 10), List.of(0, 0, 0),
                 List.of("23:00", "00:00", "06:00"));
-        when(planner.getOrCreateShift(productionDate)).thenReturn(shift);
+        when(planner.getOrCreateShift(productionDate, "sensor-1")).thenReturn(shift);
         when(settings.applyIfChanged(eq(shift), any())).thenReturn(shift);
         when(extender.extendIfNeeded(any(), same(shift))).thenReturn(shift);
 
@@ -47,7 +47,7 @@ class ShiftProductRegistrarTimeTest {
         ArgumentCaptor<Shift> saved = ArgumentCaptor.forClass(Shift.class);
         verify(planner).updateShift(saved.capture());
         assertThat(saved.getValue().getHourlyActualValues()).containsExactly(0, 1, 0);
-        verify(reconcile).reconcile(new ReconcileStoppagesCommand(productionDate, "primary", 1,
+        verify(reconcile).reconcile(new ReconcileStoppagesCommand(productionDate, "sensor-1", 1,
                 LocalDateTime.of(2026, 8, 10, 0, 15)));
     }
 
@@ -55,7 +55,7 @@ class ShiftProductRegistrarTimeTest {
     void planRequiredIntervalAccumulatesActualWithoutReconcile() {
         LocalDate productionDate = LocalDate.of(2026, 8, 10);
         Shift shift = shift(productionDate, List.of(10), List.of(0, 0), List.of("15:30", "16:00"));
-        when(planner.getOrCreateShift(productionDate)).thenReturn(shift);
+        when(planner.getOrCreateShift(productionDate, "sensor-1")).thenReturn(shift);
         when(settings.applyIfChanged(eq(shift), any())).thenReturn(shift);
         when(extender.extendIfNeeded(any(), same(shift))).thenReturn(shift);
 

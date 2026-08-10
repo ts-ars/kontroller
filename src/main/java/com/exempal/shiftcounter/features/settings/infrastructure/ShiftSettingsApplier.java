@@ -122,8 +122,8 @@ public class ShiftSettingsApplier {
         Shift updated = corrections.apply(current, metrics.labels(), metrics.plans(), labelsChanged,
                 calculationTime);
 
-        ShiftView view = projectionUseCase.buildView(updated.getDate());
-        events.publish(new ShiftUpdatedEvent(view.date(), view.actual(), view.plan(), view.hours()));
+        ShiftView view = projectionUseCase.buildView(updated.getDate(), updated.getSensorId());
+        events.publish(new ShiftUpdatedEvent(view.date(), updated.getSensorId(), view.actual(), view.plan(), view.hours()));
 
         return updated;
     }

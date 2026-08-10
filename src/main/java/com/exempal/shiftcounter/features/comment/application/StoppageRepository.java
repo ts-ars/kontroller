@@ -9,8 +9,8 @@ import java.util.Optional;
 public interface StoppageRepository {
     Optional<Stoppage> findById(long id);
     Optional<Stoppage> findForUpdateById(long id);
-    List<Stoppage> findByShiftDate(LocalDate date);
-    List<Stoppage> findByShiftDateBetween(LocalDate from, LocalDate to);
+    List<Stoppage> findByShiftDateAndSensorId(LocalDate date, String sensorId);
+    List<Stoppage> findByShiftDateBetweenAndSensorId(LocalDate from, LocalDate to, String sensorId);
     List<Stoppage> findActiveByShiftAndInterval(long shiftId, int intervalIndex);
     List<Stoppage> findActiveByShiftSensorAndIntervalRange(long shiftId, String sensorKey,
                                                             int fromInterval, int toInterval);

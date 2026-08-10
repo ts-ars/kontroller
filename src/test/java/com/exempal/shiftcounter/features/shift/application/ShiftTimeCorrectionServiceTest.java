@@ -25,7 +25,7 @@ class ShiftTimeCorrectionServiceTest {
         SignalStoragePort signals = mock(SignalStoragePort.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
         ReconcileStoppagesUseCase reconcile = mock(ReconcileStoppagesUseCase.class);
-        when(signals.findByRange(any(), any())).thenReturn(List.of(
+        when(signals.findBySensorAndRange(eq("sensor-1"), any(), any())).thenReturn(List.of(
                 new Signal(LocalDateTime.of(2026, 8, 10, 8, 15)),
                 new Signal(LocalDateTime.of(2026, 8, 10, 9, 15))));
         when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -47,7 +47,7 @@ class ShiftTimeCorrectionServiceTest {
         SignalStoragePort signals = mock(SignalStoragePort.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
         ReconcileStoppagesUseCase reconcile = mock(ReconcileStoppagesUseCase.class);
-        when(signals.findByRange(any(), any())).thenReturn(List.of());
+        when(signals.findBySensorAndRange(eq("sensor-1"), any(), any())).thenReturn(List.of());
         when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var service = new ShiftTimeCorrectionService(new ShiftIntervalService(), signals, shifts, reconcile);
 
@@ -69,7 +69,7 @@ class ShiftTimeCorrectionServiceTest {
         SignalStoragePort signals = mock(SignalStoragePort.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
         ReconcileStoppagesUseCase reconcile = mock(ReconcileStoppagesUseCase.class);
-        when(signals.findByRange(any(), any())).thenReturn(List.of(
+        when(signals.findBySensorAndRange(eq("sensor-1"), any(), any())).thenReturn(List.of(
                 new Signal(LocalDateTime.of(2026, 8, 10, 10, 15))));
         when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         var service = new ShiftTimeCorrectionService(new ShiftIntervalService(), signals, shifts, reconcile);

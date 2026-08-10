@@ -45,7 +45,7 @@ class StoppageControllerTest {
                 .andExpect(jsonPath("$.intervalIndex").value(2))
                 .andExpect(jsonPath("$.diagnostics[0]").value("FIXED_EXCEEDS_TOTAL_LOSS: bounded"));
         verify(reconcile).reconcile(new ReconcileStoppagesCommand(java.time.LocalDate.of(2026, 8, 7),
-                "primary", 2, java.time.LocalDateTime.of(2026, 8, 7, 10, 30)));
+                "sensor-1", 2, java.time.LocalDateTime.of(2026, 8, 7, 10, 30)));
     }
 
     @Test

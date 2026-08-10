@@ -19,6 +19,6 @@ class AdamEventEmitterTest {
         emitter.pollAdam();
         emitter.pollAdam();
 
-        verify(signals, times(2)).onProductSensorTriggered();
+        verify(signals, times(2)).register(any());
     }
 }

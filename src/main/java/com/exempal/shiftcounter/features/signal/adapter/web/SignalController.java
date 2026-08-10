@@ -1,35 +1,30 @@
 package com.exempal.shiftcounter.features.signal.adapter.web;
 
-import com.exempal.shiftcounter.features.signal.domain.SignalInputPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.exempal.shiftcounter.features.sensor.domain.SensorId;
+import com.exempal.shiftcounter.features.signal.domain.*;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Обрабатывает сигнал от сенсора и публикует событие в систему.
- */
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @RestController
 @Profile("test")
 @RequestMapping("/api/signal")
 public class SignalController {
+    private final SignalInputPort signalInput;
+    private final Clock clock;
 
-    private static final Logger log = LoggerFactory.getLogger(SignalController.class);
-
-    private final SignalInputPort signalInputPort;
-
-    public SignalController(SignalInputPort signalInputPort) {
-        this.signalInputPort = signalInputPort;
+    public SignalController(SignalInputPort signalInput, Clock clock) {
+        this.signalInput = signalInput;
+        this.clock = clock;
     }
 
     @PostMapping
-    public ResponseEntity<Void> triggerSignal(
-            @RequestParam String shiftDate,
-            @RequestParam String sensor
-    ) {
-        log.info("📡 Сигнал получен: сенсор = {}, дата смены = {}", sensor, shiftDate);
-        signalInputPort.onProductSensorTriggered();
-        return ResponseEntity.ok().build();
+    public SignalRegistrationResult triggerSignal(@RequestParam String sensorId) {
+        LocalDateTime occurredAt = LocalDateTime.ofInstant(clock.instant(), clock.getZone());
+        return signalInput.register(new RegisterSignalCommand(SensorId.of(sensorId), occurredAt,
+                SignalSource.HTTP_SIMULATION, UUID.randomUUID().toString()));
     }
 }

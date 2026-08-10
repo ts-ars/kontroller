@@ -5,6 +5,6 @@ import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 
 import java.util.UUID;
 
-public record StoppageViewDto(Long id, UUID detectionKey, String time, int minutes, String type,
+public record StoppageViewDto(Long id, UUID detectionKey, String sensorId, String time, int minutes, String type,
                               StoppageState state, ExplanationStatus explanationStatus, long version) {
 }

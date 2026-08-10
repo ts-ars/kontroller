@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-10
-- Branch: `codex/stage-5-time`, based on merged `main` commit `9c2923b`
+- Branch: `codex/stage-6-sensors`, based on merged `main` commit `4cfeb9a`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -16,19 +16,20 @@
 | Command | Result |
 |---|---|
 | `.\mvnw.cmd clean test-compile -DskipTests` | PASS |
-| Final review-focused Stage 5 suite | PASS — 15 executed, 0 skipped/failures/errors |
-| First `.\mvnw.cmd clean verify` | PASS — 101 discovered, 97 executed, 4 skipped, 0 failures/errors; 6:11 |
-| Second consecutive `.\mvnw.cmd clean verify` | PASS — same 101/97/4 totals, 0 failures/errors; 6:04 |
+| Stage 6 focused unit suite | PASS — 11 executed, 0 skipped/failures/errors |
+| Stage 6 end-to-end registration scenario | PASS — duplicate no-op and two-sensor isolation |
+| First final `.\mvnw.cmd clean verify` | PASS — 109 discovered, 106 executed, 3 skipped, 0 failures/errors; 9:10 |
+| Second consecutive `.\mvnw.cmd clean verify` | PASS — same 109/106/3 totals, 0 failures/errors; 3:08 |
 
-Stage 5 verification used PostgreSQL 15.13 in the isolated Docker project
-`kontroller-stage5-final`, volume `kontroller-stage5-final_pgdata` and host port `55435`. The
+Stage 6 verification used PostgreSQL 15.13 in the isolated Docker project
+`kontroller-stage6-final`, volume `kontroller-stage6-final_pgdata` and host port `55436`. The
 user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 90 discovered, 88 executed, 0 failures, 0 errors, 2 skipped.
+- Surefire: 98 discovered, 97 executed, 0 failures, 0 errors, 1 skipped.
 - Failsafe: 11 discovered, 9 executed, 0 failures, 0 errors, 2 skipped.
-- Combined: 101 discovered, 97 executed, 0 failures, 0 errors, 4 intentionally disabled.
+- Combined: 109 discovered, 106 executed, 0 failures, 0 errors, 3 intentionally disabled.
 - Load test: excluded from standard `verify` and classified with JUnit tag `load`.
 
 ## Test classification
@@ -48,9 +49,9 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 - `TestEnvironmentIsolationIT` verifies the active profile, JDBC catalog/user, Flyway history,
   bean gating and denial of `shift_test` access to production.
 - Spring integration tests use a centralized database reset listener.
-- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V5 data,
-  verifies deterministic valid-row backfill and migration reports for invalid legacy rows, then
-  removes the schema.
+- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V6 data,
+  verifies deterministic valid-row backfill, `primary` to `sensor-1`, the six-row catalog and
+  migration reports for invalid legacy rows, then removes the schema.
 
 ## Stage 4 protection and scenario coverage
 
@@ -83,27 +84,43 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 - `Stage5TimeArchitectureTest` rejects direct current-time/system-zone calls outside the approved
   time boundary and prevents restoration of the obsolete duplicate time helper.
 
+## Stage 6 protection and scenario coverage
+
+- I5 is active and passing: sequential duplicate source identity publishes only one increment trigger.
+- `SensorCatalogTest` protects the six stable IDs and approved 4+2 settings-group ownership.
+- `SignalServiceTest` protects source identity duplicate no-op, sensor propagation and production-date
+  assignment at the 07:00 boundary.
+- `Stage6SignalRegistrationIntegrationTest` exercises the complete synchronous path: two deliveries
+  of one `sensor-2` recovery identity create one Signal/increment/Reconcile, while the same source
+  identity for `sensor-3` remains an independent fact and does not create `sensor-1` state.
+- `ShiftSensorIsolationTest` protects independent Actual values; sensor-aware signal, shift, stoppage,
+  report, REST projection and WebSocket event tests protect boundary propagation.
+- `Stage6SensorArchitectureTest` rejects the historical `primary` literal in production Java, requires
+  every current adapter to use the registration command and keeps Stage 7 transaction semantics out.
+- Migration rehearsal protects historical Shift, Signal and Stoppage ownership by `sensor-1` and the
+  V6 source-identity/catalog schema.
+
 ## Intentionally disabled tests
 
-1. I5 — physical signal idempotency remains assigned to Stages 6–7.
-2. `ShiftSettingsApplierIntegrationTest` — settings application remains Stage 8.
-3. `ShiftSettingsDeliveryGuaranteeTest` — settings delivery remains Stage 8.
-4. `ShiftSettingsIntegrationTest` — settings update integration remains Stage 8.
+1. `ShiftSettingsApplierIntegrationTest` — settings application remains Stage 8.
+2. `ShiftSettingsDeliveryGuaranteeTest` — settings delivery remains Stage 8.
+3. `ShiftSettingsIntegrationTest` — settings update integration remains Stage 8.
 
-## Stage 5 status
+## Stage 6 status
 
-**COMPLETE under the approved Stage 5 boundary.** Production-date and interval resolution are unified;
-cross-midnight, exact `07:00`, final interval, plan-required extension, timestamp redistribution,
-injected Clock and half-open signal reads are covered and passing. Physical signal identity and six
-sensors remain Stage 6; atomicity/counter input remains Stage 7; settings groups remain Stage 8.
+**COMPLETE under the approved Stage 6 boundary.** Six stable sensors, persisted group ownership,
+sensor-aware Shift/Signal/Reconcile/API/event facts, historical `sensor-1` migration and sequential
+source-identity idempotency are covered and passing. Atomic Signal/Actual/Reconcile commit,
+same-sensor concurrent input, partial-failure recovery and counter delta remain Stage 7; group settings
+and their recalculation behavior remain Stage 8.
 
 ## Reproduction
 
 1. Start Docker Desktop or provide an isolated PostgreSQL 15 instance.
-2. Export the three compose passwords and run `docker compose --project-name kontroller-stage5-final up -d`
-   on a fresh volume with `POSTGRES_PORT=55435`.
-3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55435/shiftcounter_test`,
+2. Export the three compose passwords and run `docker compose --project-name kontroller-stage6-final up -d`
+   on a fresh volume with `POSTGRES_PORT=55436`.
+3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55436/shiftcounter_test`,
    `TEST_DB_USERNAME=shift_test`, the test password and the matching production-isolation variables.
 4. Run `.\mvnw.cmd clean verify`.
-5. Confirm 101 discovered / 97 executed / 4 skipped, zero failures/errors, Flyway V1–V5 and logs for
+5. Confirm 109 discovered / 106 executed / 3 skipped, zero failures/errors, Flyway V1–V6 and logs for
    `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.

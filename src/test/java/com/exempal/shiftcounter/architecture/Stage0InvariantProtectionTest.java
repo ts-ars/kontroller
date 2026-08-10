@@ -1,23 +1,23 @@
 package com.exempal.shiftcounter.architecture;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import com.exempal.shiftcounter.features.comment.application.StoppageDetector;
 import com.exempal.shiftcounter.features.comment.application.StoppageMatcher;
 import com.exempal.shiftcounter.features.comment.calculator.*;
 import com.exempal.shiftcounter.features.comment.domain.*;
+import com.exempal.shiftcounter.features.sensor.domain.SensorId;
+import com.exempal.shiftcounter.features.signal.application.SignalService;
+import com.exempal.shiftcounter.features.signal.domain.*;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
+import com.exempal.shiftcounter.shared.event.DomainEventPublisher;
+import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class Stage0InvariantProtectionTest {
     @Test
@@ -48,16 +48,28 @@ class Stage0InvariantProtectionTest {
         StoppageCalculationContext context = new StoppageCalculationContext(1L, Stoppage.PRIMARY_SENSOR,
                 0, start, start.plusHours(1), 100, 20, 1.0, List.of(), start.plusHours(1));
         var plan = new StoppageMatcher().match(context, List.of(existing), List.of(
-                new StoppageCandidate(DetectionType.FIXED, start.plusMinutes(1),
-                        Duration.ofMinutes(10), 8)));
+                new StoppageCandidate(DetectionType.FIXED, start.plusMinutes(1), Duration.ofMinutes(10), 8)));
         assertTrue(plan.valid());
         assertEquals(existing.detectionKey(), plan.active().getFirst().detectionKey());
         assertEquals("belt", plan.active().getFirst().explanations().getFirst().comment());
         assertEquals(5, plan.active().getFirst().explanations().getFirst().allocatedMinutes());
     }
 
-    @Test @Disabled("Known defect assigned to Stages 6–7: physical signal identity is not implemented")
-    void duplicatePhysicalSignalIncrementsActualOnce() { fail("Activate after signal identity and transactions"); }
+    @Test
+    void duplicatePhysicalSignalIncrementsActualOnce() {
+        SignalStoragePort storage = mock(SignalStoragePort.class);
+        DomainEventPublisher events = mock(DomainEventPublisher.class);
+        when(storage.saveIfAbsent(any())).thenReturn(true, false);
+        SignalService service = new SignalService(events, storage,
+                new ProductionDayService(Clock.system(ZoneOffset.UTC)));
+        RegisterSignalCommand signal = new RegisterSignalCommand(SensorId.of("sensor-1"),
+                LocalDateTime.of(2026, 8, 7, 8, 0), SignalSource.RECOVERY, "physical-1");
+
+        service.register(signal);
+        service.register(signal);
+
+        verify(events, times(1)).publish(any());
+    }
 
     private StoppageCalculator calculator() {
         return new StoppageCalculatorImpl(

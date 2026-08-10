@@ -18,7 +18,7 @@ public record ReconcileStoppagesCommand(LocalDate shiftDate, String sensorKey, I
 
     public ReconcileStoppagesCommand {
         if (shiftDate == null) throw new IllegalArgumentException("shiftDate is required");
-        if (sensorKey == null || sensorKey.isBlank()) throw new IllegalArgumentException("sensorKey is required");
+        com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.require(sensorKey);
         if (calculationTime == null) throw new IllegalArgumentException("calculationTime is required");
         if (resolveOnly && intervalIndex == null) {
             throw new IllegalArgumentException("resolve-only command requires intervalIndex");

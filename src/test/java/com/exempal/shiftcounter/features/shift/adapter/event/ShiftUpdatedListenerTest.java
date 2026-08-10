@@ -40,12 +40,13 @@ class ShiftUpdatedListenerTest {
                 List.of("08:00", "09:00", "10:00")
         );
         ShiftView view = new ShiftView(event.date(), event.actual(), event.plan(), event.hours());
-        when(projection.buildView(event.date())).thenReturn(view);
+        when(projection.buildView(event.date(), event.sensorId())).thenReturn(view);
 
         // Act
         listener.handle(event);
 
         // Assert
         verify(messaging).convertAndSend("/topic/shift-updates", view);
+        verify(messaging).convertAndSend("/topic/shift-updates/sensor-1", view);
     }
 }

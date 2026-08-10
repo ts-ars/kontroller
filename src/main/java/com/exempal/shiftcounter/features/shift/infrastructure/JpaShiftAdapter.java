@@ -27,7 +27,7 @@ public class JpaShiftAdapter implements ActualDataPort {
     @Override
     @Transactional
     public Shift save(Shift shift) {
-        ShiftEntity entity = repository.findByDate(shift.getDate())
+        ShiftEntity entity = repository.findByDateAndSensorId(shift.getDate(), shift.getSensorId())
                 .map(existing -> {
                     replace(existing, shift);
                     return existing;
@@ -65,7 +65,7 @@ public class JpaShiftAdapter implements ActualDataPort {
     @Override
     @Transactional
     public void saveOrReplace(Shift shift) {
-        repository.findByDate(shift.getDate())
+        repository.findByDateAndSensorId(shift.getDate(), shift.getSensorId())
                 .ifPresent(existing -> repository.deleteById(existing.getId()));
         repository.flush();
         repository.save(ShiftEntity.fromDomain(shift));
@@ -73,8 +73,8 @@ public class JpaShiftAdapter implements ActualDataPort {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Shift> findByDate(LocalDate date) {
-        return repository.findByDate(date)
+    public Optional<Shift> findByDateAndSensorId(LocalDate date, String sensorId) {
+        return repository.findByDateAndSensorId(date, sensorId)
                 .map(entity -> {
                     Hibernate.initialize(entity.getHourlyActualValues());
                     Hibernate.initialize(entity.getHourlyPlanValues());
@@ -90,15 +90,16 @@ public class JpaShiftAdapter implements ActualDataPort {
 
     @Override
     @Transactional
-    public void deleteByDate(LocalDate date) {
-        repository.findByDate(date).ifPresent(shift -> {
+    public void deleteByDateAndSensorId(LocalDate date, String sensorId) {
+        repository.findByDateAndSensorId(date, sensorId).ifPresent(shift -> {
             log.info("🧹 Удаление смены за дату {}", date);
             repository.delete(shift);
         });
     }
     @Transactional(readOnly = true)
     public Optional<ShiftEntity> findEntityByDate(LocalDate date) {
-        return repository.findByDate(date);
+        return repository.findByDateAndSensorId(date,
+                com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1);
     }
 
     @Override

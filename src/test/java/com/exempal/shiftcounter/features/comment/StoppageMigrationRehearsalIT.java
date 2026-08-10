@@ -60,6 +60,12 @@ class StoppageMigrationRehearsalIT {
                     ".stoppage_model_migration_report WHERE stoppage_id=11", Integer.class)).isEqualTo(1);
             assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA +
                     ".legacy_loss_explanation_migration_report WHERE stoppage_id=12", Integer.class)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT sensor_id FROM " + SCHEMA +
+                    ".shift WHERE id=1", String.class)).isEqualTo("sensor-1");
+            assertThat(jdbc.queryForObject("SELECT sensor_key FROM " + SCHEMA +
+                    ".stoppages WHERE id=10", String.class)).isEqualTo("sensor-1");
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA +
+                    ".sensors", Integer.class)).isEqualTo(6);
         } finally {
             jdbc.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE");
         }

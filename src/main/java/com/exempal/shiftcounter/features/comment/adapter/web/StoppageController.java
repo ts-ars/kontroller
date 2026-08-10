@@ -4,7 +4,6 @@ import com.exempal.shiftcounter.features.comment.adapter.dto.ReconcileResponse;
 import com.exempal.shiftcounter.features.comment.adapter.dto.StoppageViewDto;
 import com.exempal.shiftcounter.features.comment.adapter.mapper.StoppageViewMapper;
 import com.exempal.shiftcounter.features.comment.application.*;
-import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,21 +26,24 @@ public class StoppageController {
     public ResponseEntity<ReconcileResponse> recalculate(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Integer intervalIndex,
+            @RequestParam(defaultValue = "sensor-1") String sensorId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime calculationTime) {
         LocalDateTime suppliedTime = calculationTime == null ? productionDays.now() : calculationTime;
         LocalDate suppliedDate = date == null ? productionDays.resolve(suppliedTime).date() : date;
         ReconcileResult result = reconcile.reconcile(new ReconcileStoppagesCommand(suppliedDate,
-                Stoppage.PRIMARY_SENSOR, intervalIndex, suppliedTime));
+                sensorId, intervalIndex, suppliedTime));
         return result.hasFatalDiagnostic()
-                ? ResponseEntity.unprocessableEntity().body(ReconcileResponse.from(result))
-                : ResponseEntity.ok(ReconcileResponse.from(result));
+                ? ResponseEntity.unprocessableEntity().body(ReconcileResponse.from(sensorId, result))
+                : ResponseEntity.ok(ReconcileResponse.from(sensorId, result));
     }
 
     @GetMapping("/range")
     public List<StoppageViewDto> getRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return repository.findByShiftDateBetween(from, to).stream().map(StoppageViewMapper::toDto).toList();
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "sensor-1") String sensorId) {
+        return repository.findByShiftDateBetweenAndSensorId(from, to, sensorId).stream()
+                .map(StoppageViewMapper::toDto).toList();
     }
 }

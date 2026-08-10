@@ -28,15 +28,15 @@ public class ShiftInitializerService implements ShiftInitializer {
     }
 
     @Override
-    public Shift createNewShift(LocalDate date) {
-        return actualDataPort.findByDate(date).orElseGet(() -> {
-            Shift shift = shiftFactory.createNewShift(date);
+    public Shift createNewShift(LocalDate date, String sensorId) {
+        return actualDataPort.findByDateAndSensorId(date, sensorId).orElseGet(() -> {
+            Shift shift = shiftFactory.createNewShift(date, sensorId);
             actualDataPort.save(shift);
 
             log.info("✅ Смена создана: {} | План: {}", date, shift.getHourlyPlanValues());
 
             eventPublisher.publish(new ShiftUpdatedEvent(
-                    shift.getDate(),
+                    shift.getDate(), shift.getSensorId(),
                     shift.getHourlyActualValues(),
                     shift.getHourlyPlanValues(),
                     shift.getHourlyLabels()
@@ -47,8 +47,8 @@ public class ShiftInitializerService implements ShiftInitializer {
     }
 
     @Override
-    public Shift recalculateShift(LocalDate date) {
-        Shift existing = actualDataPort.findByDate(date)
+    public Shift recalculateShift(LocalDate date, String sensorId) {
+        Shift existing = actualDataPort.findByDateAndSensorId(date, sensorId)
                 .orElseThrow(() -> new ShiftNotFoundException(date));
 
         Shift recalculated = shiftFactory.recalculateFrom(existing);
@@ -57,7 +57,7 @@ public class ShiftInitializerService implements ShiftInitializer {
         log.info("🔁 Смена обновлена: {} | План: {} | Факт: {}", date, recalculated.getHourlyPlanValues(), recalculated.getHourlyActualValues());
 
         eventPublisher.publish(new ShiftUpdatedEvent(
-                recalculated.getDate(),
+                recalculated.getDate(), recalculated.getSensorId(),
                 recalculated.getHourlyActualValues(),
                 recalculated.getHourlyPlanValues(),
                 recalculated.getHourlyLabels()

@@ -37,12 +37,13 @@ class StoppageReconcilesServiceTest {
         shift = new ShiftEntity();
         shift.setId(1L);
         shift.setDate(date);
+        shift.setSensorId("sensor-1");
         shift.setActual(20);
         shift.setHourlyLabels(List.of("08:00"));
         shift.setHourlyPlanValues(List.of(100));
         shift.setHourlyActualValues(List.of(20));
-        when(shifts.findForUpdateByDate(date)).thenReturn(Optional.of(shift.toDomain()));
-        when(signals.getSignalsBetween(any(), any())).thenReturn(List.of());
+        when(shifts.findForUpdateByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift.toDomain()));
+        when(signals.getSignalsBetween(eq("sensor-1"), any(), any())).thenReturn(List.of());
         StoppageCalculator calculator = new StoppageCalculatorImpl(
                 new StoppageFixedLossCalculator(new StoppageDetector(), Duration.ofHours(2)),
                 new StoppageTempoLossCalculator());
@@ -87,14 +88,14 @@ class StoppageReconcilesServiceTest {
         shift.setHourlyLabels(List.of("23:30", "00:30"));
         shift.setHourlyPlanValues(List.of(100, 100));
         shift.setHourlyActualValues(List.of(100, 100));
-        when(shifts.findForUpdateByDate(date)).thenReturn(Optional.of(shift.toDomain()));
+        when(shifts.findForUpdateByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift.toDomain()));
         when(stoppages.findActiveByShiftSensorAndIntervalRange(1L, Stoppage.PRIMARY_SENSOR, 0, 2))
                 .thenReturn(List.of());
 
         service.reconcile(new ReconcileStoppagesCommand(date, Stoppage.PRIMARY_SENSOR, 1,
                 LocalDateTime.of(2026, 8, 8, 1, 0)));
 
-        verify(signals).getSignalsBetween(LocalDateTime.of(2026, 8, 8, 0, 30),
+        verify(signals).getSignalsBetween("sensor-1", LocalDateTime.of(2026, 8, 8, 0, 30),
                 LocalDateTime.of(2026, 8, 8, 1, 0));
     }
 

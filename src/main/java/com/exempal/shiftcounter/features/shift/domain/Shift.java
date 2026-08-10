@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.shift.domain;
 
 import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,8 @@ public class Shift {
 
     private final Long id;
     private final LocalDate date;
+    private final String sensorId;
+    private final String settingsGroupId;
     private final List<Integer> hourlyPlanValues;
     private final Integer actual;
     private final List<Integer> hourlyActualValues;
@@ -21,6 +24,7 @@ public class Shift {
     public Shift(
             Long id,
             LocalDate date,
+            String sensorId,
             List<Integer> hourlyPlanValues,
             Integer actual,
             List<Integer> hourlyActualValues,
@@ -28,10 +32,17 @@ public class Shift {
     ) {
         this.id = id;
         this.date = date;
+        this.sensorId = SensorCatalog.require(sensorId).id().value();
+        this.settingsGroupId = SensorCatalog.require(sensorId).settingsGroupId();
         this.hourlyPlanValues = new ArrayList<>(hourlyPlanValues);
         this.actual = hourlyActualValues.stream().mapToInt(Integer::intValue).sum();
         this.hourlyActualValues = new ArrayList<>(hourlyActualValues);
         this.hourlyLabels = new ArrayList<>(hourlyLabels);
+    }
+
+    public Shift(Long id, LocalDate date, List<Integer> hourlyPlanValues, Integer actual,
+                 List<Integer> hourlyActualValues, List<String> hourlyLabels) {
+        this(id, date, SensorCatalog.SENSOR_1, hourlyPlanValues, actual, hourlyActualValues, hourlyLabels);
     }
 
     public Shift(
@@ -42,6 +53,11 @@ public class Shift {
             List<String> hourlyLabels
     ) {
         this(null, date, hourlyPlanValues, actual, hourlyActualValues, hourlyLabels);
+    }
+
+    public Shift(LocalDate date, String sensorId, List<Integer> hourlyPlanValues, Integer actual,
+                 List<Integer> hourlyActualValues, List<String> hourlyLabels) {
+        this(null, date, sensorId, hourlyPlanValues, actual, hourlyActualValues, hourlyLabels);
     }
 
     @Getter
@@ -58,6 +74,7 @@ public class Shift {
         return new Shift(
                 this.id,
                 this.date,
+                this.sensorId,
                 this.hourlyPlanValues,
                 this.actual != null ? this.actual + 1 : 1,
                 updatedActual,
@@ -78,6 +95,7 @@ public class Shift {
         return new Shift(
                 this.id,
                 this.date,
+                this.sensorId,
                 newPlanValues,
                 recalculatedActual, // ✅ правильное значение actual
                 newActualValues,

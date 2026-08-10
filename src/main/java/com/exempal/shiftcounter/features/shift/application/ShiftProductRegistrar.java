@@ -2,7 +2,7 @@ package com.exempal.shiftcounter.features.shift.application;
 
 import com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand;
 import com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesUseCase;
-import com.exempal.shiftcounter.features.comment.domain.Stoppage;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsApplier;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftInterval;
@@ -25,9 +25,14 @@ public class ShiftProductRegistrar {
     private final ReconcileStoppagesUseCase reconciles;
 
     public void registerProduct(LocalDateTime timestamp) {
+        registerProduct(SensorCatalog.SENSOR_1, timestamp);
+    }
+
+    public void registerProduct(String sensorId, LocalDateTime timestamp) {
+        SensorCatalog.require(sensorId);
         var productionDay = productionDays.resolve(timestamp);
         Shift current = shiftSettingsApplier.applyIfChanged(
-                shiftPlanner.getOrCreateShift(productionDay.date()), timestamp);
+                shiftPlanner.getOrCreateShift(productionDay.date(), sensorId), timestamp);
         Shift extended = extender.extendIfNeeded(timestamp, current);
         ShiftInterval interval = intervals.find(productionDay.date(), extended.getHourlyLabels(),
                         extended.getHourlyPlanValues().size(), timestamp)
@@ -42,7 +47,7 @@ public class ShiftProductRegistrar {
         shiftPlanner.updateShift(updated);
         if (interval.planSupplied()) {
             reconciles.reconcile(new ReconcileStoppagesCommand(productionDay.date(),
-                    Stoppage.PRIMARY_SENSOR, interval.index(), timestamp));
+                    sensorId, interval.index(), timestamp));
         }
     }
 }

@@ -1,40 +1,20 @@
 package com.exempal.shiftcounter.shared.event;
 
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
+
 import java.time.LocalDateTime;
 
-/**
- * 📦 Доменное событие, сигнализирующее об остановке производства.
- *
- * Это событие публикуется при получении сигнала остановки с устройства (например, ADAM-6050)
- * и используется подписчиком (ProductionStoppedListener) для автоматического создания
- * события остановки производства для последующего формирования модели {@code Stoppage}.
- *
- * ⚙️ Пример использования:
- *   eventPublisher.publishEvent(new ProductionStoppedEvent(...));
- */
-public class ProductionStoppedEvent implements DomainEvent {
-
-    /**
-     * Время начала остановки (с точностью до секунд).
-     */
-    private final LocalDateTime time;
-
-    /**
-     * Длительность остановки в минутах (например, 2.5 = 2 мин 30 сек).
-     */
-    private final double minutes;
+public record ProductionStoppedEvent(String sensorId, LocalDateTime time,
+                                     double minutes) implements DomainEvent {
+    public ProductionStoppedEvent {
+        SensorCatalog.require(sensorId);
+        if (time == null) throw new IllegalArgumentException("time is required");
+    }
 
     public ProductionStoppedEvent(LocalDateTime time, double minutes) {
-        this.time = LocalDateTime.from(time);
-        this.minutes = minutes;
+        this(SensorCatalog.SENSOR_1, time, minutes);
     }
 
-    public LocalDateTime getTime() {
-        return time;
-    }
-
-    public double getMinutes() {
-        return minutes;
-    }
+    public LocalDateTime getTime() { return time; }
+    public double getMinutes() { return minutes; }
 }
-

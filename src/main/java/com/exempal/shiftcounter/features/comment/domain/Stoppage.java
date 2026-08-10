@@ -8,7 +8,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 public final class Stoppage {
-    public static final String PRIMARY_SENSOR = "primary";
+    public static final String SENSOR_1 = com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1;
+    @Deprecated(forRemoval = false)
+    public static final String PRIMARY_SENSOR = SENSOR_1;
 
     private final Long id;
     private final UUID detectionKey;

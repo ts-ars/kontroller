@@ -12,9 +12,12 @@ import java.util.Optional;
 
 public interface ShiftJpaRepository extends JpaRepository<ShiftEntity, Long> {
 
-    Optional<ShiftEntity> findByDate(LocalDate date);
+    @EntityGraph(attributePaths = {"hourlyActualValues", "hourlyPlanValues", "hourlyLabels"})
+    Optional<ShiftEntity> findByDateAndSensorId(LocalDate date, String sensorId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select s from ShiftEntity s where s.date = :date")
-    Optional<ShiftEntity> findForUpdateByDate(@Param("date") LocalDate date);
+    @EntityGraph(attributePaths = {"hourlyActualValues", "hourlyPlanValues", "hourlyLabels"})
+    @Query("select s from ShiftEntity s where s.date = :date and s.sensorId = :sensorId")
+    Optional<ShiftEntity> findForUpdateByDateAndSensorId(@Param("date") LocalDate date,
+                                                         @Param("sensorId") String sensorId);
 }
