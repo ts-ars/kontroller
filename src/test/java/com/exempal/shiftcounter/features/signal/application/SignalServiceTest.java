@@ -20,9 +20,10 @@ class SignalServiceTest {
     void duplicateSourceIdentityPublishesNoSecondIncrementTrigger() {
         SignalStoragePort storage = mock(SignalStoragePort.class);
         DomainEventPublisher events = mock(DomainEventPublisher.class);
+        SignalRegistrationLock lock = mock(SignalRegistrationLock.class);
         when(storage.saveIfAbsent(any())).thenReturn(true, false);
         SignalService service = new SignalService(events, storage,
-                new ProductionDayService(Clock.system(ZoneOffset.UTC)));
+                new ProductionDayService(Clock.system(ZoneOffset.UTC)), lock);
         RegisterSignalCommand command = new RegisterSignalCommand(SensorId.of("sensor-3"),
                 LocalDateTime.of(2026, 8, 10, 9, 15), SignalSource.RECOVERY, "source-event-42");
 
@@ -34,6 +35,7 @@ class SignalServiceTest {
                         && signal.productionDate().toString().equals("2026-08-10")
                         && signal.sourceIdentity().equals("source-event-42")));
         verify(events, times(1)).publish(isA(ProductDetectedEvent.class));
+        verify(lock, times(2)).acquire(java.time.LocalDate.of(2026, 8, 10), "sensor-3");
     }
 
     @Test
@@ -41,7 +43,7 @@ class SignalServiceTest {
         SignalStoragePort storage = mock(SignalStoragePort.class);
         when(storage.saveIfAbsent(any())).thenReturn(true);
         SignalService service = new SignalService(mock(DomainEventPublisher.class), storage,
-                new ProductionDayService(Clock.system(ZoneOffset.UTC)));
+                new ProductionDayService(Clock.system(ZoneOffset.UTC)), mock(SignalRegistrationLock.class));
 
         service.register(new RegisterSignalCommand(SensorId.of("sensor-6"),
                 LocalDateTime.of(2026, 8, 10, 0, 15), SignalSource.BATCH, "batch-1"));

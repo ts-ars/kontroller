@@ -5,8 +5,8 @@ import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusInitException;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.ip.IpParameters;
-import com.serotonin.modbus4j.msg.ReadDiscreteInputsRequest;
-import com.serotonin.modbus4j.msg.ReadDiscreteInputsResponse;
+import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
+import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -46,21 +46,25 @@ public class AdamModbusAdapter {
         }
     }
 
-    public boolean readDigitalInput(int address) {
+    public long readCounter(int channel) {
         if (!connected.get()) {
             throw new IllegalStateException("Modbus not connected");
         }
 
         try {
-            ReadDiscreteInputsRequest request = new ReadDiscreteInputsRequest(SLAVE_ID, address, 1);
-            ReadDiscreteInputsResponse response = (ReadDiscreteInputsResponse) master.send(request);
+            int address = channel * 2;
+            ReadHoldingRegistersRequest request = new ReadHoldingRegistersRequest(SLAVE_ID, address, 2);
+            ReadHoldingRegistersResponse response = (ReadHoldingRegistersResponse) master.send(request);
             if (response == null || response.isException()) {
-                log.warn("[MODBUS] Failed to read DI[{}]: {}", address, response != null ? response.getExceptionMessage() : "null response");
-                return false;
+                throw new IllegalStateException("Counter read failed for channel " + channel + ": "
+                        + (response != null ? response.getExceptionMessage() : "null response"));
             }
-            return response.getBooleanData()[0];
+            short[] data = response.getShortData();
+            long lowWord = Short.toUnsignedLong(data[0]);
+            long highWord = Short.toUnsignedLong(data[1]);
+            return highWord * 65_536L + lowWord;
         } catch (ModbusTransportException e) {
-            log.error("[MODBUS] Transport exception while reading DI[{}]", address, e);
+            log.error("[MODBUS] Transport exception while reading counter channel {}", channel, e);
             connected.set(false);
             throw new RuntimeException("Modbus read failed", e);
         }

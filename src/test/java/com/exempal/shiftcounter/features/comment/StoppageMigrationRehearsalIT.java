@@ -66,6 +66,8 @@ class StoppageMigrationRehearsalIT {
                     ".stoppages WHERE id=10", String.class)).isEqualTo("sensor-1");
             assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA +
                     ".sensors", Integer.class)).isEqualTo(6);
+            assertThat(jdbc.queryForObject("SELECT to_regclass('" + SCHEMA
+                    + ".counter_states') IS NOT NULL", Boolean.class)).isTrue();
         } finally {
             jdbc.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE");
         }

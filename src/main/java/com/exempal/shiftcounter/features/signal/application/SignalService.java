@@ -6,6 +6,7 @@ import com.exempal.shiftcounter.shared.event.DomainEventPublisher;
 import com.exempal.shiftcounter.shared.event.ProductDetectedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,12 +18,16 @@ public class SignalService implements SignalInputPort {
     private final DomainEventPublisher eventPublisher;
     private final SignalStoragePort signalStorage;
     private final ProductionDayService productionDays;
+    private final SignalRegistrationLock registrationLock;
 
     @Override
+    @Transactional
     public SignalRegistrationResult register(RegisterSignalCommand command) {
         UUID id = UUID.randomUUID();
-        Signal signal = new Signal(id, command.sensorId(), command.occurredAt(),
-                productionDays.resolve(command.occurredAt()).date(), command.source(), command.sourceIdentity());
+        var productionDate = productionDays.resolve(command.occurredAt()).date();
+        registrationLock.acquire(productionDate, command.sensorId().value());
+        Signal signal = new Signal(id, command.sensorId(), command.occurredAt(), productionDate,
+                command.source(), command.sourceIdentity());
         if (!signalStorage.saveIfAbsent(signal)) return SignalRegistrationResult.duplicate(command.sensorId());
         eventPublisher.publish(new ProductDetectedEvent(id, command.sensorId(), command.occurredAt()));
         return new SignalRegistrationResult(id, command.sensorId(), true);

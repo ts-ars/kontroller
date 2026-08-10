@@ -50,4 +50,10 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
     Stage 7.
 37. Stage 6 persists sensor ownership of `settings-group-1` (Sensors 1–4) or `settings-group-2`
     (Sensors 5–6). Settings storage and reactions to group changes remain Stage 8.
+38. Stage 7 makes signal registration the application transaction boundary. Registration is
+    serialized by production date and sensor, and the database conflict on source identity is the
+    final concurrent duplicate guard. Shift update delivery occurs only after a successful commit.
+39. Stage 7 persists one ADAM counter state per sensor. A new installation stores its first reading
+    as a baseline; later readings produce stable counter-value signal identities. A lower reading
+    records `COUNTER_DISCONTINUITY` without replacing the last trusted baseline.
 

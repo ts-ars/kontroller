@@ -3,6 +3,8 @@ package com.exempal.shiftcounter.common.adapter;
 import com.exempal.shiftcounter.common.domain.EventPublisherPort;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Component
 public class SpringEventPublisherAdapter implements EventPublisherPort {
@@ -15,6 +17,16 @@ public class SpringEventPublisherAdapter implements EventPublisherPort {
 
     @Override
     public void publish(Object event) {
-        applicationEventPublisher.publishEvent(event);
+        if (!TransactionSynchronizationManager.isActualTransactionActive()
+                || !TransactionSynchronizationManager.isSynchronizationActive()) {
+            applicationEventPublisher.publishEvent(event);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                applicationEventPublisher.publishEvent(event);
+            }
+        });
     }
 }

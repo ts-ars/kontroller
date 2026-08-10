@@ -19,7 +19,7 @@ public final class DatabaseResetTestExecutionListener extends AbstractTestExecut
         }
 
         JdbcTemplate jdbc = testContext.getApplicationContext().getBean(JdbcTemplate.class);
-        jdbc.execute("TRUNCATE TABLE loss_explanations, signals, stoppages, comments, "
+        jdbc.execute("TRUNCATE TABLE counter_states, loss_explanations, signals, stoppages, comments, "
                 + "shift_hour_labels, shift_hourly_actual, shift_hourly_plan, shift "
                 + "RESTART IDENTITY CASCADE");
         jdbc.update("DELETE FROM settings");
