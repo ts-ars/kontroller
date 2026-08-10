@@ -11,40 +11,37 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Slf4j
 @Component
 @Profile("prod")
 public class AdamEventEmitter {
     private final AdamModbusAdapter modbusAdapter;
-    private final SignalInputPort signals;
+    private final CounterInputPort counters;
     private final Clock clock;
     private final SensorId sensorId;
-    private boolean previousState;
+    private final int counterChannel;
 
-    public AdamEventEmitter(AdamModbusAdapter modbusAdapter, SignalInputPort signals, Clock clock,
-                            @Value("${adam.sensor-id:sensor-1}") String sensorId) {
+    public AdamEventEmitter(AdamModbusAdapter modbusAdapter, CounterInputPort counters, Clock clock,
+                            @Value("${adam.sensor-id:sensor-1}") String sensorId,
+                            @Value("${adam.counter-channel:0}") int counterChannel) {
         this.modbusAdapter = modbusAdapter;
-        this.signals = signals;
+        this.counters = counters;
         this.clock = clock;
         this.sensorId = SensorId.of(sensorId);
+        this.counterChannel = counterChannel;
     }
 
-    public AdamEventEmitter(AdamModbusAdapter modbusAdapter, SignalInputPort signals) {
-        this(modbusAdapter, signals, Clock.systemDefaultZone(), "sensor-1");
+    public AdamEventEmitter(AdamModbusAdapter modbusAdapter, CounterInputPort counters) {
+        this(modbusAdapter, counters, Clock.systemDefaultZone(), "sensor-1", 0);
     }
 
     @Scheduled(fixedDelay = 100)
     public void pollAdam() {
         try {
-            boolean currentState = modbusAdapter.readDigitalInput(0);
-            if (currentState && !previousState) {
-                LocalDateTime occurredAt = LocalDateTime.ofInstant(clock.instant(), clock.getZone());
-                signals.register(new RegisterSignalCommand(sensorId, occurredAt, SignalSource.ADAM,
-                        UUID.randomUUID().toString()));
-            }
-            previousState = currentState;
+            long currentCounter = modbusAdapter.readCounter(counterChannel);
+            LocalDateTime readAt = LocalDateTime.ofInstant(clock.instant(), clock.getZone());
+            counters.process(new CounterReadingCommand(sensorId, currentCounter, readAt));
         } catch (Exception exception) {
             log.warn("[MODBUS] Polling failed: {}", exception.getMessage());
         }

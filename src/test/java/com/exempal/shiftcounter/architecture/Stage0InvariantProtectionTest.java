@@ -61,7 +61,7 @@ class Stage0InvariantProtectionTest {
         DomainEventPublisher events = mock(DomainEventPublisher.class);
         when(storage.saveIfAbsent(any())).thenReturn(true, false);
         SignalService service = new SignalService(events, storage,
-                new ProductionDayService(Clock.system(ZoneOffset.UTC)));
+                new ProductionDayService(Clock.system(ZoneOffset.UTC)), mock(SignalRegistrationLock.class));
         RegisterSignalCommand signal = new RegisterSignalCommand(SensorId.of("sensor-1"),
                 LocalDateTime.of(2026, 8, 7, 8, 0), SignalSource.RECOVERY, "physical-1");
 

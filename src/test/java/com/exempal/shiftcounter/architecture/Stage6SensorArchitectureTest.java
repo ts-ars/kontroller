@@ -19,21 +19,23 @@ class Stage6SensorArchitectureTest {
     }
 
     @Test
-    void registrationRemainsNonTransactionalUntilStageSeven() throws IOException {
+    void registrationIsTransactionalFromStageSeven() throws IOException {
         String source = Files.readString(Path.of(
                 "src/main/java/com/exempal/shiftcounter/features/signal/application/SignalService.java"));
-        assertThat(source).doesNotContain("@Transactional");
+        assertThat(source).contains("@Transactional");
     }
 
     @Test
-    void everyCurrentInputAdapterUsesTheRegistrationCommand() throws IOException {
+    void everyCurrentInputAdapterUsesItsSingleApplicationInput() throws IOException {
         for (String file : new String[] {
-                "adapter/event/AdamEventEmitter.java",
                 "adapter/http/HttpSignalAdapter.java",
                 "adapter/web/SignalController.java"}) {
             String source = Files.readString(Path.of(
                     "src/main/java/com/exempal/shiftcounter/features/signal/" + file));
             assertThat(source).contains("RegisterSignalCommand", ".register(");
         }
+        String adam = Files.readString(Path.of(
+                "src/main/java/com/exempal/shiftcounter/features/signal/adapter/event/AdamEventEmitter.java"));
+        assertThat(adam).contains("CounterReadingCommand", ".process(");
     }
 }

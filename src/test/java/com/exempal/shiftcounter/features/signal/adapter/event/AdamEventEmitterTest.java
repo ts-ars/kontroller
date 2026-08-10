@@ -1,24 +1,23 @@
 package com.exempal.shiftcounter.features.signal.adapter.event;
 
 import com.exempal.shiftcounter.features.signal.adapter.adam.AdamModbusAdapter;
-import com.exempal.shiftcounter.features.signal.domain.SignalInputPort;
+import com.exempal.shiftcounter.features.signal.domain.CounterInputPort;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
 class AdamEventEmitterTest {
     @Test
-    void risingEdgeUsesPersistingSignalInputPortOnce() {
+    void everyPollPassesTheAbsoluteCounterToTheDeltaUseCase() {
         AdamModbusAdapter modbus = mock(AdamModbusAdapter.class);
-        SignalInputPort signals = mock(SignalInputPort.class);
-        when(modbus.readDigitalInput(0)).thenReturn(true, true, false, true);
-        AdamEventEmitter emitter = new AdamEventEmitter(modbus, signals);
+        CounterInputPort counters = mock(CounterInputPort.class);
+        when(modbus.readCounter(0)).thenReturn(100L, 100L, 103L);
+        AdamEventEmitter emitter = new AdamEventEmitter(modbus, counters);
 
         emitter.pollAdam();
         emitter.pollAdam();
         emitter.pollAdam();
-        emitter.pollAdam();
 
-        verify(signals, times(2)).register(any());
+        verify(counters, times(3)).process(any());
     }
 }

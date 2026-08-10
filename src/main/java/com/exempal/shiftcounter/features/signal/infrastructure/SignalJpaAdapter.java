@@ -4,6 +4,7 @@ import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 import com.exempal.shiftcounter.features.signal.domain.SignalStoragePort;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,12 +18,16 @@ public class SignalJpaAdapter implements SignalStoragePort {
     }
 
     @Override
+    @Transactional
     public boolean saveIfAbsent(Signal signal) {
-        if (repository.existsBySensorIdAndSourceAndSourceIdentity(signal.sensorId().value(), signal.source(),
-                signal.sourceIdentity())) return false;
-        repository.save(new SignalEntity(signal.id(), signal.sensorId().value(), signal.occurredAt(),
-                signal.productionDate(), signal.source(), signal.sourceIdentity()));
-        return true;
+        return repository.insertIfAbsent(signal.id(), signal.sensorId().value(), signal.occurredAt(),
+                signal.productionDate(), signal.source().name(), signal.sourceIdentity()) == 1;
+    }
+
+    @Override
+    @Transactional
+    public void save(Signal signal) {
+        saveIfAbsent(signal);
     }
 
     @Override
