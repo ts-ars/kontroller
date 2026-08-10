@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -19,11 +20,12 @@ public class SignalService implements SignalInputPort {
 
     private final DomainEventPublisher eventPublisher;
     private final SignalStoragePort signalStorage;
+    private final Clock clock;
 
     @Override
     public void onProductSensorTriggered() {
-        Instant now = Instant.now();
-        LocalDateTime localDateTime = now.atZone(ZoneId.systemDefault()).toLocalDateTime();
+        Instant now = clock.instant();
+        LocalDateTime localDateTime = now.atZone(clock.getZone()).toLocalDateTime();
         signalStorage.save(new Signal(localDateTime));
         eventPublisher.publish(new ProductDetectedEvent(now));
     }

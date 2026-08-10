@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-10
-- Branch: local `codex/stage-4-unified-reconcile`, based on merged `main` commit `776d82f`
+- Branch: `codex/stage-5-time`, based on merged `main` commit `9c2923b`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -16,19 +16,19 @@
 | Command | Result |
 |---|---|
 | `.\mvnw.cmd clean test-compile -DskipTests` | PASS |
-| Focused Stage 4 unit/architecture suite | PASS — 29 discovered, 28 executed, 1 skipped (I5) |
-| Targeted `StoppageReconcilePersistenceIT` | PASS — 3 PostgreSQL scenarios |
-| `.\mvnw.cmd clean verify` | PASS — 83 discovered, 79 executed, 4 skipped, 0 failures/errors; 7:31 |
+| Final review-focused Stage 5 suite | PASS — 15 executed, 0 skipped/failures/errors |
+| First `.\mvnw.cmd clean verify` | PASS — 101 discovered, 97 executed, 4 skipped, 0 failures/errors; 6:11 |
+| Second consecutive `.\mvnw.cmd clean verify` | PASS — same 101/97/4 totals, 0 failures/errors; 6:04 |
 
-Stage 4 verification used PostgreSQL 15.13 in the isolated Docker project
-`kontroller-stage4`, volume `kontroller-stage4_pgdata` and host port `55434`. The
+Stage 5 verification used PostgreSQL 15.13 in the isolated Docker project
+`kontroller-stage5-final`, volume `kontroller-stage5-final_pgdata` and host port `55435`. The
 user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 72 discovered, 70 executed, 0 failures, 0 errors, 2 skipped.
+- Surefire: 90 discovered, 88 executed, 0 failures, 0 errors, 2 skipped.
 - Failsafe: 11 discovered, 9 executed, 0 failures, 0 errors, 2 skipped.
-- Combined: 83 discovered, 79 executed, 0 failures, 0 errors, 4 intentionally disabled.
+- Combined: 101 discovered, 97 executed, 0 failures, 0 errors, 4 intentionally disabled.
 - Load test: excluded from standard `verify` and classified with JUnit tag `load`.
 
 ## Test classification
@@ -65,6 +65,24 @@ user project container `shift-postgres` on port `5432` was not modified or used.
   serialization of two concurrent calls and update-in-place with explanation preservation/conflict.
 - Persistence and migration tests protect the V5 `incident_key` mapping and historical rehearsal.
 
+## Stage 5 protection and scenario coverage
+
+- `ProductionDayServiceTest` protects the exact `07:00` boundary and half-open production window.
+- `ShiftIntervalServiceTest` protects midnight rollover, 90-minute intervals, exact interval
+  boundaries, final `:30`, ordering validation, plan-required extension and the `D+1 07:00` cap.
+- `ShiftProductRegistrarTimeTest` protects previous-production-date assignment after midnight and
+  accumulation without Reconcile in an interval whose plan is not supplied.
+- `ShiftTimeCorrectionServiceTest` protects timestamp redistribution and resolution of removed
+  intervals through the unified Reconcile use case.
+- `StoppageReconcilesServiceTest` protects absolute cross-midnight signal ranges and resolve-only
+  Reconcile for removed intervals.
+- `SignalJpaAdapterTest` protects the explicit persistence query contract `[start,end)`.
+- `AdamEventEmitterTest` protects the production path through the signal input port so a detected
+  timestamp is persisted before the domain event is published.
+- `SettingsPageTest` protects application of operator Time/Plan corrections from the actual HTML form.
+- `Stage5TimeArchitectureTest` rejects direct current-time/system-zone calls outside the approved
+  time boundary and prevents restoration of the obsolete duplicate time helper.
+
 ## Intentionally disabled tests
 
 1. I5 — physical signal idempotency remains assigned to Stages 6–7.
@@ -72,21 +90,20 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 3. `ShiftSettingsDeliveryGuaranteeTest` — settings delivery remains Stage 8.
 4. `ShiftSettingsIntegrationTest` — settings update integration remains Stage 8.
 
-## Stage 4 status
+## Stage 5 status
 
-**COMPLETE under the approved Stage 4 boundary.** One use case now owns all current loss write
-triggers; calculation balance, deterministic matching, stable identities, explanation preservation,
-idempotence, concurrent serialization and V5 migration are covered and passing. Production-day and
-cross-midnight semantics remain Stage 5; physical signal identity/atomicity remains Stages 6–7; and
-settings-group recalculation remains Stage 8.
+**COMPLETE under the approved Stage 5 boundary.** Production-date and interval resolution are unified;
+cross-midnight, exact `07:00`, final interval, plan-required extension, timestamp redistribution,
+injected Clock and half-open signal reads are covered and passing. Physical signal identity and six
+sensors remain Stage 6; atomicity/counter input remains Stage 7; settings groups remain Stage 8.
 
 ## Reproduction
 
 1. Start Docker Desktop or provide an isolated PostgreSQL 15 instance.
-2. Export the three compose passwords and run `docker compose --project-name kontroller-stage4 up -d`
-   on a fresh volume with `SHIFT_DB_PORT=55434`.
-3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55434/shiftcounter_test`,
+2. Export the three compose passwords and run `docker compose --project-name kontroller-stage5-final up -d`
+   on a fresh volume with `POSTGRES_PORT=55435`.
+3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55435/shiftcounter_test`,
    `TEST_DB_USERNAME=shift_test`, the test password and the matching production-isolation variables.
 4. Run `.\mvnw.cmd clean verify`.
-5. Confirm 83 discovered / 79 executed / 4 skipped, zero failures/errors, Flyway V1–V5 and logs for
+5. Confirm 101 discovered / 97 executed / 4 skipped, zero failures/errors, Flyway V1–V5 and logs for
    `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.

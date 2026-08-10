@@ -5,27 +5,30 @@ import com.exempal.shiftcounter.features.comment.adapter.dto.LossExplanationResp
 import com.exempal.shiftcounter.features.comment.adapter.dto.LossRowDto;
 import com.exempal.shiftcounter.features.comment.application.CommentsReadUseCase;
 import com.exempal.shiftcounter.features.comment.application.StoppageTimeService;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Component
 public class CommentsPage implements PageModel {
     private final CommentsReadUseCase useCase;
     private final StoppageTimeService timeService;
+    private final ProductionDayService productionDays;
 
-    public CommentsPage(CommentsReadUseCase useCase, StoppageTimeService timeService) {
+    public CommentsPage(CommentsReadUseCase useCase, StoppageTimeService timeService,
+                        ProductionDayService productionDays) {
         this.useCase = useCase;
         this.timeService = timeService;
+        this.productionDays = productionDays;
     }
 
     @Override public String getPageName() { return "comment"; }
 
     @Override
     public void populateModel(Model model) {
-        var data = useCase.read(LocalDate.now());
+        var data = useCase.read(productionDays.current().date());
         if (data.shift() == null) {
             model.addAttribute("losses", List.of());
             model.addAttribute("alerts", List.of("No shift found for today"));

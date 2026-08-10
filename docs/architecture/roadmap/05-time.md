@@ -1,6 +1,6 @@
 # Stage 5 — Time and Production Day
 
-Status: **APPROVED / NOT IMPLEMENTED**
+Status: **APPROVED / IMPLEMENTED**
 
 ## Production day
 
@@ -27,4 +27,20 @@ The operator may later correct Time and Plan. Time correction redistributes exis
 ## Definition of Done
 
 All services use the same production-date and interval services; every valid signal maps to exactly one interval; the `07:00` boundary is unambiguous; plan-required behavior and operator correction preserve signals; time calculations use `java.time` and an injected `Clock` where current time is required.
+
+## Implemented boundary
+
+- `ProductionDayService` owns `[D 07:00, D+1 07:00)` resolution and the application `Clock`;
+  current shift, comments, reports, settings and manual Reconcile use that boundary.
+- `ShiftIntervalService` derives absolute, ordered, half-open intervals from persisted Time values,
+  including midnight rollover, 60/90-minute intervals and the final `:00`/`:30` rule.
+- A signal beyond the configured end extends the timeline only within the production day. Extended
+  intervals keep actual independently of the plan list and skip Reconcile until a plan is supplied.
+- Time correction reloads saved signals from the production window, redistributes actual by timestamp
+  and invokes unified Reconcile. Plan-only correction preserves actual; removed intervals are resolved
+  through the same Reconcile use case.
+- Signal reads use an explicit `[start,end)` persistence query. Direct system time and system-zone calls
+  outside the approved time configuration/service are rejected by an architecture test.
+- Stage 5 retains the current `primary` sensor. Signal identity, six sensors, transaction atomicity,
+  counter-boundary delta handling and settings groups remain Stages 6–8.
 

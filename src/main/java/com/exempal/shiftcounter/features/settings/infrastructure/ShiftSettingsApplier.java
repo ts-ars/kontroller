@@ -3,12 +3,13 @@ package com.exempal.shiftcounter.features.settings.infrastructure;
 import com.exempal.shiftcounter.common.domain.EventPublisherPort;
 import com.exempal.shiftcounter.features.settings.domain.Settings;
 import com.exempal.shiftcounter.features.shift.domain.*;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.shift.application.ShiftTimeCorrectionService;
 import com.exempal.shiftcounter.features.shift.projection.ShiftProjectionUseCase;
 import com.exempal.shiftcounter.features.shift.projection.ShiftView;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -22,6 +23,8 @@ public class ShiftSettingsApplier {
     private final ShiftProjectionUseCase projectionUseCase;
     private final ActualDataPort actualDataPort;
     private final ShiftMetricsCalculator metricsCalculator;
+    private final ProductionDayService productionDays;
+    private final ShiftTimeCorrectionService corrections;
 
     public ShiftSettingsApplier(
             ShiftInitializer shiftInitializer,
@@ -29,7 +32,9 @@ public class ShiftSettingsApplier {
             EventPublisherPort events,
             ShiftProjectionUseCase projectionUseCase,
             ActualDataPort actualDataPort,
-            ShiftMetricsCalculator metricsCalculator
+            ShiftMetricsCalculator metricsCalculator,
+            ProductionDayService productionDays,
+            ShiftTimeCorrectionService corrections
     ) {
         this.shiftInitializer = shiftInitializer;
         this.settingsProvider = settingsProvider;
@@ -37,14 +42,16 @@ public class ShiftSettingsApplier {
         this.projectionUseCase = projectionUseCase;
         this.actualDataPort = actualDataPort;
         this.metricsCalculator = metricsCalculator;
+        this.productionDays = productionDays;
+        this.corrections = corrections;
     }
 
     public void applySettingsToCurrentShift() {
         log.info("🔄 Перезагрузка настроек перед применением к текущей смене");
         settingsProvider.reload();
 
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = productionDays.now();
+        var today = productionDays.resolve(now).date();
         log.info("🧮 [{}] Применяем настройки к смене: {}", now, today);
 
         Shift current = actualDataPort.findByDate(today).orElse(null);
@@ -53,8 +60,7 @@ public class ShiftSettingsApplier {
             shiftInitializer.createNewShift(today);
             log.info("📅 [{}] Смены не было — создана новая.", now);
         } else {
-            Shift updated = applyIfChanged(current);
-            actualDataPort.save(updated);
+            Shift updated = applyIfChanged(current, now);
             log.info("♻️ [{}] Смена обновлена с новыми настройками: {}", now, updated.getDate());
         }
 
@@ -74,25 +80,35 @@ public class ShiftSettingsApplier {
         ShiftMetrics metrics = metricsCalculator.calculateFor(settings);
 
         // Единый помощник: дополняем/обрезаем список факта до нужной длины
-        List<Integer> updatedActuals = normalize(shift.getHourlyActualValues(), metrics.labels().size());
+        List<String> labels = new ArrayList<>(metrics.labels());
+        int oldPlanCount = shift.getHourlyPlanValues().size();
+        if (shift.getHourlyLabels().size() > oldPlanCount) {
+            labels.addAll(shift.getHourlyLabels().subList(oldPlanCount, shift.getHourlyLabels().size()));
+        }
+        List<Integer> updatedActuals = normalize(shift.getHourlyActualValues(), labels.size());
 
         log.info("🔧 Обновлены часы смены: {}", metrics.labels());
         log.info("📊 Применяем планы: {}", metrics.plans());
 
-        return shift.withUpdatedStructure(metrics.labels(), metrics.plans(), updatedActuals);
+        return shift.withUpdatedStructure(labels, metrics.plans(), updatedActuals);
     }
 
     /** Применение настроек только если что-то изменилось (порядок меток/планы). */
     public Shift applyIfChanged(Shift current) {
+        return applyIfChanged(current, productionDays.now());
+    }
+
+    public Shift applyIfChanged(Shift current, LocalDateTime calculationTime) {
         settingsProvider.reload();
         Settings settings = settingsProvider.get();
         ShiftMetrics metrics = metricsCalculator.calculateFor(settings); // содержит labels() и plans()
 
         List<String> oldLabels = current.getHourlyLabels();
-        List<Integer> oldPlans  = normalize(current.getHourlyPlanValues(),  metrics.labels().size());
-        List<Integer> oldActual = normalize(current.getHourlyActualValues(), metrics.labels().size());
+        int oldPlanCount = current.getHourlyPlanValues().size();
+        List<String> oldConfiguredLabels = oldLabels.subList(0, Math.min(oldPlanCount, oldLabels.size()));
+        List<Integer> oldPlans = current.getHourlyPlanValues();
 
-        boolean labelsChanged = !oldLabels.equals(metrics.labels());
+        boolean labelsChanged = !oldConfiguredLabels.equals(metrics.labels());
         boolean planChanged   = !oldPlans.equals(metrics.plans());
 
         if (!labelsChanged && !planChanged) {
@@ -100,35 +116,16 @@ public class ShiftSettingsApplier {
             return current;
         }
 
-        // Если порядок меток меняется — переносим факт по названиям меток
-        List<Integer> remappedActual = labelsChanged
-                ? remapByLabel(oldLabels, metrics.labels(), oldActual)
-                : oldActual;
-
         log.info("🔧 Обновлены часы смены: {}", metrics.labels());
         log.info("📊 Применяем планы: {}", metrics.plans());
 
-        Shift updated = current.withUpdatedStructure(metrics.labels(), metrics.plans(), remappedActual);
+        Shift updated = corrections.apply(current, metrics.labels(), metrics.plans(), labelsChanged,
+                calculationTime);
 
-        // Сохраняем и пушим View
-        actualDataPort.save(updated);
         ShiftView view = projectionUseCase.buildView(updated.getDate());
         events.publish(new ShiftUpdatedEvent(view.date(), view.actual(), view.plan(), view.hours()));
 
         return updated;
-    }
-
-    /** Перенос значений факта, если поменялся порядок меток. */
-    private List<Integer> remapByLabel(List<String> fromLabels, List<String> toLabels, List<Integer> fromValues) {
-        Map<String, Integer> pos = new HashMap<>();
-        for (int i = 0; i < fromLabels.size(); i++) pos.put(fromLabels.get(i), i);
-
-        List<Integer> out = new ArrayList<>(toLabels.size());
-        for (String lbl : toLabels) {
-            Integer i = pos.get(lbl);
-            out.add(i != null && i < fromValues.size() ? fromValues.get(i) : 0);
-        }
-        return out;
     }
 
     /** Универсальный помощник: привести список к нужной длине (дополнить нулями/обрезать). */

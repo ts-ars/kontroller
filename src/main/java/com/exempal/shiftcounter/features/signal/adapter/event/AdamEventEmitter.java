@@ -1,16 +1,12 @@
 package com.exempal.shiftcounter.features.signal.adapter.event;
 
 import com.exempal.shiftcounter.features.signal.adapter.adam.AdamModbusAdapter;
+import com.exempal.shiftcounter.features.signal.domain.SignalInputPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import com.exempal.shiftcounter.shared.event.ProductDetectedEvent;
-
-
-import java.time.Instant;
 
 @Slf4j
 @Component
@@ -19,7 +15,7 @@ import java.time.Instant;
 public class AdamEventEmitter {
 
     private final AdamModbusAdapter modbusAdapter;
-    private final ApplicationEventPublisher publisher;
+    private final SignalInputPort signals;
 
     private boolean previousState = false;
 
@@ -29,7 +25,7 @@ public class AdamEventEmitter {
             boolean currentState = modbusAdapter.readDigitalInput(0);
 
             if (currentState && !previousState) {
-                publisher.publishEvent(new ProductDetectedEvent(Instant.now()));
+                signals.onProductSensorTriggered();
                 log.info("[MODBUS] Product detected — event published");
             }
 

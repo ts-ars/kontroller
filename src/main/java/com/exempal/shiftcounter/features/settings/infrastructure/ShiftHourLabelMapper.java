@@ -15,7 +15,6 @@ public class ShiftHourLabelMapper {
      */
     public static List<String> toLabelsStartOnly(List<ShiftHour> hours) {
         return hours.stream()
-                .sorted(java.util.Comparator.comparing(ShiftHour::getStart))
                 .map(hour -> hour.getStart().format(FORMAT))
                 .collect(Collectors.toList());
     }
@@ -25,7 +24,6 @@ public class ShiftHourLabelMapper {
      */
     public static List<String> toLabelsFull(List<ShiftHour> hours) {
         return hours.stream()
-                .sorted(java.util.Comparator.comparing(ShiftHour::getStart))
                 .map(ShiftHour::toString) // используется уже реализованный метод toString()
                 .collect(Collectors.toList());
     }

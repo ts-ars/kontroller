@@ -1,5 +1,6 @@
 package com.exempal.shiftcounter.features.shift.infrastructure;
 
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.features.shift.projection.ShiftProjectionUseCase;
 import com.exempal.shiftcounter.features.shift.projection.ShiftView;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,7 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,7 +25,8 @@ public class ShiftPageTest {
     @BeforeEach
     void setUp() {
         projection = mock(ShiftProjectionUseCase.class);
-        page = new ShiftPage(projection);
+        page = new ShiftPage(projection, new ProductionDayService(
+                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)));
     }
 
     @Test

@@ -2,11 +2,15 @@ package com.exempal.shiftcounter.features.comment;
 
 import com.exempal.shiftcounter.features.comment.adapter.web.StoppageController;
 import com.exempal.shiftcounter.features.comment.application.*;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -22,7 +26,9 @@ class StoppageControllerTest {
     void setUp() {
         reconcile = mock(ReconcileStoppagesUseCase.class);
         mvc = MockMvcBuilders.standaloneSetup(new StoppageController(
-                mock(StoppageRepository.class), reconcile)).build();
+                mock(StoppageRepository.class), reconcile,
+                new ProductionDayService(Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"),
+                        ZoneOffset.UTC)))).build();
     }
 
     @Test

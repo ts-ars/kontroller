@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.comment.application;
 
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.shared.event.ProductionStoppedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -10,10 +11,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProductionStoppedListener {
     private final ReconcileStoppagesUseCase reconcile;
+    private final ProductionDayService productionDays;
 
     @EventListener
     public void onProductionStopped(ProductionStoppedEvent event) {
-        reconcile.reconcile(new ReconcileStoppagesCommand(event.getTime().toLocalDate(),
+        reconcile.reconcile(new ReconcileStoppagesCommand(productionDays.resolve(event.getTime()).date(),
                 Stoppage.PRIMARY_SENSOR, null, event.getTime()));
     }
 }

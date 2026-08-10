@@ -2,13 +2,17 @@ package com.exempal.shiftcounter.features.report;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.*;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
 import java.time.Duration;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +32,8 @@ class ReportPageTest {
                 LocalDateTime.of(2026, 8, 7, 8, 0), Duration.ofMinutes(10), 10, 400,
                 DetectionType.FIXED, StoppageState.ACTIVE, List.of(explanation), 0L);
         when(repository.findByShiftDateBetween(any(), any())).thenReturn(List.of(stoppage));
-        page = new ReportPage(repository);
+        page = new ReportPage(repository, new ProductionDayService(
+                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)));
     }
 
     @Test
