@@ -1,6 +1,5 @@
 package com.exempal.shiftcounter.features.shift.infrastructure;
 
-import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
 import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +16,8 @@ import java.util.*;
 public class JpaShiftAdapter implements ActualDataPort {
 
     private final ShiftJpaRepository repository;
-    private final SettingsPort settings;
-
-    public JpaShiftAdapter(ShiftJpaRepository repository, SettingsPort settings) {
+    public JpaShiftAdapter(ShiftJpaRepository repository) {
         this.repository = repository;
-        this.settings = settings;
     }
 
     @Override

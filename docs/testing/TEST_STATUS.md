@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-10
-- Branch: `codex/stage-7-transactions`, based on merged `main` commit `9d1561f`
+- Branch: `codex/stage-8-settings`, based on merged Stage 7 `main` commit `f42f4fc`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -16,20 +16,19 @@
 | Command | Result |
 |---|---|
 | `.\mvnw.cmd test-compile -DskipTests` | PASS |
-| Stage 7 focused transaction/counter suite | PASS — 20 executed, 0 skipped/failures/errors |
-| Stage 4 persistence regression lifecycle verify | PASS — 8 executed, 0 skipped/failures/errors |
-| First final `.\mvnw.cmd clean verify` | PASS — 125 discovered, 122 executed, 3 skipped, 0 failures/errors; 4:32 |
-| Second consecutive `.\mvnw.cmd clean verify` | PASS — same 125/122/3 totals, 0 failures/errors; 4:29 |
+| Stage 8 focused settings suite | PASS — 6 executed, 0 skipped/failures/errors |
+| First final `.\mvnw.cmd clean verify` | PASS — 121 executed, 0 skipped/failures/errors; 6:56 |
+| Second clean `.\mvnw.cmd clean verify` on a fresh database | PASS — same 121 totals, 0 skipped/failures/errors; 9:11 |
 
-Stage 7 verification used PostgreSQL 15.13 in the isolated Docker project
-`kontroller-stage7`, volume `kontroller-stage7_pgdata` and host port `55437`. The
+Stage 8 verification used PostgreSQL 15.13 in isolated Docker projects
+`kontroller-stage8` and `kontroller-stage8b`, with host ports `55438` and `55439`. The
 user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 114 discovered, 113 executed, 0 failures, 0 errors, 1 skipped.
-- Failsafe: 11 discovered, 9 executed, 0 failures, 0 errors, 2 skipped.
-- Combined: 125 discovered, 122 executed, 0 failures, 0 errors, 3 intentionally disabled.
+- Surefire: 112 executed, 0 failures, 0 errors, 0 skipped.
+- Failsafe: 9 executed, 0 failures, 0 errors, 0 skipped.
+- Combined: 121 executed, 0 failures, 0 errors, 0 skipped.
 - Load test: excluded from standard `verify` and classified with JUnit tag `load`.
 
 ## Test classification
@@ -49,9 +48,10 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 - `TestEnvironmentIsolationIT` verifies the active profile, JDBC catalog/user, Flyway history,
   bean gating and denial of `shift_test` access to production.
 - Spring integration tests use a centralized database reset listener.
-- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V7 data,
+- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V8 data,
   verifies deterministic valid-row backfill, `primary` to `sensor-1`, the six-row catalog and
-  counter-state schema, records migration reports for invalid legacy rows, then removes the schema.
+  counter-state schema and both settings groups with paired Time/Plan rows, records migration reports
+  for invalid legacy rows, then removes the schema.
 
 ## Stage 4 protection and scenario coverage
 
@@ -116,27 +116,36 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 - `Stage7TransactionArchitectureTest` protects the application transaction boundary, atomic database
   conflict handling and the absence of the obsolete in-memory ADAM edge state.
 
+## Stage 8 protection and scenario coverage
+
+- `JpaSettingsGroupAdapterTest` protects two independent persisted groups and paired Time/Plan rows.
+- `Stage8SettingsGroupIntegrationTest` proves plan-only Actual preservation, Time-change signal
+  redistribution, group isolation, completed-shift stability, after-commit events and full rollback of
+  settings, all member shifts and notifications when one member Reconcile fails.
+- `SettingsPageTest` protects explicit group selection and update routing.
+- `Stage8SettingsArchitectureTest` rejects restoration of the global key/value storage or process-local
+  settings cache and protects the application transaction/locking boundary.
+- Migration rehearsal proves legacy global Time/Plan values become identical initial settings for both
+  groups and the obsolete global table is removed.
+
 ## Intentionally disabled tests
 
-1. `ShiftSettingsApplierIntegrationTest` — settings application remains Stage 8.
-2. `ShiftSettingsDeliveryGuaranteeTest` — settings delivery remains Stage 8.
-3. `ShiftSettingsIntegrationTest` — settings update integration remains Stage 8.
+None. The three Stage 8 placeholders were replaced by executable contract tests.
 
-## Stage 7 status
+## Stage 8 status
 
-**COMPLETE under the approved Stage 7 boundary.** Signal, Actual and Reconcile are atomic; concurrent
-duplicates are no-ops; same-sensor/day updates are serialized without blocking other sensors; Shift
-updates are delivered only after commit; and persisted ADAM counter delta, 07:00 boundary, restart and
-discontinuity behavior are covered and passing. Settings-group storage and group update behavior remain
-Stage 8 and were not introduced.
+**COMPLETE under the approved Stage 8 boundary.** Two groups are persisted independently; Time and Plan
+are stored together; current member shifts update atomically; Time changes redistribute signals;
+plan-only changes preserve Actual; history and the other group remain stable; and notifications follow
+commit. Stage 9 cleanup and Stage 10 operations were not introduced.
 
 ## Reproduction
 
 1. Start Docker Desktop or provide an isolated PostgreSQL 15 instance.
-2. Export the three compose passwords and run `docker compose --project-name kontroller-stage7 up -d`
-   on a fresh volume with `POSTGRES_PORT=55437`.
-3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55437/shiftcounter_test`,
+2. Export the three compose passwords and run `docker compose --project-name kontroller-stage8 up -d`
+   on a fresh volume with an unused host port such as `POSTGRES_PORT=55438`.
+3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55438/shiftcounter_test`,
    `TEST_DB_USERNAME=shift_test`, the test password and the matching production-isolation variables.
 4. Run `.\mvnw.cmd clean verify`.
-5. Confirm 125 discovered / 122 executed / 3 skipped, zero failures/errors, Flyway V1–V7 and logs for
+5. Confirm 121 executed / 0 skipped, zero failures/errors, Flyway V1–V8 and logs for
    `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.

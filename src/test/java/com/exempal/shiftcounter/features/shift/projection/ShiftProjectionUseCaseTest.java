@@ -1,6 +1,6 @@
 package com.exempal.shiftcounter.features.shift.projection;
 
-import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
+import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsProvider;
 import com.exempal.shiftcounter.features.settings.domain.Settings;
 import com.exempal.shiftcounter.features.settings.domain.ShiftHour;
 import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
@@ -18,13 +18,13 @@ import static org.mockito.Mockito.*;
 
 class ShiftProjectionUseCaseTest {
 
-    private SettingsPort settings;
+    private ShiftSettingsProvider settings;
     private ActualDataPort actualDataPort;
     private ShiftProjectionUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        settings = mock(SettingsPort.class);
+        settings = mock(ShiftSettingsProvider.class);
         actualDataPort = mock(ActualDataPort.class);
         useCase = new ShiftProjectionUseCase(settings, actualDataPort);
     }
@@ -47,7 +47,7 @@ class ShiftProjectionUseCaseTest {
         );
 
         when(actualDataPort.findByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift));
-        when(settings.load()).thenReturn(testSettings(hours, plan));
+        when(settings.getForSensor(anyString())).thenReturn(testSettings(hours, plan));
 
         ShiftView view = useCase.buildView(date);
 
@@ -64,7 +64,7 @@ class ShiftProjectionUseCaseTest {
         List<String> planStrings = List.of("100", "100");
 
         when(actualDataPort.findByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.empty());
-        when(settings.load()).thenReturn(testSettings(hours, List.of(100, 100)));
+        when(settings.getForSensor(anyString())).thenReturn(testSettings(hours, List.of(100, 100)));
 
         ShiftView view = useCase.buildView(date);
 
@@ -92,7 +92,7 @@ class ShiftProjectionUseCaseTest {
         );
 
         when(actualDataPort.findByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shortShift));
-        when(settings.load()).thenReturn(testSettings(hours, List.of(50, 0, 0, 0)));
+        when(settings.getForSensor(anyString())).thenReturn(testSettings(hours, List.of(50, 0, 0, 0)));
 
         ShiftView view = useCase.buildView(date);
 

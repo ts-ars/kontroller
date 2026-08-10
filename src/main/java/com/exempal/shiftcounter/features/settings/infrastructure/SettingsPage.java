@@ -1,13 +1,13 @@
 package com.exempal.shiftcounter.features.settings.infrastructure;
 
 import com.exempal.shiftcounter.core.PageModel;
-import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
-import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
+import com.exempal.shiftcounter.features.settings.application.SettingsGroupService;
+import com.exempal.shiftcounter.features.settings.application.UpdateSettingsGroupCommand;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -15,15 +15,10 @@ import java.util.Map;
 @RequestMapping("/settings")
 public class SettingsPage implements PageModel {
 
-    private final SettingsPort settings;
-    private final ShiftIntervalService intervals;
-    private final ShiftSettingsApplier settingsApplier;
+    private final SettingsGroupService settings;
 
-    public SettingsPage(SettingsPort settings, ShiftIntervalService intervals,
-                        ShiftSettingsApplier settingsApplier) {
+    public SettingsPage(SettingsGroupService settings) {
         this.settings = settings;
-        this.intervals = intervals;
-        this.settingsApplier = settingsApplier;
     }
 
     @Override
@@ -33,12 +28,14 @@ public class SettingsPage implements PageModel {
 
     @Override
     public void populateModel(Model model, Map<String, String> params) {
-        List<Integer> plans = settings.getHourlyPlans().stream()
-                .map(Integer::parseInt)
-                .toList();
-
-        model.addAttribute("plans", plans);
-        model.addAttribute("hours", settings.getHours());
+        String groupId = params.getOrDefault("groupId", SensorCatalog.GROUP_1);
+        var group = settings.get(groupId);
+        model.addAttribute("groupId", group.id());
+        model.addAttribute("groupName", group.name());
+        model.addAttribute("enabled", group.enabled());
+        model.addAttribute("groups", List.of(SensorCatalog.GROUP_1, SensorCatalog.GROUP_2));
+        model.addAttribute("plans", group.intervals().stream().map(value -> value.plan()).toList());
+        model.addAttribute("hours", group.intervals().stream().map(value -> value.startTime().toString()).toList());
     }
 
     @Override
@@ -47,24 +44,11 @@ public class SettingsPage implements PageModel {
     }
 
     @PostMapping
-    public String updateSettings(@RequestParam("hours") List<String> hours,
+    public String updateSettings(@RequestParam("groupId") String groupId,
+                                 @RequestParam("hours") List<String> hours,
                                  @RequestParam("plans") List<Integer> plans) {
-        if (hours == null || hours.isEmpty() || plans == null || hours.size() != plans.size()) {
-            throw new IllegalArgumentException("Time and Plan must have the same non-empty size");
-        }
-        if (plans.stream().anyMatch(value -> value == null || value < 0)) {
-            throw new IllegalArgumentException("Plan must not be negative");
-        }
-        intervals.resolve(LocalDate.of(2000, 1, 1), hours, plans.size());
-
-        settings.updateHours(hours);
-
-        List<String> planStrings = plans.stream()
-                .map(String::valueOf)
-                .toList();
-        settings.updateHourlyPlans(planStrings);
-        settingsApplier.applySettingsToCurrentShift();
-
-        return "redirect:/page/settings";
+        var current = settings.get(groupId);
+        settings.update(new UpdateSettingsGroupCommand(groupId, current.name(), current.enabled(), hours, plans));
+        return "redirect:/page/settings?groupId=" + groupId;
     }
 }

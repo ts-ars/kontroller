@@ -20,7 +20,7 @@ public class ShiftFactory {
     }
 
     public Shift createNewShift(LocalDate date, String sensorId) {
-        Settings settings = settingsProvider.get();
+        Settings settings = settingsProvider.getForSensor(sensorId);
 
         List<String> hourLabels = ShiftHourLabelMapper.toLabelsStartOnly(settings.getHours());
 
@@ -43,7 +43,7 @@ public class ShiftFactory {
     }
 
     public Shift recalculateFrom(Shift existingShift) {
-        Settings settings = settingsProvider.get();
+        Settings settings = settingsProvider.getForSensor(existingShift.getSensorId());
 
         List<String> hourLabels = ShiftHourLabelMapper.toLabelsStartOnly(settings.getHours());
 

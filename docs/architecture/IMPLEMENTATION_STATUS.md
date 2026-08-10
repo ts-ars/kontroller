@@ -14,19 +14,17 @@ Source of truth: this repository
 | 5 — Time | APPROVED | DONE |
 | 6 — Signals | APPROVED | DONE |
 | 7 — Transactions | APPROVED | DONE |
-| 8 — Settings | APPROVED | TODO |
+| 8 — Settings | APPROVED | DONE |
 | 9 — Architectural cleanup | APPROVED | TODO |
 | 10 — Production release | APPROVED | TODO |
 
 ## Current action
 
-Stage 7 is implemented in a separate change set based on merged `main` commit
-`9d1561f6b40ac76e204cf28422acb612693effed`. Signal persistence, Actual increment and Reconcile now
-share one transaction; concurrent registration is serialized per production date and sensor;
-database conflict handling makes duplicate source identity a no-op; and Shift update delivery is
-after commit. ADAM uses persisted per-sensor Counter Input state, applies counter delta, preserves the
-old-day assignment for a poll crossing 07:00 and records discontinuity without inventing production.
+Stage 8 is implemented in a separate change set based on merged Stage 7 `main` commit
+`f42f4fc3adfcb3ab2a287cde5d01cf0a5f9c333b`. Two persisted settings groups now own ordered
+Time/Plan interval records. A group update and recalculation of its existing current member shifts is
+one transaction; Time changes redistribute persisted signals, plan-only changes preserve Actual,
+events follow commit, the other group is isolated and completed shifts remain unchanged.
 
-Do not extend this change set with Stage 8 settings-group storage or update behavior, Stage 9 cleanup
-or Stage 10 production operations.
+Do not extend this change set with Stage 9 architectural cleanup or Stage 10 production operations.
 
