@@ -20,6 +20,15 @@
 | First final `.\mvnw.cmd clean verify` | PASS — 121 executed, 0 skipped/failures/errors; 6:56 |
 | Second clean `.\mvnw.cmd clean verify` on a fresh database | PASS — same 121 totals, 0 skipped/failures/errors; 9:11 |
 | Stage 9 final `mvn -q clean verify` | PASS — 131 executed, 0 skipped/failures/errors; 5:16 |
+| Stage 10 CI `./mvnw clean verify` | PASS — 138 executed, 0 skipped/failures/errors; 1:18 |
+| Stage 10 release load suite | PASS — 2 executed, 0 skipped/failures/errors; 2:08 |
+| Stage 10 versioned package/upload | PASS — `shiftcounter-0.0.18.jar` |
+
+Stage 10 adds focused production configuration/startup/ADAM tests and a separately tagged parallel
+six-sensor release load scenario. The local Stage 10 cloud checkout could not resolve Maven
+dependencies because its Maven cache was empty and outbound Maven Central/JitPack access was
+unavailable; YAML parsing and `git diff --check` passed locally. GitHub CI run 18 then completed the
+authoritative full verification, real load suite, versioned packaging and artifact upload.
 
 Stage 8 verification used PostgreSQL 15.13 in isolated Docker projects
 `kontroller-stage8` and `kontroller-stage8b`, with host ports `55438` and `55439`. The
@@ -27,10 +36,10 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 122 executed, 0 failures, 0 errors, 0 skipped.
+- Surefire: 129 executed, 0 failures, 0 errors, 0 skipped.
 - Failsafe: 9 executed, 0 failures, 0 errors, 0 skipped.
-- Combined: 131 executed, 0 failures, 0 errors, 0 skipped.
-- Load test: excluded from standard `verify` and classified with JUnit tag `load`.
+- Combined: 138 executed, 0 failures, 0 errors, 0 skipped.
+- Release load suite: 2 executed, 0 failures, 0 errors, 0 skipped.
 
 ## Test classification
 
@@ -159,6 +168,12 @@ commit. That Stage 8 change set did not introduce Stage 9 or Stage 10 work.
 **COMPLETE under the approved Stage 9 boundary.** Layer direction, application ports, aggregate/entity
 separation, use-case transaction ownership, dead-path removal and domain invariants are implemented
 and protected. Stage 10 production release work was not introduced.
+
+## Stage 10 status
+
+**IN PROGRESS.** Repository-owned release controls and executable tests are present. Real production
+backup/restore, migration rehearsal, secret rotation, network/TLS/monitoring setup, six-device smoke,
+counter-running restart and database-outage evidence remain external blocking gates.
 
 ## Reproduction
 

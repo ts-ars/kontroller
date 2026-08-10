@@ -3,9 +3,9 @@ package com.exempal.shiftcounter.features.signal.adapter.event;
 import com.exempal.shiftcounter.features.signal.application.CounterInputPort;
 import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.adapter.adam.AdamModbusAdapter;
+import com.exempal.shiftcounter.features.signal.adapter.adam.AdamProperties;
 import com.exempal.shiftcounter.features.signal.domain.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,31 +20,33 @@ public class AdamEventEmitter {
     private final AdamModbusAdapter modbusAdapter;
     private final CounterInputPort counters;
     private final Clock clock;
-    private final SensorId sensorId;
-    private final int counterChannel;
+    private final AdamProperties properties;
 
     public AdamEventEmitter(AdamModbusAdapter modbusAdapter, CounterInputPort counters, Clock clock,
-                            @Value("${adam.sensor-id:sensor-1}") String sensorId,
-                            @Value("${adam.counter-channel:0}") int counterChannel) {
+                            AdamProperties properties) {
         this.modbusAdapter = modbusAdapter;
         this.counters = counters;
         this.clock = clock;
-        this.sensorId = SensorId.of(sensorId);
-        this.counterChannel = counterChannel;
+        this.properties = properties;
     }
 
-    public AdamEventEmitter(AdamModbusAdapter modbusAdapter, CounterInputPort counters) {
-        this(modbusAdapter, counters, Clock.systemDefaultZone(), "sensor-1", 0);
-    }
-
-    @Scheduled(fixedDelay = 100)
+    @Scheduled(fixedDelayString = "${adam.poll-delay}")
     public void pollAdam() {
+        if (!properties.enabled()) return;
+        properties.devices().forEach(this::poll);
+    }
+
+    private void poll(AdamProperties.Device device) {
         try {
-            long currentCounter = modbusAdapter.readCounter(counterChannel);
+            long currentCounter = modbusAdapter.readCounter(device);
             LocalDateTime readAt = LocalDateTime.ofInstant(clock.instant(), clock.getZone());
-            counters.process(new CounterReadingCommand(sensorId, currentCounter, readAt));
+            CounterProcessingResult result = counters.process(new CounterReadingCommand(
+                    SensorId.of(device.sensorId()), currentCounter, readAt));
+            log.info("sensor={} counter={} delta={} acceptedSignals={} productionDate={} result={}",
+                    device.sensorId(), currentCounter, result.delta(), result.acceptedSignals(),
+                    result.attributedProductionDate(), result.status());
         } catch (Exception exception) {
-            log.warn("[MODBUS] Polling failed: {}", exception.getMessage());
+            log.warn("sensor={} result=poll-failed reason={}", device.sensorId(), exception.getMessage());
         }
     }
 }

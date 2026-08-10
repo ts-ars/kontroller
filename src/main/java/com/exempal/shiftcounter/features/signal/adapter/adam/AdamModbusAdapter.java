@@ -11,52 +11,54 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
 @Profile("prod")
 public class AdamModbusAdapter {
-
-    private static final String IP = "192.168.0.100";
-    private static final int PORT = 502;
-    private static final int SLAVE_ID = 1;
-
     private final ModbusFactory factory = new ModbusFactory();
-    private ModbusMaster master;
-    private final AtomicBoolean connected = new AtomicBoolean(false);
+    private final AdamProperties properties;
+    private final Map<String, ModbusMaster> masters = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> connected = new ConcurrentHashMap<>();
 
-    @PostConstruct
-    public void init() {
+    public AdamModbusAdapter(AdamProperties properties) {
+        this.properties = properties;
+        properties.devices().forEach(device -> connected.put(device.sensorId(), false));
+    }
+
+    private ModbusMaster connect(AdamProperties.Device device) {
         try {
             IpParameters params = new IpParameters();
-            params.setHost(IP);
-            params.setPort(PORT);
+            params.setHost(device.host());
+            params.setPort(device.port());
             params.setEncapsulated(false);
-
-            master = factory.createTcpMaster(params, true);
+            ModbusMaster master = factory.createTcpMaster(params, true);
+            master.setTimeout(Math.toIntExact(properties.timeout().toMillis()));
+            master.setRetries(properties.retries());
             master.init();
-            connected.set(true);
-            log.info("[MODBUS] Connected to ADAM at {}:{}", IP, PORT);
+            connected.put(device.sensorId(), true);
+            masters.put(device.sensorId(), master);
+            log.info("adamState=connected sensor={} host={} port={}", device.sensorId(), device.host(), device.port());
+            return master;
         } catch (ModbusInitException e) {
-            log.error("[MODBUS] Initialization failed", e);
-            connected.set(false);
+            connected.put(device.sensorId(), false);
+            log.warn("adamState=unavailable sensor={} result=connect-failed", device.sensorId());
+            throw new IllegalStateException("ADAM connection failed for " + device.sensorId(), e);
         }
     }
 
-    public long readCounter(int channel) {
-        if (!connected.get()) {
-            throw new IllegalStateException("Modbus not connected");
-        }
-
+    public long readCounter(AdamProperties.Device device) {
+        ModbusMaster master = masters.get(device.sensorId());
+        if (master == null || !connected.getOrDefault(device.sensorId(), false)) master = connect(device);
         try {
-            int address = channel * 2;
-            ReadHoldingRegistersRequest request = new ReadHoldingRegistersRequest(SLAVE_ID, address, 2);
+            int address = device.counterChannel() * 2;
+            ReadHoldingRegistersRequest request = new ReadHoldingRegistersRequest(device.slaveId(), address, 2);
             ReadHoldingRegistersResponse response = (ReadHoldingRegistersResponse) master.send(request);
             if (response == null || response.isException()) {
-                throw new IllegalStateException("Counter read failed for channel " + channel + ": "
+                throw new IllegalStateException("Counter read failed for sensor " + device.sensorId() + ": "
                         + (response != null ? response.getExceptionMessage() : "null response"));
             }
             short[] data = response.getShortData();
@@ -64,22 +66,25 @@ public class AdamModbusAdapter {
             long highWord = Short.toUnsignedLong(data[1]);
             return highWord * 65_536L + lowWord;
         } catch (ModbusTransportException e) {
-            log.error("[MODBUS] Transport exception while reading counter channel {}", channel, e);
-            connected.set(false);
-            throw new RuntimeException("Modbus read failed", e);
+            disconnect(device.sensorId());
+            log.warn("adamState=disconnected sensor={} result=transport-failure", device.sensorId());
+            throw new IllegalStateException("ADAM read failed for " + device.sensorId(), e);
         }
     }
 
-    public boolean isConnected() {
-        return connected.get();
+    public Map<String, Boolean> connectionStates() {
+        return Map.copyOf(connected);
+    }
+
+    private void disconnect(String sensorId) {
+        ModbusMaster master = masters.remove(sensorId);
+        if (master != null) master.destroy();
+        connected.put(sensorId, false);
     }
 
     @PreDestroy
     public void shutdown() {
-        if (master != null) {
-            master.destroy();
-            connected.set(false);
-            log.info("[MODBUS] Connection closed");
-        }
+        properties.devices().forEach(device -> disconnect(device.sensorId()));
+        log.info("adamState=closed result=graceful-shutdown");
     }
 }

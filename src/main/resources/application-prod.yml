@@ -10,3 +10,73 @@ spring:
 
   flyway:
     enabled: true
+
+management:
+  server:
+    address: 127.0.0.1
+    port: ${MANAGEMENT_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+      roles: ADMIN
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+        adam:
+          include: adam
+
+server:
+  forward-headers-strategy: framework
+
+adam:
+  enabled: ${ADAM_ENABLED:true}
+  poll-delay: ${ADAM_POLL_DELAY:100ms}
+  timeout: ${ADAM_TIMEOUT:2s}
+  retries: ${ADAM_RETRIES:2}
+  devices:
+    - sensor-id: sensor-1
+      host: ${ADAM_SENSOR_1_HOST}
+      port: ${ADAM_SENSOR_1_PORT:502}
+      slave-id: ${ADAM_SENSOR_1_SLAVE_ID:1}
+      counter-channel: ${ADAM_SENSOR_1_CHANNEL:0}
+    - sensor-id: sensor-2
+      host: ${ADAM_SENSOR_2_HOST}
+      port: ${ADAM_SENSOR_2_PORT:502}
+      slave-id: ${ADAM_SENSOR_2_SLAVE_ID:1}
+      counter-channel: ${ADAM_SENSOR_2_CHANNEL:0}
+    - sensor-id: sensor-3
+      host: ${ADAM_SENSOR_3_HOST}
+      port: ${ADAM_SENSOR_3_PORT:502}
+      slave-id: ${ADAM_SENSOR_3_SLAVE_ID:1}
+      counter-channel: ${ADAM_SENSOR_3_CHANNEL:0}
+    - sensor-id: sensor-4
+      host: ${ADAM_SENSOR_4_HOST}
+      port: ${ADAM_SENSOR_4_PORT:502}
+      slave-id: ${ADAM_SENSOR_4_SLAVE_ID:1}
+      counter-channel: ${ADAM_SENSOR_4_CHANNEL:0}
+    - sensor-id: sensor-5
+      host: ${ADAM_SENSOR_5_HOST}
+      port: ${ADAM_SENSOR_5_PORT:502}
+      slave-id: ${ADAM_SENSOR_5_SLAVE_ID:1}
+      counter-channel: ${ADAM_SENSOR_5_CHANNEL:0}
+    - sensor-id: sensor-6
+      host: ${ADAM_SENSOR_6_HOST}
+      port: ${ADAM_SENSOR_6_PORT:502}
+      slave-id: ${ADAM_SENSOR_6_SLAVE_ID:1}
+      counter-channel: ${ADAM_SENSOR_6_CHANNEL:0}
+
+security:
+  operator:
+    username: ${OPERATOR_USERNAME}
+    password: ${OPERATOR_PASSWORD}
+  admin:
+    username: ${ADMIN_USERNAME}
+    password: ${ADMIN_PASSWORD}

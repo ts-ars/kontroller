@@ -22,12 +22,21 @@
         </encoder>
     </appender>
 
-    <!-- Основной логгер -->
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-    </root>
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+        </encoder>
+    </appender>
 
-    <!-- Логгирование твоего кода с DEBUG -->
-    <logger name="com.exempal.shiftcounter" level="DEBUG"/>
+    <springProfile name="prod">
+        <root level="INFO"><appender-ref ref="JSON"/></root>
+        <logger name="com.exempal.shiftcounter" level="INFO"/>
+    </springProfile>
+    <springProfile name="!prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="com.exempal.shiftcounter" level="DEBUG"/>
+    </springProfile>
 </configuration>

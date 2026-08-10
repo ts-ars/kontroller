@@ -57,6 +57,20 @@ jobs:
       - name: Run verification suite
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
 
+      - name: Run release load suite
+        run: ./mvnw --batch-mode --no-transfer-progress -Dgroups=load -Dtest.excludedGroups=e2e test
+
+      - name: Package immutable release candidate
+        run: ./mvnw --batch-mode --no-transfer-progress -DskipTests -Drevision=0.0.${{ github.run_number }} -Dgit.commit=${{ github.sha }} clean package
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@v6
+        with:
+          name: shiftcounter-${{ github.sha }}
+          path: target/shiftcounter-0.0.${{ github.run_number }}.jar
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Stop isolated PostgreSQL
         if: always()
         run: docker compose down --volumes
