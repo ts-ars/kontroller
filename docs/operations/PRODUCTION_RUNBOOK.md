@@ -19,7 +19,7 @@ appeared in Git history, logs or tickets.
    [BACKUP_RESTORE.md](BACKUP_RESTORE.md).
 3. Rehearse Flyway against the restored copy. Save the Flyway output and review migration-report
    tables for ambiguous legacy rows. Do not edit an applied migration.
-4. Verify required secrets and all six ADAM mappings without printing their values.
+4. Verify required secrets and ADAM mappings for all six sensors without printing their values.
 5. Deploy the CI-produced immutable JAR/container. Do not build from a production checkout.
 6. Start with the explicit `prod` profile. Startup must reject the wrong database, role or missing
    credentials/device configuration.
