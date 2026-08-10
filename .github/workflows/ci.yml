@@ -58,7 +58,7 @@ jobs:
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
 
       - name: Run release load suite
-        run: ./mvnw --batch-mode --no-transfer-progress -Dgroups=load -DexcludedGroups=e2e test
+        run: ./mvnw --batch-mode --no-transfer-progress -Dgroups=load -Dtest.excludedGroups=e2e test
 
       - name: Package immutable release candidate
         run: ./mvnw --batch-mode --no-transfer-progress -DskipTests -Drevision=0.0.${{ github.run_number }} -Dgit.commit=${{ github.sha }} clean package
