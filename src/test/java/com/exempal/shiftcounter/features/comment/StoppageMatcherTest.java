@@ -1,7 +1,7 @@
 package com.exempal.shiftcounter.features.comment;
 
 import com.exempal.shiftcounter.features.comment.application.*;
-import com.exempal.shiftcounter.features.comment.calculator.*;
+import com.exempal.shiftcounter.features.comment.application.calculator.*;
 import com.exempal.shiftcounter.features.comment.domain.*;
 import org.junit.jupiter.api.Test;
 

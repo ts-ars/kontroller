@@ -1,9 +1,7 @@
 package com.exempal.shiftcounter.features.shift.domain;
 
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +28,18 @@ public class Shift {
             List<Integer> hourlyActualValues,
             List<String> hourlyLabels
     ) {
+        if (date == null) throw new IllegalArgumentException("shift date is required");
+        if (hourlyPlanValues == null || hourlyActualValues == null || hourlyLabels == null) {
+            throw new IllegalArgumentException("shift plan, actual values and labels are required");
+        }
+        if (hourlyLabels.isEmpty()) throw new IllegalArgumentException("shift labels must not be empty");
+        if (hourlyPlanValues.size() > hourlyLabels.size()) {
+            throw new IllegalArgumentException("plan values cannot exceed shift labels");
+        }
+        if (hourlyPlanValues.stream().anyMatch(value -> value == null || value < 0)
+                || hourlyActualValues.stream().anyMatch(value -> value == null || value < 0)) {
+            throw new IllegalArgumentException("shift plan and actual values must be non-negative");
+        }
         this.id = id;
         this.date = date;
         this.sensorId = SensorCatalog.require(sensorId).id().value();
@@ -59,11 +69,6 @@ public class Shift {
                  List<Integer> hourlyActualValues, List<String> hourlyLabels) {
         this(null, date, sensorId, hourlyPlanValues, actual, hourlyActualValues, hourlyLabels);
     }
-
-    @Getter
-    @Setter
-    private ShiftEntity entity;
-
 
     /**
      * Увеличивает значение actual по индексу на 1 и возвращает новый Shift

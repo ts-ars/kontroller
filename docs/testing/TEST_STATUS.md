@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-10
-- Branch: `codex/stage-8-settings`, based on merged Stage 7 `main` commit `f42f4fc`
+- Branch: `codex/stage-9-architecture-cleanup`, based on merged Stage 8 `main` commit `2beb964`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -19,6 +19,7 @@
 | Stage 8 focused settings suite | PASS — 6 executed, 0 skipped/failures/errors |
 | First final `.\mvnw.cmd clean verify` | PASS — 121 executed, 0 skipped/failures/errors; 6:56 |
 | Second clean `.\mvnw.cmd clean verify` on a fresh database | PASS — same 121 totals, 0 skipped/failures/errors; 9:11 |
+| Stage 9 final `mvn -q clean verify` | PASS — 131 executed, 0 skipped/failures/errors; 5:16 |
 
 Stage 8 verification used PostgreSQL 15.13 in isolated Docker projects
 `kontroller-stage8` and `kontroller-stage8b`, with host ports `55438` and `55439`. The
@@ -26,9 +27,9 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 112 executed, 0 failures, 0 errors, 0 skipped.
+- Surefire: 122 executed, 0 failures, 0 errors, 0 skipped.
 - Failsafe: 9 executed, 0 failures, 0 errors, 0 skipped.
-- Combined: 121 executed, 0 failures, 0 errors, 0 skipped.
+- Combined: 131 executed, 0 failures, 0 errors, 0 skipped.
 - Load test: excluded from standard `verify` and classified with JUnit tag `load`.
 
 ## Test classification
@@ -128,6 +129,20 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 - Migration rehearsal proves legacy global Time/Plan values become identical initial settings for both
   groups and the obsolete global table is removed.
 
+## Stage 9 protection and scenario coverage
+
+- `Stage9ArchitectureTest` enforces domain independence, application-to-adapter separation,
+  controller/repository separation, cycle-free feature dependencies and removal of obsolete
+  `infrastructure`/`api` production packages.
+- `Stage9DomainInvariantTest` protects non-negative Shift values, plan/label bounds, contiguous and
+  production-day-ordered settings intervals, unique interval starts and required sensor ownership.
+- Existing Stage 0–8 architecture and behavior tests were updated to the final package boundaries and
+  continue to pass without weakening their contracts.
+- The full suite passed against isolated PostgreSQL 16.14 in `kontroller-stage9-postgres` on host port
+  `55440`; the user project database on port `5432` was not used.
+- Stage 9 adds no migration: Flyway validates the existing eight migrations and reports schema V8 as
+  current.
+
 ## Intentionally disabled tests
 
 None. The three Stage 8 placeholders were replaced by executable contract tests.
@@ -137,15 +152,20 @@ None. The three Stage 8 placeholders were replaced by executable contract tests.
 **COMPLETE under the approved Stage 8 boundary.** Two groups are persisted independently; Time and Plan
 are stored together; current member shifts update atomically; Time changes redistribute signals;
 plan-only changes preserve Actual; history and the other group remain stable; and notifications follow
-commit. Stage 9 cleanup and Stage 10 operations were not introduced.
+commit. That Stage 8 change set did not introduce Stage 9 or Stage 10 work.
+
+## Stage 9 status
+
+**COMPLETE under the approved Stage 9 boundary.** Layer direction, application ports, aggregate/entity
+separation, use-case transaction ownership, dead-path removal and domain invariants are implemented
+and protected. Stage 10 production release work was not introduced.
 
 ## Reproduction
 
-1. Start Docker Desktop or provide an isolated PostgreSQL 15 instance.
-2. Export the three compose passwords and run `docker compose --project-name kontroller-stage8 up -d`
-   on a fresh volume with an unused host port such as `POSTGRES_PORT=55438`.
-3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55438/shiftcounter_test`,
+1. Start Docker Desktop or provide an isolated PostgreSQL instance.
+2. Start that isolated instance on an unused host port.
+3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55440/shiftcounter_test`,
    `TEST_DB_USERNAME=shift_test`, the test password and the matching production-isolation variables.
 4. Run `.\mvnw.cmd clean verify`.
-5. Confirm 121 executed / 0 skipped, zero failures/errors, Flyway V1–V8 and logs for
+5. Confirm 131 executed / 0 skipped, zero failures/errors, Flyway V1–V8 and logs for
    `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.

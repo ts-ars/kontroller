@@ -1,15 +1,13 @@
-package com.exempal.shiftcounter.features.shift.projection;
+package com.exempal.shiftcounter.features.shift.application.projection;
 
-import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsProvider;
-import com.exempal.shiftcounter.features.settings.domain.Settings;
-import com.exempal.shiftcounter.features.settings.domain.ShiftHour;
-import com.exempal.shiftcounter.features.shift.domain.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.application.ShiftSettingsPort;
+import com.exempal.shiftcounter.features.shift.application.ShiftSettings;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,13 +16,13 @@ import static org.mockito.Mockito.*;
 
 class ShiftProjectionUseCaseTest {
 
-    private ShiftSettingsProvider settings;
+    private ShiftSettingsPort settings;
     private ActualDataPort actualDataPort;
     private ShiftProjectionUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        settings = mock(ShiftSettingsProvider.class);
+        settings = mock(ShiftSettingsPort.class);
         actualDataPort = mock(ActualDataPort.class);
         useCase = new ShiftProjectionUseCase(settings, actualDataPort);
     }
@@ -101,11 +99,7 @@ class ShiftProjectionUseCaseTest {
         assertThat(view.hours()).isEqualTo(hours);
     }
 
-    private Settings testSettings(List<String> labels, List<Integer> plans) {
-        List<ShiftHour> hours = labels.stream()
-                .map(LocalTime::parse)
-                .map(start -> new ShiftHour(start, start.plusHours(1)))
-                .toList();
-        return new Settings(hours, plans);
+    private ShiftSettings testSettings(List<String> labels, List<Integer> plans) {
+        return new ShiftSettings(labels, plans);
     }
 }

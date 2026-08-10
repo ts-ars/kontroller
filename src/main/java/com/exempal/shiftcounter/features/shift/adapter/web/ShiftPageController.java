@@ -1,8 +1,8 @@
 package com.exempal.shiftcounter.features.shift.adapter.web;
 
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
-import com.exempal.shiftcounter.features.shift.projection.ShiftProjectionUseCase;
-import com.exempal.shiftcounter.features.shift.projection.ShiftView;
+import com.exempal.shiftcounter.features.shift.application.projection.ShiftProjectionUseCase;
+import com.exempal.shiftcounter.features.shift.application.projection.ShiftView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

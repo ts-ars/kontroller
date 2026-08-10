@@ -2,8 +2,8 @@ package com.exempal.shiftcounter.features.comment;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.*;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftJpaRepository;
+import com.exempal.shiftcounter.features.shift.adapter.persistence.ShiftEntity;
+import com.exempal.shiftcounter.features.shift.adapter.persistence.ShiftJpaRepository;
 import jakarta.persistence.OptimisticLockException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

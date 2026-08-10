@@ -12,8 +12,11 @@ class Stage4ReconcileArchitectureTest {
     @Test
     void triggersDelegateToUnifiedUseCaseWithoutCalculatingOrPersisting() throws IOException {
         assertThinTrigger("src/main/java/com/exempal/shiftcounter/features/comment/adapter/web/StoppageController.java");
-        assertThinTrigger("src/main/java/com/exempal/shiftcounter/features/comment/application/ProductionStoppedListener.java");
-        assertThinTrigger("src/main/java/com/exempal/shiftcounter/features/shift/application/ShiftProductRegistrar.java");
+        String registrar = Files.readString(Path.of(
+                "src/main/java/com/exempal/shiftcounter/features/shift/application/ShiftProductRegistrar.java"));
+        assertThat(registrar).contains("ShiftReconcilePort").doesNotContain("StoppageCalculator", "JpaRepository");
+        assertThat(Path.of("src/main/java/com/exempal/shiftcounter/features/comment/application/ProductionStoppedListener.java"))
+                .doesNotExist();
     }
 
     @Test

@@ -1,5 +1,6 @@
-package com.exempal.shiftcounter.features.settings.infrastructure;
+package com.exempal.shiftcounter.features.settings.adapter.settings;
 
+import com.exempal.shiftcounter.features.settings.adapter.web.SettingsPage;
 import com.exempal.shiftcounter.features.settings.application.SettingsGroupService;
 import com.exempal.shiftcounter.features.settings.application.UpdateSettingsGroupCommand;
 import com.exempal.shiftcounter.features.settings.domain.IntervalSetting;

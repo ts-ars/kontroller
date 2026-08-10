@@ -4,8 +4,8 @@ import com.exempal.shiftcounter.features.shift.application.ShiftExtenderService;
 import com.exempal.shiftcounter.features.shift.application.ShiftPlannerUseCase;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.shift.projection.ShiftProjectionUseCase;
-import com.exempal.shiftcounter.features.shift.projection.ShiftView;
+import com.exempal.shiftcounter.features.shift.application.projection.ShiftProjectionUseCase;
+import com.exempal.shiftcounter.features.shift.application.projection.ShiftView;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;

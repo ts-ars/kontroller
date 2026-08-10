@@ -3,8 +3,7 @@ package com.exempal.shiftcounter.features.signal.application;
 import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
-import com.exempal.shiftcounter.shared.event.DomainEventPublisher;
-import com.exempal.shiftcounter.shared.event.ProductDetectedEvent;
+import com.exempal.shiftcounter.features.shift.application.ProductRegistrationUseCase;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -19,10 +18,10 @@ class SignalServiceTest {
     @Test
     void duplicateSourceIdentityPublishesNoSecondIncrementTrigger() {
         SignalStoragePort storage = mock(SignalStoragePort.class);
-        DomainEventPublisher events = mock(DomainEventPublisher.class);
+        ProductRegistrationUseCase products = mock(ProductRegistrationUseCase.class);
         SignalRegistrationLock lock = mock(SignalRegistrationLock.class);
         when(storage.saveIfAbsent(any())).thenReturn(true, false);
-        SignalService service = new SignalService(events, storage,
+        SignalService service = new SignalService(products, storage,
                 new ProductionDayService(Clock.system(ZoneOffset.UTC)), lock);
         RegisterSignalCommand command = new RegisterSignalCommand(SensorId.of("sensor-3"),
                 LocalDateTime.of(2026, 8, 10, 9, 15), SignalSource.RECOVERY, "source-event-42");
@@ -34,7 +33,7 @@ class SignalServiceTest {
                 signal.sensorId().value().equals("sensor-3")
                         && signal.productionDate().toString().equals("2026-08-10")
                         && signal.sourceIdentity().equals("source-event-42")));
-        verify(events, times(1)).publish(isA(ProductDetectedEvent.class));
+        verify(products, times(1)).registerProduct("sensor-3", command.occurredAt());
         verify(lock, times(2)).acquire(java.time.LocalDate.of(2026, 8, 10), "sensor-3");
     }
 
@@ -42,7 +41,7 @@ class SignalServiceTest {
     void recordsPreviousProductionDateBeforeSeven() {
         SignalStoragePort storage = mock(SignalStoragePort.class);
         when(storage.saveIfAbsent(any())).thenReturn(true);
-        SignalService service = new SignalService(mock(DomainEventPublisher.class), storage,
+        SignalService service = new SignalService(mock(ProductRegistrationUseCase.class), storage,
                 new ProductionDayService(Clock.system(ZoneOffset.UTC)), mock(SignalRegistrationLock.class));
 
         service.register(new RegisterSignalCommand(SensorId.of("sensor-6"),

@@ -1,8 +1,8 @@
-package com.exempal.shiftcounter.features.shift.infrastructure;
+package com.exempal.shiftcounter.features.shift.adapter.persistence;
 
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
-import com.exempal.shiftcounter.features.shift.projection.ShiftProjectionUseCase;
-import com.exempal.shiftcounter.features.shift.projection.ShiftView;
+import com.exempal.shiftcounter.features.shift.application.projection.ShiftProjectionUseCase;
+import com.exempal.shiftcounter.features.shift.application.projection.ShiftView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;

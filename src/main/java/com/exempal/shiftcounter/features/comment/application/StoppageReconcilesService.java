@@ -1,11 +1,10 @@
 package com.exempal.shiftcounter.features.comment.application;
 
-import com.exempal.shiftcounter.features.comment.calculator.*;
+import com.exempal.shiftcounter.features.comment.application.calculator.*;
 import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
+import com.exempal.shiftcounter.features.shift.application.ShiftReconcilePort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftInterval;
-import com.exempal.shiftcounter.features.signal.application.SignalService;
-import com.exempal.shiftcounter.features.signal.domain.Signal;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +21,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
+public class StoppageReconcilesService implements ReconcileStoppagesUseCase, ShiftReconcilePort {
     private final ShiftIntervalService intervals;
-    private final SignalService signalService;
+    private final ReconcileSignalQueryPort signals;
     private final StoppageCalculator calculator;
     private final StoppageMatcher matcher;
     private final ReconcileShiftRepository shifts;
@@ -67,14 +66,14 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
         LocalDateTime start = interval.start();
         LocalDateTime end = interval.end();
         if (!end.isAfter(start)) return invalid(intervalIndex, "interval end must be after start");
-        List<Signal> signals = signalService.getSignalsBetween(command.sensorKey(), start, end);
+        List<LocalDateTime> signalTimestamps = signals.findTimestamps(command.sensorKey(), start, end);
         int plan = shift.getHourlyPlanValues().get(intervalIndex);
         int actual = shift.getHourlyActualValues().get(intervalIndex);
         double minutes = Duration.between(start, end).toNanos() / 60_000_000_000.0;
         double cansPerMinute = minutes <= 0 ? 0 : plan / minutes;
         StoppageCalculationContext context = new StoppageCalculationContext(shift.getId(),
                 command.sensorKey(), intervalIndex, start, end, plan, actual, cansPerMinute,
-                signals.stream().map(Signal::timestamp).toList(), command.calculationTime());
+                signalTimestamps, command.calculationTime());
 
         StoppageCalculation calculation = calculator.calculate(context);
         if (calculation.diagnostics().stream().anyMatch(ReconcileDiagnostic::fatal)) {
@@ -101,6 +100,19 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
                 diagnostics.size());
         return new ReconcileResult(intervalIndex, active, diagnostics,
                 planResult.toSave().size(), true);
+    }
+
+    @Override
+    public void reconcile(java.time.LocalDate shiftDate, String sensorId, int intervalIndex,
+                          LocalDateTime calculationTime) {
+        reconcile(new ReconcileStoppagesCommand(shiftDate, sensorId, intervalIndex, calculationTime));
+    }
+
+    @Override
+    public void resolveRemovedInterval(java.time.LocalDate shiftDate, String sensorId, int intervalIndex,
+                                       LocalDateTime calculationTime) {
+        reconcile(ReconcileStoppagesCommand.resolveRemovedInterval(
+                shiftDate, sensorId, intervalIndex, calculationTime));
     }
 
     private ReconcileResult invalid(int intervalIndex, String detail) {

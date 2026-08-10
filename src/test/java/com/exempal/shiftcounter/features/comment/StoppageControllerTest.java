@@ -26,7 +26,7 @@ class StoppageControllerTest {
     void setUp() {
         reconcile = mock(ReconcileStoppagesUseCase.class);
         mvc = MockMvcBuilders.standaloneSetup(new StoppageController(
-                mock(StoppageRepository.class), reconcile,
+                mock(StoppageQueryUseCase.class), reconcile,
                 new ProductionDayService(Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"),
                         ZoneOffset.UTC)))).build();
     }

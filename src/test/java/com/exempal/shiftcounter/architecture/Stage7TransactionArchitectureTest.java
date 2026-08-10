@@ -14,7 +14,7 @@ class Stage7TransactionArchitectureTest {
         String service = Files.readString(Path.of(
                 "src/main/java/com/exempal/shiftcounter/features/signal/application/SignalService.java"));
         String repository = Files.readString(Path.of(
-                "src/main/java/com/exempal/shiftcounter/features/signal/infrastructure/SignalJpaRepository.java"));
+                "src/main/java/com/exempal/shiftcounter/features/signal/adapter/persistence/SignalJpaRepository.java"));
 
         assertThat(service).contains("@Transactional", "registrationLock.acquire");
         assertThat(repository).contains("on conflict", "do nothing");

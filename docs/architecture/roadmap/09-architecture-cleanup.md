@@ -1,6 +1,6 @@
 # Stage 9 — Architectural Cleanup
 
-Status: **APPROVED / NOT IMPLEMENTED**
+Status: **APPROVED / IMPLEMENTED**
 
 This stage adds no business functionality. It brings the implementation into compliance with Stages 0–8.
 
@@ -22,6 +22,25 @@ This stage adds no business functionality. It brings the implementation into com
 Every use case and adapter has appropriately scoped tests; the full unit/integration suite passes; a final audit checks compliance with Stages 0–8.
 
 Security, deployment, backup, secrets, CI/CD and production infrastructure are not Stage 9 work; they belong to Stage 10.
+
+## Implementation evidence
+
+- Feature packages now consistently use `domain`, `application`, and `adapter`; obsolete
+  `infrastructure` and `api` production packages are removed.
+- Cross-feature behavior is exposed through application ports. Signal registration invokes the
+  shift product-registration boundary directly inside the Stage 7 transaction.
+- Domain models are separated from persistence entities through centralized mappers; web adapters
+  depend on application queries rather than repositories.
+- Transaction ownership is located at application use-case boundaries. Persistence adapters contain
+  no transaction demarcation.
+- The duplicate synchronous domain-event path, obsolete listeners/controllers, factories, metrics
+  calculators, and settings helpers are removed.
+- `Stage9ArchitectureTest` enforces dependency direction, web/persistence separation, feature-cycle
+  freedom, and the removal of obsolete package shapes. `Stage9DomainInvariantTest` protects the new
+  domain guards.
+- No schema migration is needed because the cleanup preserves the existing Stage 8 database schema.
+
+Stage 10 production release work remains explicitly out of scope.
 
 ## Definition of Done
 

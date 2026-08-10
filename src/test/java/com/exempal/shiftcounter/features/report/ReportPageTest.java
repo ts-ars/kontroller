@@ -1,8 +1,9 @@
-package com.exempal.shiftcounter.features.report;
+package com.exempal.shiftcounter.features.report.adapter;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.report.application.ReportQueryUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
@@ -33,8 +34,8 @@ class ReportPageTest {
                 DetectionType.FIXED, StoppageState.ACTIVE, List.of(explanation), 0L);
         when(repository.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-1")))
                 .thenReturn(List.of(stoppage));
-        page = new ReportPage(repository, new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)));
+        page = new ReportPage(new ReportQueryUseCase(repository, new ProductionDayService(
+                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC))));
     }
 
     @Test

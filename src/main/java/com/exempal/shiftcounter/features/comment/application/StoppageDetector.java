@@ -1,7 +1,7 @@
 package com.exempal.shiftcounter.features.comment.application;
 
-import com.exempal.shiftcounter.features.comment.calculator.StoppageCalculationContext;
-import com.exempal.shiftcounter.features.comment.calculator.StoppageCandidate;
+import com.exempal.shiftcounter.features.comment.application.calculator.StoppageCalculationContext;
+import com.exempal.shiftcounter.features.comment.application.calculator.StoppageCandidate;
 import com.exempal.shiftcounter.features.comment.domain.DetectionType;
 import org.springframework.stereotype.Component;
 

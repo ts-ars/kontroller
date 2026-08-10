@@ -1,7 +1,7 @@
 package com.exempal.shiftcounter.features.comment.adapter.event;
 
 
-import com.exempal.shiftcounter.features.comment.event.CommentsUpdatedEvent;
+import com.exempal.shiftcounter.features.comment.application.event.CommentsUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
