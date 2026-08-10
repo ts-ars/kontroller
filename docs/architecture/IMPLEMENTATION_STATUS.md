@@ -9,7 +9,7 @@ Source of truth: this repository
 | 0 — Business invariants | APPROVED | BASELINE FOR ALL WORK |
 | 1 — Test environment | APPROVED | DONE |
 | 2 — Comments | APPROVED | DONE |
-| 3 — Stoppage model | APPROVED | TODO |
+| 3 — Stoppage model | APPROVED | DONE |
 | 4 — Reconcile | APPROVED | TODO |
 | 5 — Time | APPROVED | TODO |
 | 6 — Signals | APPROVED | TODO |
@@ -20,5 +20,5 @@ Source of truth: this repository
 
 ## Current action
 
-Stage 2 is implemented with the approved minimum `LossExplanation` boundary. Begin Stage 3 only through a separate audit and approved change set; Reconcile preservation remains explicitly assigned to Stage 4.
+Stage 3 is implemented on the separate `codex/stage-3-stoppage-model` change set stacked on Stage 2. Begin Stage 4 only through a separate audit and approved change set. Stable matching, update-in-place and end-to-end Reconcile preservation remain explicitly assigned to Stage 4.
 

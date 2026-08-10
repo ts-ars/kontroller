@@ -3,17 +3,14 @@
 package com.exempal.shiftcounter.features.comment.adapter.mapper;
 
 import com.exempal.shiftcounter.features.comment.adapter.dto.StoppageViewDto;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 
 public class StoppageViewMapper {
 
-    public static StoppageViewDto toDto(StoppageEntry entry) {
+    public static StoppageViewDto toDto(Stoppage entry) {
         return new StoppageViewDto(
-                entry.getId(),
-                entry.getLabel(),
-                entry.getMinutes(),
-                entry.getType() != null ? entry.getType().toString().toLowerCase() : "",
-                entry.getComment()
+                entry.id(), entry.detectionKey(), entry.startedAt().toString(), entry.roundedMinutes(),
+                entry.detectionType().name().toLowerCase(), entry.state(), entry.explanationStatus(), entry.version()
         );
     }
 }

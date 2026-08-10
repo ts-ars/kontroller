@@ -6,6 +6,7 @@ import com.exempal.shiftcounter.features.comment.application.LossAllocationExcep
 import com.exempal.shiftcounter.features.comment.application.LossExplanationUseCase;
 import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
+import jakarta.persistence.OptimisticLockException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -57,5 +58,18 @@ class LossExplanationControllerTest {
                         .content("{\"category\":\"QUALITY\",\"comment\":\"\",\"allocatedMinutes\":11}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("allocated minutes exceed stoppage rounded minutes"));
+    }
+
+    @Test
+    void reportsConcurrentChangeAsConflict() throws Exception {
+        when(useCase.create(eq(7L), any(), any(), anyInt()))
+                .thenThrow(new OptimisticLockException("stale"));
+
+        mvc.perform(post("/api/stoppages/7/explanations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"category\":\"QUALITY\",\"comment\":\"\",\"allocatedMinutes\":1}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value(
+                        "stoppage was changed by another transaction; reload and retry"));
     }
 }

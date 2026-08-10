@@ -2,10 +2,9 @@ package com.exempal.shiftcounter.features.comment.adapter.web;
 
 import com.exempal.shiftcounter.features.comment.adapter.dto.StoppageViewDto;
 import com.exempal.shiftcounter.features.comment.adapter.mapper.StoppageViewMapper;
+import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.calculator.StoppageCalculator;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.comment.domain.StoppageRepository;
-import com.exempal.shiftcounter.features.comment.domain.StoppageType;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsProvider;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
@@ -59,7 +58,7 @@ public class StoppageController {
 
             List<Signal> signals = signalService.getSignalsBetween(from, to);
 
-            List<StoppageEntry> newEntries = stoppageCalculator.recalculate(
+            List<Stoppage> newEntries = stoppageCalculator.recalculate(
                     shift,
                     hourIndex,
                     signals,
@@ -67,12 +66,9 @@ public class StoppageController {
                     LocalDateTime.now()
             );
 
-            for (StoppageEntry newEntry : newEntries) {
-                Optional<StoppageEntry> existing = repository.findByShiftDateAndHourIndexAndMinutes(
-                        newEntry.getShift().getDate(),
-                        newEntry.getHourIndex(),
-                        newEntry.getMinutes()
-                );
+            for (Stoppage newEntry : newEntries) {
+                Optional<Stoppage> existing = repository.findActiveEquivalent(
+                        shift.getDate(), newEntry.intervalIndex(), newEntry.roundedMinutes());
 
                 if (existing.isEmpty()) {
                     repository.save(newEntry);

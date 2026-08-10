@@ -2,6 +2,7 @@ package com.exempal.shiftcounter.features.comment.adapter.web;
 
 import com.exempal.shiftcounter.features.comment.application.LossAllocationException;
 import com.exempal.shiftcounter.features.comment.application.LossExplanationNotFoundException;
+import jakarta.persistence.OptimisticLockException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,5 +18,11 @@ public class LossExplanationExceptionHandler {
     @ExceptionHandler({LossAllocationException.class, IllegalArgumentException.class})
     ProblemDetail invalid(RuntimeException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(OptimisticLockException.class)
+    ProblemDetail conflict(OptimisticLockException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "stoppage was changed by another transaction; reload and retry");
     }
 }

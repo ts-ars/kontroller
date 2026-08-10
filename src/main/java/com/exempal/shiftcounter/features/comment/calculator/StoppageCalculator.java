@@ -2,7 +2,7 @@ package com.exempal.shiftcounter.features.comment.calculator;
 
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 
 import java.time.LocalDateTime;
@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface StoppageCalculator {
 
-    List<StoppageEntry> recalculate(
+    List<Stoppage> recalculate(
             Shift shift,
             int hourIndex,
             List<Signal> signals,
