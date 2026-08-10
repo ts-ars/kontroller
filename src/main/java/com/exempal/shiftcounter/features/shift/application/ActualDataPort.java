@@ -18,8 +18,6 @@ public interface ActualDataPort {
         return findByDateAndSensorId(date, SENSOR_1);
     }
 
-    void saveOrReplace(Shift shift);
-
     void deleteByDateAndSensorId(LocalDate date, String sensorId);
 
     default void deleteByDate(LocalDate date) {

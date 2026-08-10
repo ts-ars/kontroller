@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,13 +28,5 @@ public class SignalService implements SignalInputPort {
         if (!signalStorage.saveIfAbsent(signal)) return SignalRegistrationResult.duplicate(command.sensorId());
         productRegistration.registerProduct(command.sensorId().value(), command.occurredAt());
         return new SignalRegistrationResult(id, command.sensorId(), true);
-    }
-
-    public List<Signal> getSignalsBetween(String sensorId, LocalDateTime start, LocalDateTime end) {
-        return signalStorage.findBySensorAndRange(sensorId, start, end);
-    }
-
-    public List<Signal> getSignalsBetween(LocalDateTime start, LocalDateTime end) {
-        return getSignalsBetween("sensor-1", start, end);
     }
 }

@@ -2,13 +2,10 @@ package com.exempal.shiftcounter.features.settings.adapter.settings;
 
 import com.exempal.shiftcounter.features.settings.application.SettingsRepository;
 import com.exempal.shiftcounter.features.settings.domain.SettingsGroup;
-import com.exempal.shiftcounter.features.settings.application.SettingsRepository;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.shift.application.ShiftSettings;
 import com.exempal.shiftcounter.features.shift.application.ShiftSettingsPort;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
 
 @Component
 public class ShiftSettingsProvider implements ShiftSettingsPort {
@@ -22,10 +19,6 @@ public class ShiftSettingsProvider implements ShiftSettingsPort {
     @Override
     public ShiftSettings getForSensor(String sensorId) {
         return toShiftSettings(settings.findById(SensorCatalog.require(sensorId).settingsGroupId()));
-    }
-
-    public SettingsGroup getGroup(String groupId) {
-        return settings.findById(groupId);
     }
 
     private ShiftSettings toShiftSettings(SettingsGroup group) {

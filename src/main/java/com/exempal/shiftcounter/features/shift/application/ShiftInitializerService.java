@@ -51,26 +51,4 @@ public class ShiftInitializerService implements ShiftInitializer {
         });
     }
 
-    private Shift recalculateShift(LocalDate date, String sensorId) {
-        Shift existing = actualDataPort.findByDateAndSensorId(date, sensorId)
-                .orElseThrow(() -> new ShiftNotFoundException(date));
-
-        ShiftSettings current = settings.getForSensor(sensorId);
-        var actual = new java.util.ArrayList<>(existing.getHourlyActualValues());
-        while (actual.size() < current.labels().size()) actual.add(0);
-        if (actual.size() > current.labels().size()) actual = new java.util.ArrayList<>(actual.subList(0, current.labels().size()));
-        Shift recalculated = existing.withUpdatedStructure(current.labels(), current.plans(), actual);
-        actualDataPort.saveOrReplace(recalculated);
-
-        log.info("🔁 Смена обновлена: {} | План: {} | Факт: {}", date, recalculated.getHourlyPlanValues(), recalculated.getHourlyActualValues());
-
-        eventPublisher.publish(new ShiftUpdatedEvent(
-                recalculated.getDate(), recalculated.getSensorId(),
-                recalculated.getHourlyActualValues(),
-                recalculated.getHourlyPlanValues(),
-                recalculated.getHourlyLabels()
-        ));
-
-        return recalculated;
-    }
 }

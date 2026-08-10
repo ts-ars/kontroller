@@ -28,8 +28,4 @@ public class ProductionDayService {
     public LocalDateTime now() {
         return LocalDateTime.now(clock);
     }
-
-    public Clock clock() {
-        return clock;
-    }
 }

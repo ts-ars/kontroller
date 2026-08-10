@@ -48,14 +48,6 @@ public class JpaShiftAdapter implements ActualDataPort {
     }
 
     @Override
-    public void saveOrReplace(Shift shift) {
-        repository.findByDateAndSensorId(shift.getDate(), shift.getSensorId())
-                .ifPresent(existing -> repository.deleteById(existing.getId()));
-        repository.flush();
-        repository.save(ShiftEntityMapper.fromDomain(shift));
-    }
-
-    @Override
     public Optional<Shift> findByDateAndSensorId(LocalDate date, String sensorId) {
         return repository.findByDateAndSensorId(date, sensorId)
                 .map(entity -> {
@@ -84,11 +76,6 @@ public class JpaShiftAdapter implements ActualDataPort {
             repository.delete(shift);
         });
     }
-    public Optional<ShiftEntity> findEntityByDate(LocalDate date) {
-        return repository.findByDateAndSensorId(date,
-                com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1);
-    }
-
     @Override
     public Optional<Shift> findById(long shiftId) {
         return repository.findById(shiftId).map(ShiftEntityMapper::toDomain);

@@ -26,13 +26,12 @@ class ShiftPersistenceCycleTest {
         LocalDate date = LocalDate.of(2025, 6, 5);
         List<Integer> plan = List.of(90);
         List<Integer> actual = List.of(90);
-        List<String> comments = List.of("autotest");
         List<String> labels = List.of("08:00");
 
         Shift shift = new Shift(date, plan, 90, actual, labels);
 
         // Act
-        jpaShiftAdapter.saveOrReplace(shift); // ✅ безопасная замена по дате
+        jpaShiftAdapter.save(shift);
         Shift loaded = jpaShiftAdapter.findByDate(date).orElseThrow();
 
         // Assert
@@ -50,8 +49,8 @@ class ShiftPersistenceCycleTest {
         Shift initial = new Shift(date, List.of(80), 80, List.of(80), List.of("08:00"));
         Shift updated = new Shift(date, List.of(120), 120, List.of(120), List.of("08:00"));
 
-        jpaShiftAdapter.saveOrReplace(initial);
-        jpaShiftAdapter.saveOrReplace(updated);
+        jpaShiftAdapter.save(initial);
+        jpaShiftAdapter.save(updated);
 
         // Act
         Shift loaded = jpaShiftAdapter.findByDate(date).orElseThrow();
