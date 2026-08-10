@@ -44,6 +44,8 @@ public class ShiftProductRegistrar implements ProductRegistrationUseCase {
 
         Shift updated = extended.withIncrementedHourlyActualValue(interval.index());
         shiftPlanner.updateShift(updated);
+        log.info("sensor={} productionDate={} interval={} result=actual-incremented",
+                sensorId, productionDay.date(), interval.index());
         if (interval.planSupplied()) {
             reconciles.reconcile(productionDay.date(), sensorId, interval.index(), timestamp);
         }

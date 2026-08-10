@@ -1,0 +1,5 @@
+target/*
+!target/shiftcounter-*.jar
+.git
+.env
+logs

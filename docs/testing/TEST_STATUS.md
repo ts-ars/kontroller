@@ -21,6 +21,13 @@
 | Second clean `.\mvnw.cmd clean verify` on a fresh database | PASS — same 121 totals, 0 skipped/failures/errors; 9:11 |
 | Stage 9 final `mvn -q clean verify` | PASS — 131 executed, 0 skipped/failures/errors; 5:16 |
 
+Stage 10 adds focused production configuration/startup/ADAM tests and a separately tagged parallel
+six-sensor release load scenario. The Stage 10 cloud checkout could not resolve Maven dependencies
+because its Maven cache was empty and outbound Maven Central/JitPack access was unavailable. YAML
+parsing and `git diff --check` passed locally. The authoritative Stage 10 `clean verify` and release
+load results are therefore the blocking GitHub CI checks for the draft PR and must be recorded here
+before Stage 10 can be declared complete.
+
 Stage 8 verification used PostgreSQL 15.13 in isolated Docker projects
 `kontroller-stage8` and `kontroller-stage8b`, with host ports `55438` and `55439`. The
 user project container `shift-postgres` on port `5432` was not modified or used.
@@ -159,6 +166,12 @@ commit. That Stage 8 change set did not introduce Stage 9 or Stage 10 work.
 **COMPLETE under the approved Stage 9 boundary.** Layer direction, application ports, aggregate/entity
 separation, use-case transaction ownership, dead-path removal and domain invariants are implemented
 and protected. Stage 10 production release work was not introduced.
+
+## Stage 10 status
+
+**IN PROGRESS.** Repository-owned release controls and executable tests are present. Real production
+backup/restore, migration rehearsal, secret rotation, network/TLS/monitoring setup, six-device smoke,
+counter-running restart and database-outage evidence remain external blocking gates.
 
 ## Reproduction
 
