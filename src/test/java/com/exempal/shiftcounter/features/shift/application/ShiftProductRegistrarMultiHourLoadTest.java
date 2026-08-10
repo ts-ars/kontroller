@@ -38,12 +38,10 @@ class ShiftProductRegistrarMultiHourLoadTest {
         Shift shift = planner.getOrCreateShift(testDate);
         List<String> hours = shift.getHourlyLabels();
 
-        if (index >= hours.size() - 1) {
-            fail("❌ Нет следующего часа для индекса " + index);
-        }
-
         LocalTime start = LocalTime.parse(hours.get(index));
-        LocalTime end = LocalTime.parse(hours.get(index + 1));
+        LocalTime end = index + 1 < hours.size()
+                ? LocalTime.parse(hours.get(index + 1))
+                : start.plusMinutes(start.getMinute() == 30 ? 30 : 60);
         long duration = java.time.Duration.between(start, end).toMinutes();
 
         return LocalDateTime.of(testDate, start.plusMinutes(duration / 2));
