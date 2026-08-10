@@ -1,37 +1,38 @@
 package com.exempal.shiftcounter.features.signal.application;
 
-import com.exempal.shiftcounter.features.signal.domain.Signal;
-import com.exempal.shiftcounter.features.signal.domain.SignalInputPort;
-import com.exempal.shiftcounter.features.signal.domain.SignalStoragePort;
+import com.exempal.shiftcounter.features.signal.domain.*;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.shared.event.DomainEventPublisher;
 import com.exempal.shiftcounter.shared.event.ProductDetectedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class SignalService implements SignalInputPort {
-
     private final DomainEventPublisher eventPublisher;
     private final SignalStoragePort signalStorage;
-    private final Clock clock;
+    private final ProductionDayService productionDays;
 
     @Override
-    public void onProductSensorTriggered() {
-        Instant now = clock.instant();
-        LocalDateTime localDateTime = now.atZone(clock.getZone()).toLocalDateTime();
-        signalStorage.save(new Signal(localDateTime));
-        eventPublisher.publish(new ProductDetectedEvent(now));
+    public SignalRegistrationResult register(RegisterSignalCommand command) {
+        UUID id = UUID.randomUUID();
+        Signal signal = new Signal(id, command.sensorId(), command.occurredAt(),
+                productionDays.resolve(command.occurredAt()).date(), command.source(), command.sourceIdentity());
+        if (!signalStorage.saveIfAbsent(signal)) return SignalRegistrationResult.duplicate(command.sensorId());
+        eventPublisher.publish(new ProductDetectedEvent(id, command.sensorId(), command.occurredAt()));
+        return new SignalRegistrationResult(id, command.sensorId(), true);
     }
 
-    // ✅ Этот метод вызывает существующий порт
+    public List<Signal> getSignalsBetween(String sensorId, LocalDateTime start, LocalDateTime end) {
+        return signalStorage.findBySensorAndRange(sensorId, start, end);
+    }
+
     public List<Signal> getSignalsBetween(LocalDateTime start, LocalDateTime end) {
-        return signalStorage.findByRange(start, end); // ✅ всё корректно
+        return getSignalsBetween("sensor-1", start, end);
     }
 }

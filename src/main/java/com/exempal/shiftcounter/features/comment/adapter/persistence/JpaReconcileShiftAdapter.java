@@ -19,8 +19,8 @@ public class JpaReconcileShiftAdapter implements ReconcileShiftRepository {
 
     @Override
     @Transactional
-    public Optional<Shift> findForUpdateByDate(LocalDate date) {
-        return shifts.findForUpdateByDate(date).map(this::toDomain);
+    public Optional<Shift> findForUpdateByDateAndSensorId(LocalDate date, String sensorId) {
+        return shifts.findForUpdateByDateAndSensorId(date, sensorId).map(this::toDomain);
     }
 
     private Shift toDomain(ShiftEntity entity) {

@@ -9,7 +9,7 @@ public class StoppageViewMapper {
 
     public static StoppageViewDto toDto(Stoppage entry) {
         return new StoppageViewDto(
-                entry.id(), entry.detectionKey(), entry.startedAt().toString(), entry.roundedMinutes(),
+                entry.id(), entry.detectionKey(), entry.sensorKey(), entry.startedAt().toString(), entry.roundedMinutes(),
                 entry.detectionType().name().toLowerCase(), entry.state(), entry.explanationStatus(), entry.version()
         );
     }

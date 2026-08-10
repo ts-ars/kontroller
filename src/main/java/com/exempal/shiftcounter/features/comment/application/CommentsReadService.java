@@ -23,10 +23,10 @@ public class CommentsReadService implements CommentsReadUseCase {
     }
 
     @Override
-    public Data read(LocalDate date) {
-        Shift shift = actualDataPort.findByDate(date).orElse(null);
+    public Data read(LocalDate date, String sensorId) {
+        Shift shift = actualDataPort.findByDateAndSensorId(date, sensorId).orElse(null);
         if (shift == null) return new Data(null, List.of(), List.of());
-        List<Stoppage> rows = repository.findByShiftDate(date).stream()
+        List<Stoppage> rows = repository.findByShiftDateAndSensorId(date, sensorId).stream()
                 .filter(value -> value.state() == StoppageState.ACTIVE)
                 .sorted(chronological()).toList();
         List<Stoppage> missing = rows.stream()

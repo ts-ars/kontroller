@@ -23,12 +23,15 @@ public interface StoppageJpaRepository extends JpaRepository<StoppageEntity, Lon
     Optional<StoppageEntity> findForUpdateById(@Param("id") long id);
 
     @EntityGraph(attributePaths = {"shift", "explanations"})
-    @Query("select distinct s from StoppageEntity s where s.shift.date = :date and s.detectionType is not null")
-    List<StoppageEntity> findSystemByShiftDate(@Param("date") LocalDate date);
+    @Query("select distinct s from StoppageEntity s where s.shift.date = :date and s.sensorKey = :sensorId and s.detectionType is not null")
+    List<StoppageEntity> findSystemByShiftDateAndSensorId(@Param("date") LocalDate date,
+                                                          @Param("sensorId") String sensorId);
 
     @EntityGraph(attributePaths = {"shift", "explanations"})
-    @Query("select distinct s from StoppageEntity s where s.shift.date between :from and :to and s.detectionType is not null")
-    List<StoppageEntity> findSystemByShiftDateBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+    @Query("select distinct s from StoppageEntity s where s.shift.date between :from and :to and s.sensorKey = :sensorId and s.detectionType is not null")
+    List<StoppageEntity> findSystemByShiftDateBetweenAndSensorId(@Param("from") LocalDate from,
+                                                                 @Param("to") LocalDate to,
+                                                                 @Param("sensorId") String sensorId);
 
     @EntityGraph(attributePaths = {"shift", "explanations"})
     @Query("""

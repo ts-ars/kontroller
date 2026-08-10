@@ -1,14 +1,10 @@
 package com.exempal.shiftcounter.shared.event;
 
-import lombok.Getter;
+import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Getter
-public class ProductDetectedEvent implements DomainEvent {
-    private final Instant detectedAt;
-
-    public ProductDetectedEvent(Instant detectedAt) {
-        this.detectedAt = detectedAt;
-    }
+public record ProductDetectedEvent(UUID signalId, SensorId sensorId,
+                                   LocalDateTime occurredAt) implements DomainEvent {
 }

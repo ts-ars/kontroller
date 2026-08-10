@@ -1,6 +1,5 @@
 package com.exempal.shiftcounter.features.comment.application;
 
-import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.shared.event.ProductionStoppedEvent;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +15,6 @@ public class ProductionStoppedListener {
     @EventListener
     public void onProductionStopped(ProductionStoppedEvent event) {
         reconcile.reconcile(new ReconcileStoppagesCommand(productionDays.resolve(event.getTime()).date(),
-                Stoppage.PRIMARY_SENSOR, null, event.getTime()));
+                event.sensorId(), null, event.getTime()));
     }
 }

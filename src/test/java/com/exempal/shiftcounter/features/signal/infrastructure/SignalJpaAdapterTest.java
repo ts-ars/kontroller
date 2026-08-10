@@ -15,12 +15,12 @@ class SignalJpaAdapterTest {
         SignalJpaRepository repository = mock(SignalJpaRepository.class);
         LocalDateTime start = LocalDateTime.of(2026, 8, 10, 23, 30);
         LocalDateTime end = LocalDateTime.of(2026, 8, 11, 0, 30);
-        when(repository.findAllInHalfOpenRange(start, end)).thenReturn(List.of(
+        when(repository.findAllInHalfOpenRange("sensor-1", start, end)).thenReturn(List.of(
                 new SignalEntity(UUID.randomUUID(), start)));
 
-        var result = new SignalJpaAdapter(repository).findByRange(start, end);
+        var result = new SignalJpaAdapter(repository).findBySensorAndRange("sensor-1", start, end);
 
         assertThat(result).singleElement().extracting(value -> value.timestamp()).isEqualTo(start);
-        verify(repository).findAllInHalfOpenRange(start, end);
+        verify(repository).findAllInHalfOpenRange("sensor-1", start, end);
     }
 }

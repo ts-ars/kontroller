@@ -1,15 +1,15 @@
 package com.exempal.shiftcounter.features.signal.infrastructure;
 
+import com.exempal.shiftcounter.features.sensor.domain.SensorId;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 import com.exempal.shiftcounter.features.signal.domain.SignalStoragePort;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Component
 public class SignalJpaAdapter implements SignalStoragePort {
-
     private final SignalJpaRepository repository;
 
     public SignalJpaAdapter(SignalJpaRepository repository) {
@@ -17,15 +17,24 @@ public class SignalJpaAdapter implements SignalStoragePort {
     }
 
     @Override
-    public void save(Signal signal) {
-        repository.save(new SignalEntity(UUID.randomUUID(), signal.timestamp()));
+    public boolean saveIfAbsent(Signal signal) {
+        if (repository.existsBySensorIdAndSourceAndSourceIdentity(signal.sensorId().value(), signal.source(),
+                signal.sourceIdentity())) return false;
+        repository.save(new SignalEntity(signal.id(), signal.sensorId().value(), signal.occurredAt(),
+                signal.productionDate(), signal.source(), signal.sourceIdentity()));
+        return true;
     }
 
     @Override
-    public List<Signal> findByRange(java.time.LocalDateTime from, java.time.LocalDateTime to) {
-        return repository.findAllInHalfOpenRange(from, to)
-                .stream()
-                .map(entity -> new Signal(entity.getTimestamp()))
+    public List<Signal> findBySensorAndRange(String sensorId, LocalDateTime from, LocalDateTime to) {
+        return repository.findAllInHalfOpenRange(sensorId, from, to).stream()
+                .map(entity -> new Signal(entity.getId(), SensorId.of(entity.getSensorId()),
+                        entity.getOccurredAt(), entity.getProductionDate(), entity.getSource(),
+                        entity.getSourceIdentity()))
                 .toList();
+    }
+
+    public List<Signal> findByRange(LocalDateTime from, LocalDateTime to) {
+        return findBySensorAndRange("sensor-1", from, to);
     }
 }

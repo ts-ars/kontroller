@@ -19,7 +19,7 @@ public class ShiftFactory {
         this.settingsProvider = settingsProvider;
     }
 
-    public Shift createNewShift(LocalDate date) {
+    public Shift createNewShift(LocalDate date, String sensorId) {
         Settings settings = settingsProvider.get();
 
         List<String> hourLabels = ShiftHourLabelMapper.toLabelsStartOnly(settings.getHours());
@@ -30,11 +30,16 @@ public class ShiftFactory {
         return new Shift(
                 null,
                 date,
+                sensorId,
                 hourlyPlan,
                 0,
                 hourlyActual,
                 hourLabels
         );
+    }
+
+    public Shift createNewShift(LocalDate date) {
+        return createNewShift(date, com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1);
     }
 
     public Shift recalculateFrom(Shift existingShift) {
@@ -51,6 +56,7 @@ public class ShiftFactory {
         return new Shift(
                 existingShift.getId(),
                 existingShift.getDate(),
+                existingShift.getSensorId(),
                 hourlyPlan,
                 actualSum,
                 actual,

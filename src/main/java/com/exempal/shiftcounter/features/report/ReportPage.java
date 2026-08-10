@@ -38,8 +38,10 @@ public class ReportPage implements PageModel {
         LocalDate current = productionDays.current().date();
         LocalDate from = parseDateParam(params.get("from"), current.minusDays(7));
         LocalDate to = parseDateParam(params.get("to"), current);
+        String sensorId = params.getOrDefault("sensorId", "sensor-1");
+        com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.require(sensorId);
 
-        List<Stoppage> entries = repository.findByShiftDateBetween(from, to).stream()
+        List<Stoppage> entries = repository.findByShiftDateBetweenAndSensorId(from, to, sensorId).stream()
                 .filter(entry -> entry.state() == StoppageState.ACTIVE)
                 .toList();
 
@@ -64,6 +66,7 @@ public class ReportPage implements PageModel {
         model.addAttribute("problems", problems);
         model.addAttribute("startDate", from.toString());
         model.addAttribute("endDate", to.toString());
+        model.addAttribute("sensorId", sensorId);
         model.addAttribute("totalMinutes", totalMinutes);
         model.addAttribute("totalCans", totalCans);
     }

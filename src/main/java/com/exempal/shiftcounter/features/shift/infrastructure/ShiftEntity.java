@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @Table(name = "shift", uniqueConstraints = {
-        @UniqueConstraint(name = "uc_shift_date", columnNames = {"date"})
+        @UniqueConstraint(name = "ux_shift_date_sensor", columnNames = {"date", "sensor_id"})
 })
 public class ShiftEntity {
     @Id
@@ -24,6 +24,9 @@ public class ShiftEntity {
 
     @Column(nullable = false)
     private LocalDate date;
+
+    @Column(name = "sensor_id", nullable = false, length = 64)
+    private String sensorId;
 
     private Integer actual;
 
@@ -48,6 +51,7 @@ public class ShiftEntity {
     public static ShiftEntity fromDomain(Shift shift) {
         ShiftEntity entity = new ShiftEntity();
         entity.setDate(shift.getDate());
+        entity.setSensorId(shift.getSensorId());
         entity.setActual(shift.getActual());
         entity.setHourlyActualValues(new ArrayList<>(shift.getHourlyActualValues()));
         entity.setHourlyPlanValues(new ArrayList<>(shift.getHourlyPlanValues()));
@@ -56,7 +60,7 @@ public class ShiftEntity {
     }
 
     public Shift toDomain() {
-        Shift shift = new Shift(id, date, new ArrayList<>(hourlyPlanValues), actual,
+        Shift shift = new Shift(id, date, sensorId, new ArrayList<>(hourlyPlanValues), actual,
                 new ArrayList<>(hourlyActualValues), new ArrayList<>(hourlyLabels));
         shift.setEntity(this);
         return shift;

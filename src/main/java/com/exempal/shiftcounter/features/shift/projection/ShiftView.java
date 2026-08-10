@@ -5,12 +5,18 @@ import java.util.List;
 
 public record ShiftView(
         LocalDate date,
+        String sensorId,
         List<Integer> actual,
         List<Integer> plan,
         List<String> hours,
         List<Boolean> planSupplied
 ) {
     public ShiftView(LocalDate date, List<Integer> actual, List<Integer> plan, List<String> hours) {
-        this(date, actual, plan, hours, java.util.Collections.nCopies(hours.size(), true));
+        this(date, "sensor-1", actual, plan, hours, java.util.Collections.nCopies(hours.size(), true));
+    }
+
+    public ShiftView(LocalDate date, List<Integer> actual, List<Integer> plan, List<String> hours,
+                     List<Boolean> planSupplied) {
+        this(date, "sensor-1", actual, plan, hours, planSupplied);
     }
 }

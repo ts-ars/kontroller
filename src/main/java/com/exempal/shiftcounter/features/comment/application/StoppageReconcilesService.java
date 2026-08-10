@@ -33,7 +33,7 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
     @Override
     @Transactional
     public ReconcileResult reconcile(ReconcileStoppagesCommand command) {
-        Shift shift = shifts.findForUpdateByDate(command.shiftDate()).orElse(null);
+        Shift shift = shifts.findForUpdateByDateAndSensorId(command.shiftDate(), command.sensorKey()).orElse(null);
         if (shift == null) {
             return invalid(-1, "shift not found for " + command.shiftDate());
         }
@@ -67,7 +67,7 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
         LocalDateTime start = interval.start();
         LocalDateTime end = interval.end();
         if (!end.isAfter(start)) return invalid(intervalIndex, "interval end must be after start");
-        List<Signal> signals = signalService.getSignalsBetween(start, end);
+        List<Signal> signals = signalService.getSignalsBetween(command.sensorKey(), start, end);
         int plan = shift.getHourlyPlanValues().get(intervalIndex);
         int actual = shift.getHourlyActualValues().get(intervalIndex);
         double minutes = Duration.between(start, end).toNanos() / 60_000_000_000.0;

@@ -33,10 +33,14 @@ public class ShiftPlannerUseCase {
     }
 
     public Shift getOrCreateShift(LocalDate date) {
-        return actualDataPort.findByDate(date)
+        return getOrCreateShift(date, com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1);
+    }
+
+    public Shift getOrCreateShift(LocalDate date, String sensorId) {
+        return actualDataPort.findByDateAndSensorId(date, sensorId)
                 .orElseGet(() -> {
                     log.info("🆕 Создание смены на {}", date);
-                    return shiftInitializer.createNewShift(date);
+                    return shiftInitializer.createNewShift(date, sensorId);
                 });
     }
 
@@ -45,6 +49,7 @@ public class ShiftPlannerUseCase {
         log.info("💾 Смена сохранена: {}", updated.getDate());
         eventPublisherPort.publish(new ShiftUpdatedEvent(
                 updated.getDate(),
+                updated.getSensorId(),
                 updated.getHourlyActualValues(),
                 updated.getHourlyPlanValues(),
                 updated.getHourlyLabels()

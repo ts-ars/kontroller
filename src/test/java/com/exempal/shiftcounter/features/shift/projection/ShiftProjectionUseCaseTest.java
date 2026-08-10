@@ -46,7 +46,7 @@ class ShiftProjectionUseCaseTest {
                 hours
         );
 
-        when(actualDataPort.findByDate(date)).thenReturn(Optional.of(shift));
+        when(actualDataPort.findByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shift));
         when(settings.load()).thenReturn(testSettings(hours, plan));
 
         ShiftView view = useCase.buildView(date);
@@ -63,7 +63,7 @@ class ShiftProjectionUseCaseTest {
         List<String> hours = List.of("08:00", "09:00");
         List<String> planStrings = List.of("100", "100");
 
-        when(actualDataPort.findByDate(date)).thenReturn(Optional.empty());
+        when(actualDataPort.findByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.empty());
         when(settings.load()).thenReturn(testSettings(hours, List.of(100, 100)));
 
         ShiftView view = useCase.buildView(date);
@@ -91,7 +91,7 @@ class ShiftProjectionUseCaseTest {
                 hours
         );
 
-        when(actualDataPort.findByDate(date)).thenReturn(Optional.of(shortShift));
+        when(actualDataPort.findByDateAndSensorId(date, "sensor-1")).thenReturn(Optional.of(shortShift));
         when(settings.load()).thenReturn(testSettings(hours, List.of(50, 0, 0, 0)));
 
         ShiftView view = useCase.buildView(date);

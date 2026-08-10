@@ -21,9 +21,13 @@ public class ShiftProjectionUseCase {
     }
 
     public ShiftView buildView(LocalDate date) {
+        return buildView(date, com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1);
+    }
+
+    public ShiftView buildView(LocalDate date, String sensorId) {
         var loaded = settings.load();
 
-        return actual.findByDate(date)
+        return actual.findByDateAndSensorId(date, sensorId)
                 .map(shift -> {
                     // Часы — из домена (фактической смены), порядок не трогаем
                     List<String> hours = shift.getHourlyLabels();
@@ -33,7 +37,7 @@ public class ShiftProjectionUseCase {
                     List<Integer> actualValues = ensureSize(shift.getHourlyActualValues(), expectedSize);
                     List<Boolean> planSupplied = java.util.stream.IntStream.range(0, expectedSize)
                             .mapToObj(index -> index < suppliedPlans).toList();
-                    return new ShiftView(date, actualValues, plan, hours, planSupplied);
+                    return new ShiftView(date, sensorId, actualValues, plan, hours, planSupplied);
                 })
                 .orElseGet(() -> {
                     // Если смены ещё нет — берём дефолтные часы из настроек
@@ -44,7 +48,7 @@ public class ShiftProjectionUseCase {
                     int expectedSize = hours.size();
                     List<Integer> plan = ensureSize(loaded.getHourlyPlans(), expectedSize);
                     List<Integer> actualValues = Collections.nCopies(expectedSize, 0);
-                    return new ShiftView(date, actualValues, plan, hours,
+                    return new ShiftView(date, sensorId, actualValues, plan, hours,
                             Collections.nCopies(expectedSize, true));
                 });
     }

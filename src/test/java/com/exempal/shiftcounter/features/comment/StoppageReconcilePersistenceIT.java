@@ -88,6 +88,7 @@ class StoppageReconcilePersistenceIT {
     private ShiftEntity savedShift() {
         ShiftEntity shift = new ShiftEntity();
         shift.setDate(DATE);
+        shift.setSensorId("sensor-1");
         shift.setActual(20);
         shift.setHourlyLabels(List.of("08:00"));
         shift.setHourlyPlanValues(List.of(100));

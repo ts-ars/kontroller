@@ -28,12 +28,12 @@ public class ShiftApiController {
     }
 
     @GetMapping("/current")
-    public ShiftView getCurrentShift() {
+    public ShiftView getCurrentShift(@RequestParam(defaultValue = "sensor-1") String sensorId) {
         LocalDateTime timestamp = productionDays.now();
         var day = productionDays.resolve(timestamp);
-        Shift shift = shiftPlanner.getOrCreateShift(day.date());
+        Shift shift = shiftPlanner.getOrCreateShift(day.date(), sensorId);
         Shift extended = shiftExtender.extendIfNeeded(timestamp, shift);
         if (!extended.getHourlyLabels().equals(shift.getHourlyLabels())) shiftPlanner.updateShift(extended);
-        return shiftProjection.buildView(day.date());
+        return shiftProjection.buildView(day.date(), sensorId);
     }
 }

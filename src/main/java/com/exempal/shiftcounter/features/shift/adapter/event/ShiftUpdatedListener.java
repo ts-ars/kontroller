@@ -24,8 +24,9 @@ public class ShiftUpdatedListener {
 
     @EventListener
     public void handle(ShiftUpdatedEvent event) {
-        ShiftView view = projection.buildView(event.date());
-        messaging.convertAndSend("/topic/shift-updates", view);
+        ShiftView view = projection.buildView(event.date(), event.sensorId());
+        messaging.convertAndSend("/topic/shift-updates/" + event.sensorId(), view);
+        if (event.sensorId().equals("sensor-1")) messaging.convertAndSend("/topic/shift-updates", view);
         log.info("📤 Отправлен ShiftView в /topic/shift-updates: {}", view);
     }
 }
