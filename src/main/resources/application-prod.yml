@@ -23,7 +23,8 @@ management:
     health:
       probes:
         enabled: true
-      show-details: never
+      show-details: when-authorized
+      roles: ADMIN
       group:
         readiness:
           include: readinessState,db

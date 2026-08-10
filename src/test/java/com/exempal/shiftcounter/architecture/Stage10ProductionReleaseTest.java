@@ -14,7 +14,7 @@ class Stage10ProductionReleaseTest {
         String main = Files.readString(Path.of("src/main/resources/application.yml"));
         assertThat(production)
                 .contains("${DB_URL}", "ddl-auto: validate", "include: health,info")
-                .contains("address: 127.0.0.1", "include: adam")
+                .contains("address: 127.0.0.1", "include: adam", "show-details: when-authorized", "roles: ADMIN")
                 .doesNotContain("include-stacktrace: always");
         assertThat(main).contains("shutdown: graceful", "timeout-per-shutdown-phase: 30s");
     }

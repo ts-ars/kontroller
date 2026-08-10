@@ -8,7 +8,8 @@ Before release, confirm the physical input-to-sensor mapping with a controlled p
 counter before and after, the persisted baseline, accepted delta, production date and interval. Repeat
 for all six sensors. Duplicate delivery must not increment Actual twice.
 
-The separate `/actuator/health/adam` group reports connection state for every configured sensor. It is
-an operational view and intentionally does not control application readiness: loss of one ADAM must
-not crash or remove the rest of the application. Alert on disconnects, discontinuities, repeated poll
-failures and absence of expected polls.
+The separate `/actuator/health/adam` group reports connection state for every configured sensor to an
+authenticated admin. Anonymous callers receive status without details. It is an operational view and
+intentionally does not control application readiness: loss of one ADAM must not crash or remove the
+rest of the application. Alert on disconnects, discontinuities, repeated poll failures and absence of
+expected polls.
