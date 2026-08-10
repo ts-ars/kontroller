@@ -28,4 +28,8 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 24. Stage 2 derives partial `allocatedCans` proportionally as `round(stoppageLostCans * allocatedMinutes / stoppageRoundedMinutes)`. Deterministic largest-remainder distribution across all explanations remains Stage 4.
 25. Legacy operator-category stoppage rows are not linked automatically. V3 preserves them and records them in a migration report for later reviewed migration.
 26. Stage 2 applies integer half-up rounding wherever an exact `Duration` is available. Persisted exact start/end/duration and unified production-day time boundaries remain Stages 3 and 5.
+27. Stage 3 represents the current single sensor as the explicit key `primary`. `Stoppage` owns `shiftId`, `sensorKey`, interval index, exact `LocalDateTime startedAt` and exact `Duration`; Stage 5 still owns production-day and interval-boundary semantics.
+28. Stage 3 replaces the domain/JPA hybrid with a pure `Stoppage` aggregate and an application repository port. JPA entities, Spring Data repositories and mapping are confined to the persistence adapter.
+29. Stage 3 compatibility never physically deletes an active loss: the existing per-hour recalculation marks previous rows `RESOLVED` before inserting new detections. Stable matching, update-in-place, identity preservation across recalculation and explanation relinking remain Stage 4.
+30. V4 backfills unambiguous FIXED/TEMPO rows with deterministic UUID keys, exact legacy-derived time/duration, state and versions. Rows without an interval label remain in the legacy representation and are recorded in `stoppage_model_migration_report`; V1–V3 are not edited.
 

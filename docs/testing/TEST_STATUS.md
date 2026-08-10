@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-07
-- Branch: local `main` Stage 2 change set based on `b861d25d5a0bb182cdb1fd4edcf622f0b13af6bb`
+- Branch: local `codex/stage-3-stoppage-model`, stacked on Stage 2 commit `708c31d` / draft PR #6
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -15,19 +15,17 @@
 
 | Command | Result |
 |---|---|
-| `.\\mvnw.cmd -DskipTests compile` | PASS |
-| `.\\mvnw.cmd test-compile -DskipTests` | PASS |
-| `.\\mvnw.cmd clean verify` (Stage 2 run 1) | PASS — 3 min 53 s |
-| `.\\mvnw.cmd clean verify` (Stage 2 run 2) | PASS — 4 min 27 s |
+| `.\\mvnw.cmd clean test-compile -DskipTests` | PASS |
+| `.\\mvnw.cmd '-Dtest=StoppageModelTest,StoppageRoundingTest,LossExplanationServiceTest,Stage3DomainArchitectureTest' test` | PASS — 15 tests |
+| `.\\mvnw.cmd '-Dit.test=StoppageMigrationRehearsalIT' failsafe:integration-test failsafe:verify` | PASS — 1 migration rehearsal |
+| `.\\mvnw.cmd clean verify` | PASS by completed Surefire/Failsafe reports — 64 discovered, 57 executed |
 
-Stage 2 verification uses PostgreSQL 15.13 in Docker project `kontroller-stage2`, volume `kontroller-stage2_pgdata` and host port `55432`. The existing user project container `shift-postgres` on port `5432` is not modified or used.
+Stage 3 verification uses PostgreSQL 15.13 in Docker project `kontroller-stage3`, volume `kontroller-stage3_pgdata` and host port `55433`. The existing user project container `shift-postgres` on port `5432` is not modified or used.
 
 ## Latest test totals
 
-Both clean runs produced the same totals:
-
-- Surefire: 49 discovered, 44 executed, 0 failures, 0 errors, 5 skipped.
-- Failsafe: 5 discovered, 3 executed, 0 failures, 0 errors, 2 skipped.
+- Surefire: 56 discovered, 51 executed, 0 failures, 0 errors, 5 skipped.
+- Failsafe: 8 discovered, 6 executed, 0 failures, 0 errors, 2 skipped.
 - Unique intentionally disabled tests: 7.
 - Load test: excluded from standard `verify` and classified with JUnit tag `load`.
 
@@ -47,6 +45,7 @@ Both clean runs produced the same totals:
 - PostgreSQL provisioning revokes public connect access and grants each role only its own database.
 - `TestEnvironmentIsolationIT` verifies the active profile, JDBC catalog/user, Flyway history, bean gating and denial of `shift_test` access to production.
 - Spring integration tests use a centralized database reset listener.
+- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V4 data, verifies deterministic valid-row backfill and migration reports for invalid legacy rows, then removes the schema.
 
 ## Known defects represented by disabled protection tests
 
@@ -55,21 +54,21 @@ Both clean runs produced the same totals:
 3. I4 — stable preservation/relinking of explanations during Reconcile requires Stage 4.
 4. I5 — physical signal idempotency requires Stages 6–7.
 
-These tests are intentionally disabled; Stage 2 does not implement later business stages merely to make them green.
+These tests remain intentionally disabled. Stage 3 supplies the stoppage identity, state, exact-time model, aggregate persistence and migration boundary; it does not implement Stage 4 matching or later business stages merely to make protection tests green.
 
-Additional existing tests are explicitly disabled until their approved stages:
+Additional existing tests remain disabled until their approved stages:
 
 - 3 settings/application-delivery tests — Stage 8.
 
-I1 is active and passing. Stage 2 replaces the three stale disabled comment-flow tests with active domain, application, web and persistence tests.
+I1 is active and passing. Stage 3 adds active aggregate, rounding, architecture, optimistic-concurrency, persistence and migration-rehearsal coverage.
 
-## Stage 2 status
+## Stage 3 status
 
-**COMPLETE.** Two consecutive clean full runs passed with identical totals against the isolated PostgreSQL environment. `IMPLEMENTATION_STATUS.md` records Stage 2 as `DONE` under the approved Stage 2/3/4 boundary.
+**COMPLETE under the approved Stage 3 boundary.** The full suite passes against isolated PostgreSQL. Stable update-in-place matching, unified Reconcile and I4 explanation preservation/relinking remain explicitly assigned to Stage 4.
 
 ## Reproduction
 
 1. Start Docker Desktop or provide an isolated PostgreSQL 15 instance.
-2. Export `POSTGRES_SUPERUSER_PASSWORD`, `SHIFT_PROD_DB_PASSWORD`, `SHIFT_TEST_DB_PASSWORD` and run `docker compose --project-name kontroller-stage2 up -d` on a fresh volume. The default host port is `55432` to avoid the existing project database on `5432`.
-3. Export `TEST_DB_PASSWORD` and `PROD_DB_URL`, then run `.\\mvnw.cmd clean verify` twice.
-4. Confirm the logs contain `shiftcounter_test`/`shift_test` and no `[MODBUS] Initialization` message.
+2. Export `POSTGRES_SUPERUSER_PASSWORD`, `SHIFT_PROD_DB_PASSWORD`, `SHIFT_TEST_DB_PASSWORD` and run `docker compose --project-name kontroller-stage3 up -d` on a fresh volume. Set `SHIFT_DB_PORT=55433` to avoid the existing project database on `5432`.
+3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55433/shiftcounter_test`, `TEST_DB_USERNAME=shift_test`, `TEST_DB_PASSWORD` and `PROD_DB_URL=jdbc:postgresql://localhost:55433/shiftcounter`, then run `.\\mvnw.cmd clean verify`.
+4. Confirm the reports contain 0 failures/errors and the logs contain `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.

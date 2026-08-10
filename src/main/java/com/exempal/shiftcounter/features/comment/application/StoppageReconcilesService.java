@@ -1,9 +1,7 @@
 package com.exempal.shiftcounter.features.comment.application;
 
 import com.exempal.shiftcounter.features.comment.calculator.StoppageCalculator;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.comment.domain.StoppageRepository;
-import com.exempal.shiftcounter.features.comment.domain.StoppageType;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsApplier;
 import com.exempal.shiftcounter.features.shift.application.ShiftPlannerUseCase;
 import com.exempal.shiftcounter.features.shift.application.ShiftTimeHelper;
@@ -81,14 +79,12 @@ public class StoppageReconcilesService {
         );
 
         // 6) Расчёт FIXED/TEMPO
-        List<StoppageEntry> newAutoStoppages = stoppageCalculator.recalculate(
+        List<Stoppage> newAutoStoppages = stoppageCalculator.recalculate(
                 shift, idx, signals, metrics, now);
 
-        // 7) Удаляем прежние авто-строки и сохраняем новые
-        stoppageRepository.deleteAllByShiftIdAndHourIndexAndTypeIn(
-                shiftEntity.getId(), idx, List.of(StoppageType.FIXED, StoppageType.TEMPO));
-
-        newAutoStoppages.forEach(e -> e.setShift(shiftEntity));
+        // Stage 3 compatibility: retain history. Stable matching/update-in-place belongs to Stage 4.
+        List<Stoppage> previous = stoppageRepository.findActiveByShiftAndInterval(shiftEntity.getId(), idx);
+        stoppageRepository.saveAll(previous.stream().map(Stoppage::resolve).toList());
         stoppageRepository.saveAll(newAutoStoppages);
 
         log.info("Reconciled date={}, hourIndex={} -> saved {} auto-stoppage(s)",

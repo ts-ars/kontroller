@@ -5,8 +5,11 @@ import com.exempal.shiftcounter.features.comment.domain.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,33 +17,22 @@ import static org.mockito.Mockito.*;
 
 class LossExplanationServiceTest {
     private StoppageRepository stoppages;
-    private LossExplanationRepository explanations;
     private LossExplanationService service;
-    private StoppageEntry stoppage;
+    private Stoppage stoppage;
 
     @BeforeEach
     void setUp() {
         stoppages = mock(StoppageRepository.class);
-        explanations = mock(LossExplanationRepository.class);
-        service = new LossExplanationService(stoppages, explanations);
-        stoppage = mock(StoppageEntry.class);
-        when(stoppage.getId()).thenReturn(10L);
-        when(stoppage.getType()).thenReturn(StoppageType.FIXED);
-        when(stoppage.getMinutes()).thenReturn(10.0);
-        when(stoppage.getCans()).thenReturn(100);
+        service = new LossExplanationService(stoppages);
+        stoppage = stoppage(List.of());
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage));
         when(stoppages.findById(10L)).thenReturn(Optional.of(stoppage));
-        when(explanations.findByStoppageId(10L)).thenReturn(List.of());
-        when(explanations.save(any())).thenAnswer(invocation -> {
-            LossExplanation value = invocation.getArgument(0);
-            return new LossExplanation(value.id() == null ? 1L : value.id(), value.stoppageId(), value.category(),
-                    value.comment(), value.allocatedMinutes(), value.allocatedCans());
-        });
+        when(stoppages.save(any())).thenAnswer(invocation -> persisted(invocation.getArgument(0)));
     }
 
     @Test
     void createsExplanationWithoutAcceptingSystemOwnedFields() {
         LossExplanation saved = service.create(10L, LossCategory.MATERIAL, "Roll change", 4);
-
         assertThat(saved.stoppageId()).isEqualTo(10L);
         assertThat(saved.allocatedMinutes()).isEqualTo(4);
         assertThat(saved.allocatedCans()).isEqualTo(40);
@@ -48,29 +40,40 @@ class LossExplanationServiceTest {
 
     @Test
     void rejectsAggregateOverAllocation() {
-        when(explanations.findByStoppageId(10L)).thenReturn(List.of(
-                new LossExplanation(2L, 10L, LossCategory.QUALITY, "Existing", 7, 70)));
-
+        stoppage = stoppage(List.of(new LossExplanation(2L, 10L, LossCategory.QUALITY, "Existing", 7, 70)));
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage));
         assertThatThrownBy(() -> service.create(10L, LossCategory.MATERIAL, "Too much", 4))
-                .isInstanceOf(LossAllocationException.class)
-                .hasMessageContaining("exceed");
-        verify(explanations, never()).save(any());
+                .isInstanceOf(LossAllocationException.class).hasMessageContaining("exceed");
+        verify(stoppages, never()).save(any());
     }
 
     @Test
-    void rejectsExplanationForLegacyOperatorRow() {
-        when(stoppage.getType()).thenReturn(StoppageType.BREAKDOWN);
-
+    void rejectsExplanationForLegacyOrMissingRow() {
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.create(10L, LossCategory.BREAKDOWN, "Legacy", 1))
-                .isInstanceOf(LossAllocationException.class);
+                .isInstanceOf(LossExplanationNotFoundException.class);
     }
 
     @Test
     void updateCannotMoveExplanationFromAnotherLoss() {
-        when(explanations.findById(3L)).thenReturn(Optional.of(
-                new LossExplanation(3L, 11L, LossCategory.QUALITY, "Other", 1, 10)));
-
         assertThatThrownBy(() -> service.update(10L, 3L, LossCategory.MATERIAL, "Move", 1))
                 .isInstanceOf(LossExplanationNotFoundException.class);
+    }
+
+    private Stoppage stoppage(List<LossExplanation> explanations) {
+        return new Stoppage(10L, UUID.fromString("00000000-0000-0000-0000-000000000010"), 1L,
+                Stoppage.PRIMARY_SENSOR, 0, LocalDateTime.of(2026, 8, 7, 8, 0), Duration.ofMinutes(10),
+                10, 100, DetectionType.FIXED, StoppageState.ACTIVE, explanations, 0L);
+    }
+
+    private Stoppage persisted(Stoppage source) {
+        List<LossExplanation> values = source.explanations().stream()
+                .map(value -> value.id() == null
+                        ? new LossExplanation(1L, 10L, value.category(), value.comment(),
+                        value.allocatedMinutes(), value.allocatedCans(), 0L) : value)
+                .toList();
+        return new Stoppage(source.id(), source.detectionKey(), source.shiftId(), source.sensorKey(),
+                source.intervalIndex(), source.startedAt(), source.exactDuration(), source.roundedMinutes(),
+                source.lostCans(), source.detectionType(), source.state(), values, source.version());
     }
 }

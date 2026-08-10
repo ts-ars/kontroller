@@ -9,10 +9,12 @@ public record LossExplanationResponse(
         LossCategory category,
         String comment,
         int allocatedMinutes,
-        int allocatedCans
+        int allocatedCans,
+        long version
 ) {
     public static LossExplanationResponse from(LossExplanation explanation) {
         return new LossExplanationResponse(explanation.id(), explanation.stoppageId(), explanation.category(),
-                explanation.comment(), explanation.allocatedMinutes(), explanation.allocatedCans());
+                explanation.comment(), explanation.allocatedMinutes(), explanation.allocatedCans(),
+                explanation.version());
     }
 }

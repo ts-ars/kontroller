@@ -1,6 +1,6 @@
 # Stage 3 — Stoppage and LossExplanation Model
 
-Status: **APPROVED / NOT IMPLEMENTED**
+Status: **APPROVED / IMPLEMENTED**
 
 ## Domain model
 
@@ -42,4 +42,12 @@ If Reconcile reduces a loss below already allocated operator minutes, the system
 5. Resolved losses retain explanations and audit history.
 6. Domain and JPA models remain separate.
 7. Versioned migration, domain tests and persistence tests pass.
+
+## Implemented boundary
+
+- The pure aggregate owns UUID identity, shift/sensor interval identity, exact start/duration, rounded minutes, lost cans, state, optimistic version and explanations.
+- Normal explanation commands lock the parent aggregate and cannot over-allocate. A backend system measurement may shrink the loss and derives `ALLOCATION_CONFLICT` without rewriting operator fields.
+- JPA `StoppageEntity` and `LossExplanationEntity` are separate from domain and both carry optimistic versions.
+- V4 preserves legacy rows, backfills unambiguous FIXED/TEMPO rows and reports system rows that have no interval label. An automated copy-style rehearsal migrates V1/V2 data through V3/V4.
+- Until Stage 4, recalculation uses a safe compatibility transition: prior ACTIVE rows become RESOLVED and new detections are inserted. Matching, update-in-place and preservation/relinking of explanations across Reconcile remain Stage 4; invariant I4 therefore remains disabled.
 

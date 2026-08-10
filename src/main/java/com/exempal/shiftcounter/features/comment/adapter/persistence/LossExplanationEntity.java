@@ -16,8 +16,9 @@ public class LossExplanationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "stoppage_id", nullable = false)
-    private Long stoppageId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "stoppage_id", nullable = false)
+    private StoppageEntity stoppage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
@@ -31,4 +32,8 @@ public class LossExplanationEntity {
 
     @Column(name = "allocated_cans", nullable = false)
     private int allocatedCans;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
 }

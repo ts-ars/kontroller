@@ -1,8 +1,7 @@
 package com.exempal.shiftcounter.features.comment.application;
 
 import com.exempal.shiftcounter.features.comment.calculator.StoppageCalculator;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.comment.domain.StoppageRepository;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsProvider;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
@@ -56,7 +55,7 @@ public class ProductionStoppedListener {
 
         List<Signal> signals = signalService.getSignalsBetween(from, to);
 
-        List<StoppageEntry> newEntries = stoppageCalculator.recalculate(
+        List<Stoppage> newEntries = stoppageCalculator.recalculate(
                 shift,
                 hourIndex,
                 signals,
@@ -64,12 +63,9 @@ public class ProductionStoppedListener {
                 timestamp
         );
 
-        for (StoppageEntry entry : newEntries) {
-            Optional<StoppageEntry> existing = stoppageRepository.findByShiftDateAndHourIndexAndMinutes(
-                    entry.getShift().getDate(),
-                    entry.getHourIndex(),
-                    entry.getMinutes()
-            );
+        for (Stoppage entry : newEntries) {
+            Optional<Stoppage> existing = stoppageRepository.findActiveEquivalent(
+                    shift.getDate(), entry.intervalIndex(), entry.roundedMinutes());
             if (existing.isEmpty()) {
                 stoppageRepository.save(entry);
             }

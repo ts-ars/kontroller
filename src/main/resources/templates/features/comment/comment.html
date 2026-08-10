@@ -8,12 +8,14 @@
   <div th:if="${#lists.isEmpty(losses)}">No system losses for today.</div>
 
   <section class="loss-card" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
-    <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00</h2>
+    <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00:00</h2>
     <p>
       <span th:text="|Loss: ${loss.roundedMinutes} min / ${loss.lostCans} cans|">Loss</span>
       · <span class="allocation-summary"
               th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span>
     </p>
+    <p class="explanation-status" th:text="|Status: ${loss.explanationStatus}|"
+       th:style="${loss.explanationStatus.name() == 'ALLOCATION_CONFLICT'} ? 'color:red;font-weight:bold' : ''">Status</p>
 
     <table>
       <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th></tr></thead>

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
  *
  * Это событие публикуется при получении сигнала остановки с устройства (например, ADAM-6050)
  * и используется подписчиком (ProductionStoppedListener) для автоматического создания
- * черновика строки остановки — StoppageEntry — в базе данных.
+ * события остановки производства для последующего формирования модели {@code Stoppage}.
  *
  * ⚙️ Пример использования:
  *   eventPublisher.publishEvent(new ProductionStoppedEvent(...));

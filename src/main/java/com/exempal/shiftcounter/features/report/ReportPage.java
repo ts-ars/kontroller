@@ -1,9 +1,9 @@
 package com.exempal.shiftcounter.features.report;
 
 import com.exempal.shiftcounter.core.PageModel;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.comment.domain.StoppageRepository;
-import com.exempal.shiftcounter.features.comment.application.LossExplanationRepository;
+import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
+import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
@@ -15,11 +15,9 @@ import java.util.*;
 public class ReportPage implements PageModel {
 
     private final StoppageRepository repository;
-    private final LossExplanationRepository explanations;
 
-    public ReportPage(StoppageRepository repository, LossExplanationRepository explanations) {
+    public ReportPage(StoppageRepository repository) {
         this.repository = repository;
-        this.explanations = explanations;
     }
 
     @Override
@@ -37,16 +35,16 @@ public class ReportPage implements PageModel {
         LocalDate from = parseDateParam(params.get("from"), LocalDate.now().minusDays(7));
         LocalDate to = parseDateParam(params.get("to"), LocalDate.now());
 
-        List<StoppageEntry> entries = repository.findByShiftDateBetween(from, to).stream()
-                .filter(entry -> entry.getType() != null && !entry.getType().isUserEditable())
+        List<Stoppage> entries = repository.findByShiftDateBetween(from, to).stream()
+                .filter(entry -> entry.state() == StoppageState.ACTIVE)
                 .toList();
 
         List<Map<String, Object>> problems = new ArrayList<>();
         int totalMinutes = 0;
         int totalCans = 0;
 
-        for (StoppageEntry entry : entries) {
-            for (var explanation : explanations.findByStoppageId(entry.getId())) {
+        for (Stoppage entry : entries) {
+            for (var explanation : entry.explanations()) {
                 Map<String, Object> row = new HashMap<>();
                 row.put("minutes", explanation.allocatedMinutes());
                 row.put("cans", explanation.allocatedCans());

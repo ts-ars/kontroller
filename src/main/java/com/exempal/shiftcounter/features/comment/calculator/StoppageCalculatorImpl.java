@@ -2,8 +2,7 @@ package com.exempal.shiftcounter.features.comment.calculator;
 
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftMetrics;
-import com.exempal.shiftcounter.features.comment.domain.StoppageEntry;
-import com.exempal.shiftcounter.features.shift.infrastructure.ShiftEntity;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 
 import java.time.LocalDateTime;
@@ -28,7 +27,7 @@ public class StoppageCalculatorImpl implements StoppageCalculator {
     }
 
     @Override
-    public List<StoppageEntry> recalculate(
+    public List<Stoppage> recalculate(
             Shift shift,
             int hourIndex,
             List<Signal> signals,
@@ -38,16 +37,12 @@ public class StoppageCalculatorImpl implements StoppageCalculator {
         double cansPerMinute = metrics.canPerMinute().get(hourIndex);
         int actual = shift.getHourlyActualValues().get(hourIndex);
 
-        ShiftEntity shiftEntity = (shift.getEntity() != null)
-                ? shift.getEntity()
-                : ShiftEntity.fromDomain(shift);
-
-        List<StoppageEntry> fixed = fixedLossCalculator.calculateFixed(
-                shiftEntity, hourIndex, signals, cansPerMinute
+        List<Stoppage> fixed = fixedLossCalculator.calculateFixed(
+                shift, hourIndex, signals, cansPerMinute
         );
-        int fixedCans = fixed.stream().mapToInt(StoppageEntry::getCans).sum();
+        int fixedCans = fixed.stream().mapToInt(Stoppage::lostCans).sum();
 
-        List<StoppageEntry> result = new ArrayList<>(fixed);
+        List<Stoppage> result = new ArrayList<>(fixed);
 
         tempoLossCalculator.calculateTempo(
                 shift, hourIndex, actual, fixedCans, cansPerMinute, now
