@@ -43,6 +43,7 @@ class LossExplanationPersistenceIT {
 
         assertThat(saved.explanations()).extracting(LossExplanation::allocatedMinutes)
                 .containsExactly(4, 6);
+        assertThat(saved.incidentKey()).isEqualTo(saved.detectionKey());
         assertThat(stoppages.findById(saved.id()).orElseThrow().explanationStatus())
                 .isEqualTo(ExplanationStatus.FULLY_EXPLAINED);
     }
@@ -69,6 +70,8 @@ class LossExplanationPersistenceIT {
                 "'rounded_minutes','state','version')", Integer.class)).isEqualTo(8);
         assertThat(jdbc.queryForObject("select count(*) from information_schema.columns " +
                 "where table_name='loss_explanations' and column_name='version'", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from information_schema.columns " +
+                "where table_name='stoppages' and column_name='incident_key'", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from information_schema.tables " +
                 "where table_name='stoppage_model_migration_report'", Integer.class)).isEqualTo(1);
     }

@@ -1,6 +1,8 @@
 package com.exempal.shiftcounter.features.shift.application;
 
-import com.exempal.shiftcounter.features.comment.application.StoppageReconcilesService;
+import com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesCommand;
+import com.exempal.shiftcounter.features.comment.application.ReconcileStoppagesUseCase;
+import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.settings.infrastructure.ShiftSettingsApplier;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,7 @@ public class ShiftProductRegistrar {
     private final ShiftExtenderService extender;
     private final ShiftTimeHelper timeHelper;
     private final ShiftSettingsApplier shiftSettingsApplier;
-    private final StoppageReconcilesService reconciles;
+    private final ReconcileStoppagesUseCase reconciles;
 
     public void registerProduct(LocalDateTime timestamp) {
         LocalDate today = timestamp.toLocalDate();
@@ -34,7 +36,7 @@ public class ShiftProductRegistrar {
             if (idx >= 0) {
                 Shift updated = todayExt.withIncrementedHourlyActualValue(idx);
                 shiftPlanner.applySettingsAndUpdate(updated);
-                reconciles.reconcileHour(today, idx, timestamp);
+                reconciles.reconcile(new ReconcileStoppagesCommand(today, Stoppage.PRIMARY_SENSOR, idx, timestamp));
                 return;
             }
         }
@@ -53,7 +55,7 @@ public class ShiftProductRegistrar {
                 if (idx >= 0) {
                     Shift updated = yExt.withIncrementedHourlyActualValue(idx);
                     shiftPlanner.applySettingsAndUpdate(updated);
-                    reconciles.reconcileHour(y, idx, timestamp);
+                    reconciles.reconcile(new ReconcileStoppagesCommand(y, Stoppage.PRIMARY_SENSOR, idx, timestamp));
                     return;
                 }
             }

@@ -1,9 +1,6 @@
 package com.exempal.shiftcounter.features.comment.calculator;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageDetector;
-import com.exempal.shiftcounter.features.comment.domain.Stoppage;
-import com.exempal.shiftcounter.features.shift.domain.Shift;
-import com.exempal.shiftcounter.features.signal.domain.Signal;
 
 import java.time.Duration;
 import java.util.List;
@@ -20,11 +17,10 @@ public class StoppageFixedLossCalculator {
         this.minGap = minGap;
     }
 
-    public List<Stoppage> calculateFixed(Shift shift, int intervalIndex, List<Signal> signals,
-                                         double cansPerMinute) {
-        return detector.detectFixedLosses(shift, intervalIndex, signals, minGap).stream()
-                .map(stoppage -> stoppage.withLostCans(
-                        (int) Math.round(stoppage.roundedMinutes() * cansPerMinute)))
+    public List<StoppageCandidate> calculateFixed(StoppageCalculationContext context) {
+        return detector.detectFixedLosses(context, minGap).stream()
+                .map(value -> value.withLostCans((int) Math.round(
+                        value.exactDuration().toNanos() / 60_000_000_000.0 * context.cansPerMinute())))
                 .toList();
     }
 }

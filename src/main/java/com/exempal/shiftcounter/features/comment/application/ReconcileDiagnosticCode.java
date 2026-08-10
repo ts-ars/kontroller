@@ -1,0 +1,13 @@
+package com.exempal.shiftcounter.features.comment.application;
+
+public enum ReconcileDiagnosticCode {
+    INVALID_INTERVAL,
+    INVALID_PRODUCTIVITY,
+    FIXED_EXCEEDS_TOTAL_LOSS,
+    AMBIGUOUS_FIXED_MATCH,
+    AMBIGUOUS_TEMPO_MATCH,
+    AMBIGUOUS_INCIDENT_LINK,
+    ALLOCATION_CONFLICT,
+    BALANCE_MISMATCH,
+    CONCURRENT_MODIFICATION
+}
