@@ -11,8 +11,9 @@ public interface StoppageRepository {
     Optional<Stoppage> findForUpdateById(long id);
     List<Stoppage> findByShiftDate(LocalDate date);
     List<Stoppage> findByShiftDateBetween(LocalDate from, LocalDate to);
-    Optional<Stoppage> findActiveEquivalent(LocalDate date, int intervalIndex, int roundedMinutes);
     List<Stoppage> findActiveByShiftAndInterval(long shiftId, int intervalIndex);
+    List<Stoppage> findActiveByShiftSensorAndIntervalRange(long shiftId, String sensorKey,
+                                                            int fromInterval, int toInterval);
     Stoppage save(Stoppage stoppage);
     List<Stoppage> saveAll(List<Stoppage> stoppages);
 }

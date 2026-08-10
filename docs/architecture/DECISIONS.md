@@ -32,4 +32,15 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 28. Stage 3 replaces the domain/JPA hybrid with a pure `Stoppage` aggregate and an application repository port. JPA entities, Spring Data repositories and mapping are confined to the persistence adapter.
 29. Stage 3 compatibility never physically deletes an active loss: the existing per-hour recalculation marks previous rows `RESOLVED` before inserting new detections. Stable matching, update-in-place, identity preservation across recalculation and explanation relinking remain Stage 4.
 30. V4 backfills unambiguous FIXED/TEMPO rows with deterministic UUID keys, exact legacy-derived time/duration, state and versions. Rows without an interval label remain in the legacy representation and are recorded in `stoppage_model_migration_report`; V1–V3 are not edited.
+31. Stage 4 uses one `ReconcileStoppagesUseCase`. Calculation receives an immutable interval context,
+    uses the full persisted plan and enforces `totalLoss = max(0, plan - actual)`, bounded FIXED and
+    residual TEMPO before any persistence occurs.
+32. FIXED matching uses positive maximum time overlap only. Equal best overlap, several candidates
+    selecting one row, or inconsistent adjacent incident identities are fatal diagnostics; Reconcile
+    performs no arbitrary list-order match and writes nothing for that attempt.
+33. V5 adds `incidentKey`. Each interval part retains its unique `detectionKey` and operator-owned
+    explanations, while adjacent boundary parts may share one incident identity.
+34. Stage 4 allocates backend-owned cans by deterministic largest remainder. Remainder ties use
+    persisted explanation id and then aggregate order; operator category, comment and minutes are never
+    rewritten by Reconcile.
 

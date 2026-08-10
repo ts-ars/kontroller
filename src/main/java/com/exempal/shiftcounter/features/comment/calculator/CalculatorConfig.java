@@ -1,7 +1,6 @@
 package com.exempal.shiftcounter.features.comment.calculator;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageDetector;
-import com.exempal.shiftcounter.features.shift.application.ShiftTimeHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,8 +22,8 @@ public class CalculatorConfig {
     }
 
     @Bean
-    public StoppageTempoLossCalculator stoppageTempoLossCalculator(ShiftTimeHelper timeHelper) {
-        return new StoppageTempoLossCalculator(timeHelper);
+    public StoppageTempoLossCalculator stoppageTempoLossCalculator() {
+        return new StoppageTempoLossCalculator();
     }
 
     @Bean

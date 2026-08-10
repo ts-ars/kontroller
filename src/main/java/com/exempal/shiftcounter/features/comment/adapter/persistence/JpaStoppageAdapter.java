@@ -46,15 +46,17 @@ public class JpaStoppageAdapter implements StoppageRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Stoppage> findActiveEquivalent(LocalDate date, int intervalIndex, int roundedMinutes) {
-        return repository.findActiveEquivalent(date, intervalIndex, roundedMinutes, StoppageState.ACTIVE)
-                .stream().findFirst().map(this::toDomain);
+    public List<Stoppage> findActiveByShiftAndInterval(long shiftId, int intervalIndex) {
+        return repository.findActiveByShiftAndInterval(shiftId, intervalIndex, StoppageState.ACTIVE)
+                .stream().map(this::toDomain).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Stoppage> findActiveByShiftAndInterval(long shiftId, int intervalIndex) {
-        return repository.findActiveByShiftAndInterval(shiftId, intervalIndex, StoppageState.ACTIVE)
+    public List<Stoppage> findActiveByShiftSensorAndIntervalRange(long shiftId, String sensorKey,
+                                                                   int fromInterval, int toInterval) {
+        return repository.findActiveByShiftSensorAndIntervalRange(shiftId, sensorKey, fromInterval,
+                        toInterval, StoppageState.ACTIVE)
                 .stream().map(this::toDomain).toList();
     }
 
@@ -83,6 +85,7 @@ public class JpaStoppageAdapter implements StoppageRepository {
         target.setLegacyMinuteOffset(0);
         target.setLegacyReason("");
         target.setDetectionKey(source.detectionKey());
+        target.setIncidentKey(source.incidentKey());
         target.setDetectionType(source.detectionType());
         target.setSensorKey(source.sensorKey());
         target.setStartedAt(source.startedAt());
@@ -119,7 +122,8 @@ public class JpaStoppageAdapter implements StoppageRepository {
     }
 
     private boolean isSystemLoss(StoppageEntity entity) {
-        return entity.getDetectionKey() != null && entity.getDetectionType() != null
+        return entity.getDetectionKey() != null && entity.getIncidentKey() != null
+                && entity.getDetectionType() != null
                 && entity.getSensorKey() != null && entity.getStartedAt() != null
                 && entity.getExactDurationNanos() != null && entity.getRoundedMinutes() != null
                 && entity.getState() != null;
@@ -130,7 +134,8 @@ public class JpaStoppageAdapter implements StoppageRepository {
                 .map(value -> new LossExplanation(value.getId(), entity.getId(), value.getCategory(),
                         value.getComment(), value.getAllocatedMinutes(), value.getAllocatedCans(), value.getVersion()))
                 .toList();
-        return new Stoppage(entity.getId(), entity.getDetectionKey(), entity.getShift().getId(),
+        return new Stoppage(entity.getId(), entity.getDetectionKey(), entity.getIncidentKey(),
+                entity.getShift().getId(),
                 entity.getSensorKey(), entity.getIntervalIndex(), entity.getStartedAt(),
                 Duration.ofNanos(entity.getExactDurationNanos()), entity.getRoundedMinutes(), entity.getLostCans(),
                 entity.getDetectionType(), entity.getState(), explanations, entity.getVersion());

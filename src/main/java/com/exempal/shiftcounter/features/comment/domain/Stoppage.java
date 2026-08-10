@@ -12,6 +12,7 @@ public final class Stoppage {
 
     private final Long id;
     private final UUID detectionKey;
+    private final UUID incidentKey;
     private final long shiftId;
     private final String sensorKey;
     private final int intervalIndex;
@@ -28,8 +29,17 @@ public final class Stoppage {
                     LocalDateTime startedAt, Duration exactDuration, int roundedMinutes, int lostCans,
                     DetectionType detectionType, StoppageState state,
                     List<LossExplanation> explanations, long version) {
+        this(id, detectionKey, detectionKey, shiftId, sensorKey, intervalIndex, startedAt, exactDuration,
+                roundedMinutes, lostCans, detectionType, state, explanations, version);
+    }
+
+    public Stoppage(Long id, UUID detectionKey, UUID incidentKey, long shiftId, String sensorKey,
+                    int intervalIndex, LocalDateTime startedAt, Duration exactDuration,
+                    int roundedMinutes, int lostCans, DetectionType detectionType, StoppageState state,
+                    List<LossExplanation> explanations, long version) {
         this.id = id;
         this.detectionKey = Objects.requireNonNull(detectionKey, "detectionKey");
+        this.incidentKey = Objects.requireNonNull(incidentKey, "incidentKey");
         if (shiftId <= 0) throw new IllegalArgumentException("shiftId must be positive");
         this.shiftId = shiftId;
         this.sensorKey = requireText(sensorKey, "sensorKey");
@@ -61,13 +71,22 @@ public final class Stoppage {
                 roundHalfUpMinutes(duration), lostCans, detectionType, StoppageState.ACTIVE, List.of(), 0L);
     }
 
+    public static Stoppage detected(UUID detectionKey, UUID incidentKey, long shiftId, String sensorKey,
+                                    int intervalIndex, LocalDateTime startedAt, Duration duration,
+                                    int lostCans, DetectionType detectionType) {
+        return new Stoppage(null, detectionKey, incidentKey, shiftId, sensorKey, intervalIndex, startedAt,
+                duration, roundHalfUpMinutes(duration), lostCans, detectionType, StoppageState.ACTIVE,
+                List.of(), 0L);
+    }
+
     public Stoppage resolve() {
         return copy(exactDuration, roundedMinutes, lostCans, StoppageState.RESOLVED, explanations);
     }
 
     public Stoppage withLostCans(int cans) {
         if (cans < 0) throw new IllegalArgumentException("lostCans must not be negative");
-        return copy(exactDuration, roundedMinutes, cans, state, explanations);
+        return copy(exactDuration, roundedMinutes, cans, state,
+                rebalanceExplanations(explanations, roundedMinutes, cans));
     }
 
     public Stoppage withSystemMeasurement(LocalDateTime newStartedAt, Duration newDuration, int newLostCans) {
@@ -75,16 +94,17 @@ public final class Stoppage {
         Objects.requireNonNull(newDuration, "exactDuration");
         if (newDuration.isNegative()) throw new IllegalArgumentException("exactDuration must not be negative");
         if (newLostCans < 0) throw new IllegalArgumentException("lostCans must not be negative");
-        return new Stoppage(id, detectionKey, shiftId, sensorKey, intervalIndex, newStartedAt, newDuration,
-                roundHalfUpMinutes(newDuration), newLostCans, detectionType, state, explanations, version);
+        return new Stoppage(id, detectionKey, incidentKey, shiftId, sensorKey, intervalIndex, newStartedAt,
+                newDuration, roundHalfUpMinutes(newDuration), newLostCans, detectionType, state,
+                rebalanceExplanations(explanations, roundHalfUpMinutes(newDuration), newLostCans), version);
     }
 
     public Stoppage addExplanation(LossCategory category, String comment, int allocatedMinutes) {
         validateNormalAllocation(allocatedMinutes, null);
         List<LossExplanation> updated = new ArrayList<>(explanations);
-        updated.add(new LossExplanation(null, requirePersistedId(), category, comment, allocatedMinutes,
-                allocatedCans(allocatedMinutes), 0L));
-        return copy(exactDuration, roundedMinutes, lostCans, state, updated);
+        updated.add(new LossExplanation(null, requirePersistedId(), category, comment, allocatedMinutes, 0, 0L));
+        return copy(exactDuration, roundedMinutes, lostCans, state,
+                rebalanceExplanations(updated, roundedMinutes, lostCans));
     }
 
     public Stoppage updateExplanation(long explanationId, LossCategory category, String comment,
@@ -94,10 +114,11 @@ public final class Stoppage {
         List<LossExplanation> updated = explanations.stream()
                 .map(value -> value.id().equals(explanationId)
                         ? new LossExplanation(value.id(), requirePersistedId(), category, comment,
-                        allocatedMinutes, allocatedCans(allocatedMinutes), value.version())
+                        allocatedMinutes, 0, value.version())
                         : value)
                 .toList();
-        return copy(exactDuration, roundedMinutes, lostCans, state, updated);
+        return copy(exactDuration, roundedMinutes, lostCans, state,
+                rebalanceExplanations(updated, roundedMinutes, lostCans));
     }
 
     public Stoppage removeExplanation(long explanationId) {
@@ -132,9 +153,47 @@ public final class Stoppage {
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("explanation not found"));
     }
 
-    private int allocatedCans(int allocatedMinutes) {
-        if (roundedMinutes == 0 || allocatedMinutes == 0 || lostCans == 0) return 0;
-        return (int) Math.round((double) lostCans * allocatedMinutes / roundedMinutes);
+    private List<LossExplanation> rebalanceExplanations(List<LossExplanation> source,
+                                                        int systemMinutes, int systemCans) {
+        long totalMinutes = source.stream().mapToLong(LossExplanation::allocatedMinutes).sum();
+        if (source.isEmpty() || totalMinutes == 0 || systemCans == 0) {
+            return source.stream().map(value -> withAllocatedCans(value, 0)).toList();
+        }
+        long target = systemMinutes <= 0 || totalMinutes >= systemMinutes
+                ? systemCans
+                : Math.round((double) systemCans * totalMinutes / systemMinutes);
+        record Share(int index, int floor, double remainder, Long id) {}
+        List<Share> shares = new ArrayList<>();
+        int floorSum = 0;
+        for (int index = 0; index < source.size(); index++) {
+            LossExplanation value = source.get(index);
+            double exact = (double) target * value.allocatedMinutes() / totalMinutes;
+            int floor = (int) Math.floor(exact);
+            floorSum += floor;
+            shares.add(new Share(index, floor, exact - floor, value.id()));
+        }
+        int[] cans = shares.stream().mapToInt(Share::floor).toArray();
+        shares.stream().sorted((left, right) -> {
+            int remainder = Double.compare(right.remainder(), left.remainder());
+            if (remainder != 0) return remainder;
+            if (left.id() == null && right.id() != null) return 1;
+            if (left.id() != null && right.id() == null) return -1;
+            if (left.id() != null) {
+                int id = Long.compare(left.id(), right.id());
+                if (id != 0) return id;
+            }
+            return Integer.compare(left.index(), right.index());
+        }).limit(target - floorSum).forEach(share -> cans[share.index()]++);
+        List<LossExplanation> result = new ArrayList<>(source.size());
+        for (int index = 0; index < source.size(); index++) {
+            result.add(withAllocatedCans(source.get(index), cans[index]));
+        }
+        return List.copyOf(result);
+    }
+
+    private LossExplanation withAllocatedCans(LossExplanation value, int cans) {
+        return new LossExplanation(value.id(), value.stoppageId(), value.category(), value.comment(),
+                value.allocatedMinutes(), cans, value.version());
     }
 
     private long requirePersistedId() {
@@ -144,7 +203,7 @@ public final class Stoppage {
 
     private Stoppage copy(Duration duration, int rounded, int cans, StoppageState newState,
                           List<LossExplanation> updatedExplanations) {
-        return new Stoppage(id, detectionKey, shiftId, sensorKey, intervalIndex, startedAt, duration,
+        return new Stoppage(id, detectionKey, incidentKey, shiftId, sensorKey, intervalIndex, startedAt, duration,
                 rounded, cans, detectionType, newState, updatedExplanations, version);
     }
 
@@ -160,6 +219,7 @@ public final class Stoppage {
 
     public Long id() { return id; }
     public UUID detectionKey() { return detectionKey; }
+    public UUID incidentKey() { return incidentKey; }
     public long shiftId() { return shiftId; }
     public String sensorKey() { return sensorKey; }
     public int intervalIndex() { return intervalIndex; }

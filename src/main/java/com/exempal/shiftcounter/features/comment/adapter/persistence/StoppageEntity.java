@@ -48,6 +48,9 @@ public class StoppageEntity {
     @Column(name = "detection_key")
     private UUID detectionKey;
 
+    @Column(name = "incident_key")
+    private UUID incidentKey;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "detection_type", length = 16)
     private DetectionType detectionType;

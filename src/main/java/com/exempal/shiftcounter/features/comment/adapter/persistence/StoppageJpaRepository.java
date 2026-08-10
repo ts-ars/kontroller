@@ -33,22 +33,22 @@ public interface StoppageJpaRepository extends JpaRepository<StoppageEntity, Lon
     @EntityGraph(attributePaths = {"shift", "explanations"})
     @Query("""
             select distinct s from StoppageEntity s
-            where s.shift.date = :date and s.intervalIndex = :intervalIndex
-              and s.roundedMinutes = :roundedMinutes and s.state = :state
-              and s.detectionType is not null
-            """)
-    List<StoppageEntity> findActiveEquivalent(@Param("date") LocalDate date,
-                                               @Param("intervalIndex") int intervalIndex,
-                                               @Param("roundedMinutes") int roundedMinutes,
-                                               @Param("state") StoppageState state);
-
-    @EntityGraph(attributePaths = {"shift", "explanations"})
-    @Query("""
-            select distinct s from StoppageEntity s
             where s.shift.id = :shiftId and s.intervalIndex = :intervalIndex
               and s.state = :state and s.detectionType is not null
             """)
     List<StoppageEntity> findActiveByShiftAndInterval(@Param("shiftId") long shiftId,
                                                        @Param("intervalIndex") int intervalIndex,
                                                        @Param("state") StoppageState state);
+
+    @EntityGraph(attributePaths = {"shift", "explanations"})
+    @Query("""
+            select distinct s from StoppageEntity s
+            where s.shift.id = :shiftId and s.sensorKey = :sensorKey
+              and s.intervalIndex between :fromInterval and :toInterval
+              and s.state = :state and s.detectionType is not null
+            """)
+    List<StoppageEntity> findActiveByShiftSensorAndIntervalRange(
+            @Param("shiftId") long shiftId, @Param("sensorKey") String sensorKey,
+            @Param("fromInterval") int fromInterval, @Param("toInterval") int toInterval,
+            @Param("state") StoppageState state);
 }

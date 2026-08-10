@@ -10,7 +10,7 @@ Source of truth: this repository
 | 1 — Test environment | APPROVED | DONE |
 | 2 — Comments | APPROVED | DONE |
 | 3 — Stoppage model | APPROVED | DONE |
-| 4 — Reconcile | APPROVED | TODO |
+| 4 — Reconcile | APPROVED | DONE |
 | 5 — Time | APPROVED | TODO |
 | 6 — Signals | APPROVED | TODO |
 | 7 — Transactions | APPROVED | TODO |
@@ -20,5 +20,7 @@ Source of truth: this repository
 
 ## Current action
 
-Stage 3 is implemented on the separate `codex/stage-3-stoppage-model` change set stacked on Stage 2. Begin Stage 4 only through a separate audit and approved change set. Stable matching, update-in-place and end-to-end Reconcile preservation remain explicitly assigned to Stage 4.
+Stages 2–4 are merged or implemented in order through the local `codex/stage-4-unified-reconcile`
+change set. Begin Stage 5 only through a separate audit and approved change set. Production-day,
+cross-midnight interval semantics and injected `Clock` remain explicitly assigned to Stage 5.
 

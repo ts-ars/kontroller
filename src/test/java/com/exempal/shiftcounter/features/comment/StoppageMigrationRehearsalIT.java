@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("e2e")
 class StoppageMigrationRehearsalIT {
-    private static final String SCHEMA = "stage3_migration_rehearsal";
+    private static final String SCHEMA = "stage4_migration_rehearsal";
 
     @Test
     void upgradesLegacyCopyAndReportsAmbiguousRows() {
@@ -51,6 +51,8 @@ class StoppageMigrationRehearsalIT {
                     ".stoppages WHERE id=10", String.class)).isEqualTo("FIXED");
             assertThat(jdbc.queryForObject("SELECT rounded_minutes FROM " + SCHEMA +
                     ".stoppages WHERE id=10", Integer.class)).isEqualTo(3);
+            assertThat(jdbc.queryForObject("SELECT incident_key = detection_key FROM " + SCHEMA +
+                    ".stoppages WHERE id=10", Boolean.class)).isTrue();
             assertThat(jdbc.queryForObject("SELECT started_at FROM " + SCHEMA +
                     ".stoppages WHERE id=10", Timestamp.class).toLocalDateTime())
                     .isEqualTo(LocalDateTime.of(2026, 8, 7, 8, 1));

@@ -1,6 +1,6 @@
 # Stage 4 — Unified Reconcile
 
-Status: **APPROVED / NOT IMPLEMENTED**
+Status: **APPROVED / IMPLEMENTED**
 
 ## Single scenario
 
@@ -34,4 +34,20 @@ Diagnostic outcomes include invalid interval, FIXED exceeding total loss, ambigu
 ## Definition of Done
 
 One use case serves every trigger; balance is exact; TEMPO and FIXED identities are stable; explanations survive; missing losses resolve rather than disappear; repeated and concurrent runs create no duplicates; controllers/listeners contain no calculation or direct persistence; all Reconcile tests pass.
+
+## Implemented boundary
+
+- `ReconcileStoppagesUseCase` is the only write scenario used by product registration, the
+  production-stopped listener and the manual HTTP trigger. The application service locks the shift,
+  loads the interval inputs once and persists one atomic match plan.
+- Pure calculation uses the full interval plan, caps effective FIXED by `totalLoss` and creates TEMPO
+  only as the exact residual. I2, I3 and I4 protection tests are active.
+- TEMPO matches by interval/type. FIXED uses positive maximum overlap; equal best overlap or competing
+  candidates produce a fatal diagnostic and no write. Exact repeated input performs no persistence.
+- Matched rows retain `detectionKey`; absent rows become `RESOLVED`. V5 adds `incidentKey` so adjacent
+  interval parts of one FIXED incident can share identity while retaining separate explanations.
+- Backend-owned explanation cans use deterministic largest-remainder distribution. System shrink
+  preserves category, comment and allocated minutes and exposes `ALLOCATION_CONFLICT`.
+- The current Stage 4 sensor remains `primary`. Production-day resolution, six-sensor identity,
+  signal transaction atomicity and settings-group recalculation remain Stages 5–8.
 

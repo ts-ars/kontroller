@@ -24,7 +24,11 @@ class StoppageModelTest {
         assertThat(partial.explanationStatus()).isEqualTo(ExplanationStatus.PARTIALLY_EXPLAINED);
         assertThat(full.explanationStatus()).isEqualTo(ExplanationStatus.FULLY_EXPLAINED);
         assertThat(conflict.explanationStatus()).isEqualTo(ExplanationStatus.ALLOCATION_CONFLICT);
-        assertThat(conflict.explanations()).isEqualTo(full.explanations());
+        assertThat(conflict.explanations()).extracting(LossExplanation::category,
+                        LossExplanation::comment, LossExplanation::allocatedMinutes)
+                .containsExactly(
+                        tuple(LossCategory.MATERIAL, "roll", 4),
+                        tuple(LossCategory.QUALITY, "quality", 6));
     }
 
     @Test
@@ -51,6 +55,27 @@ class StoppageModelTest {
         assertThat(value.startedAt()).isEqualTo(START);
         assertThat(value.endedAt()).isEqualTo(START.plusSeconds(90));
         assertThat(value.roundedMinutes()).isEqualTo(2);
+    }
+
+    @Test
+    void largestRemainderMakesFullyAllocatedCansExactAndDeterministic() {
+        Stoppage value = stoppage(List.of(), Duration.ofMinutes(10)).withLostCans(5)
+                .addExplanation(LossCategory.MATERIAL, "first", 5)
+                .addExplanation(LossCategory.QUALITY, "second", 5);
+        assertThat(value.explanations()).extracting(LossExplanation::allocatedCans)
+                .containsExactly(3, 2);
+        assertThat(value.explanations().stream().mapToInt(LossExplanation::allocatedCans).sum()).isEqualTo(5);
+    }
+
+    @Test
+    void systemShrinkRebalancesCansButPreservesOperatorMinutes() {
+        Stoppage value = stoppage(List.of(), Duration.ofMinutes(10)).withLostCans(5)
+                .addExplanation(LossCategory.MATERIAL, "first", 5)
+                .addExplanation(LossCategory.QUALITY, "second", 5)
+                .withSystemMeasurement(START, Duration.ofMinutes(5), 3);
+        assertThat(value.explanationStatus()).isEqualTo(ExplanationStatus.ALLOCATION_CONFLICT);
+        assertThat(value.explanations()).extracting(LossExplanation::allocatedMinutes).containsExactly(5, 5);
+        assertThat(value.explanations()).extracting(LossExplanation::allocatedCans).containsExactly(2, 1);
     }
 
     private Stoppage stoppage(List<LossExplanation> explanations, Duration duration) {
