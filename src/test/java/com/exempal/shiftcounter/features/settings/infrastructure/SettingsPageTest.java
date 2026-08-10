@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.settings.infrastructure;
 
 import com.exempal.shiftcounter.features.settings.domain.SettingsPort;
+import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ExtendedModelMap;
@@ -15,12 +16,16 @@ import static org.mockito.Mockito.*;
 class SettingsPageTest {
 
     private SettingsPort settings;
+    private ShiftIntervalService intervals;
+    private ShiftSettingsApplier settingsApplier;
     private SettingsPage page;
 
     @BeforeEach
     void setUp() {
         settings = mock(SettingsPort.class);
-        page = new SettingsPage(settings);
+        intervals = mock(ShiftIntervalService.class);
+        settingsApplier = mock(ShiftSettingsApplier.class);
+        page = new SettingsPage(settings, intervals, settingsApplier);
     }
 
     @Test
@@ -46,5 +51,8 @@ class SettingsPageTest {
 
         verify(settings).updateHours(List.of("10:00", "11:00", "12:00"));
         verify(settings).updateHourlyPlans(List.of("300", "350", "400"));
+        verify(intervals).resolve(java.time.LocalDate.of(2000, 1, 1),
+                List.of("10:00", "11:00", "12:00"), 3);
+        verify(settingsApplier).applySettingsToCurrentShift();
     }
 }

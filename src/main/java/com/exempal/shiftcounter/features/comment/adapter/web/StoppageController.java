@@ -5,6 +5,7 @@ import com.exempal.shiftcounter.features.comment.adapter.dto.StoppageViewDto;
 import com.exempal.shiftcounter.features.comment.adapter.mapper.StoppageViewMapper;
 import com.exempal.shiftcounter.features.comment.application.*;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import java.util.List;
 public class StoppageController {
     private final StoppageRepository repository;
     private final ReconcileStoppagesUseCase reconcile;
+    private final ProductionDayService productionDays;
 
     @PostMapping("/recalculate")
     public ResponseEntity<ReconcileResponse> recalculate(
@@ -27,8 +29,8 @@ public class StoppageController {
             @RequestParam(required = false) Integer intervalIndex,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime calculationTime) {
-        LocalDateTime suppliedTime = calculationTime == null ? LocalDateTime.now() : calculationTime;
-        LocalDate suppliedDate = date == null ? suppliedTime.toLocalDate() : date;
+        LocalDateTime suppliedTime = calculationTime == null ? productionDays.now() : calculationTime;
+        LocalDate suppliedDate = date == null ? productionDays.resolve(suppliedTime).date() : date;
         ReconcileResult result = reconcile.reconcile(new ReconcileStoppagesCommand(suppliedDate,
                 Stoppage.PRIMARY_SENSOR, intervalIndex, suppliedTime));
         return result.hasFatalDiagnostic()

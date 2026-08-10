@@ -7,22 +7,24 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Clock;
 
 @Slf4j
 @Component
 public class ProductDetectedListener {
 
     private final ShiftProductRegistrar shiftProductRegistrar;
+    private final Clock clock;
 
-    public ProductDetectedListener(ShiftProductRegistrar shiftProductRegistrar) {
+    public ProductDetectedListener(ShiftProductRegistrar shiftProductRegistrar, Clock clock) {
         this.shiftProductRegistrar = shiftProductRegistrar;
+        this.clock = clock;
     }
 
     @EventListener
     public void onProductDetected(ProductDetectedEvent event) {
         LocalDateTime timestamp = event.getDetectedAt()
-                .atZone(ZoneId.systemDefault())
+                .atZone(clock.getZone())
                 .toLocalDateTime();
 
         log.info("[EVENT] Product detected at {}", timestamp);

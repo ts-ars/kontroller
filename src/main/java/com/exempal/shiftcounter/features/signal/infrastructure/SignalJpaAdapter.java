@@ -23,7 +23,7 @@ public class SignalJpaAdapter implements SignalStoragePort {
 
     @Override
     public List<Signal> findByRange(java.time.LocalDateTime from, java.time.LocalDateTime to) {
-        return repository.findAllByTimestampBetween(from, to)
+        return repository.findAllInHalfOpenRange(from, to)
                 .stream()
                 .map(entity -> new Signal(entity.getTimestamp()))
                 .toList();

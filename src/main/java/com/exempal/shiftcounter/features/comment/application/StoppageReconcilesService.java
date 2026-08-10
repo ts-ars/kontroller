@@ -1,8 +1,9 @@
 package com.exempal.shiftcounter.features.comment.application;
 
 import com.exempal.shiftcounter.features.comment.calculator.*;
-import com.exempal.shiftcounter.features.shift.application.ShiftTimeHelper;
+import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
+import com.exempal.shiftcounter.features.shift.domain.ShiftInterval;
 import com.exempal.shiftcounter.features.signal.application.SignalService;
 import com.exempal.shiftcounter.features.signal.domain.Signal;
 import jakarta.transaction.Transactional;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
-    private final ShiftTimeHelper timeHelper;
+    private final ShiftIntervalService intervals;
     private final SignalService signalService;
     private final StoppageCalculator calculator;
     private final StoppageMatcher matcher;
@@ -36,8 +37,25 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
         if (shift == null) {
             return invalid(-1, "shift not found for " + command.shiftDate());
         }
+        if (command.resolveOnly()) {
+            List<com.exempal.shiftcounter.features.comment.domain.Stoppage> active =
+                    stoppages.findActiveByShiftSensorAndIntervalRange(shift.getId(), command.sensorKey(),
+                            command.intervalIndex(), command.intervalIndex());
+            List<com.exempal.shiftcounter.features.comment.domain.Stoppage> resolved = active.stream()
+                    .map(com.exempal.shiftcounter.features.comment.domain.Stoppage::resolve).toList();
+            if (!resolved.isEmpty()) stoppages.saveAll(resolved);
+            return new ReconcileResult(command.intervalIndex(), List.of(), List.of(), resolved.size(), true);
+        }
+        List<ShiftInterval> timeline;
+        try {
+            timeline = intervals.resolve(shift.getDate(), shift.getHourlyLabels(),
+                    shift.getHourlyPlanValues().size());
+        } catch (IllegalArgumentException exception) {
+            return invalid(-1, exception.getMessage());
+        }
         int intervalIndex = command.intervalIndex() == null
-                ? timeHelper.resolveHourIndex(shift.getDate(), shift.getHourlyLabels(), command.calculationTime())
+                ? timeline.stream().filter(value -> value.contains(command.calculationTime()))
+                    .mapToInt(ShiftInterval::index).findFirst().orElse(-1)
                 : command.intervalIndex();
         if (intervalIndex < 0 || intervalIndex >= shift.getHourlyLabels().size()
                 || intervalIndex >= shift.getHourlyPlanValues().size()
@@ -45,10 +63,11 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase {
             return invalid(intervalIndex, "interval is outside persisted shift structure");
         }
 
-        LocalDateTime start = timeHelper.resolveStartTime(shift.getHourlyLabels().get(intervalIndex), shift.getDate());
-        LocalDateTime end = timeHelper.resolveEndTime(shift.getHourlyLabels(), intervalIndex, shift.getDate());
+        ShiftInterval interval = timeline.get(intervalIndex);
+        LocalDateTime start = interval.start();
+        LocalDateTime end = interval.end();
         if (!end.isAfter(start)) return invalid(intervalIndex, "interval end must be after start");
-        List<Signal> signals = signalService.getSignalsBetween(start, end.minusNanos(1));
+        List<Signal> signals = signalService.getSignalsBetween(start, end);
         int plan = shift.getHourlyPlanValues().get(intervalIndex);
         int actual = shift.getHourlyActualValues().get(intervalIndex);
         double minutes = Duration.between(start, end).toNanos() / 60_000_000_000.0;

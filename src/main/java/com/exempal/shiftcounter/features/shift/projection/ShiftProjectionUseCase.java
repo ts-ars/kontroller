@@ -28,9 +28,12 @@ public class ShiftProjectionUseCase {
                     // Часы — из домена (фактической смены), порядок не трогаем
                     List<String> hours = shift.getHourlyLabels();
                     int expectedSize = hours.size();
+                    int suppliedPlans = shift.getHourlyPlanValues().size();
                     List<Integer> plan = ensureSize(shift.getHourlyPlanValues(), expectedSize);
                     List<Integer> actualValues = ensureSize(shift.getHourlyActualValues(), expectedSize);
-                    return new ShiftView(date, actualValues, plan, hours);
+                    List<Boolean> planSupplied = java.util.stream.IntStream.range(0, expectedSize)
+                            .mapToObj(index -> index < suppliedPlans).toList();
+                    return new ShiftView(date, actualValues, plan, hours, planSupplied);
                 })
                 .orElseGet(() -> {
                     // Если смены ещё нет — берём дефолтные часы из настроек
@@ -41,7 +44,8 @@ public class ShiftProjectionUseCase {
                     int expectedSize = hours.size();
                     List<Integer> plan = ensureSize(loaded.getHourlyPlans(), expectedSize);
                     List<Integer> actualValues = Collections.nCopies(expectedSize, 0);
-                    return new ShiftView(date, actualValues, plan, hours);
+                    return new ShiftView(date, actualValues, plan, hours,
+                            Collections.nCopies(expectedSize, true));
                 });
     }
 

@@ -16,7 +16,7 @@
             <tbody id="shiftTableBody">
             <tr th:each="hour, i : ${hours}">
                 <td th:text="${hour}">08:00</td>
-                <td th:text="${plan[i.index]}">140</td>
+                <td th:text="${planSupplied == null || planSupplied[i.index] ? plan[i.index] : 'Plan required'}">140</td>
                 <td class="actual-cell" th:text="${actual[i.index]}">0</td>
                 <td th:text="${comments != null ? comments[i.index] : ''}"></td>
             </tr>
@@ -90,11 +90,12 @@
                     const actualChanged = JSON.stringify(actualData) !== JSON.stringify(previousActual);
                     const planChanged = JSON.stringify(planData) !== JSON.stringify(previousPlan);
 
-                    // Обновление графика
                     if (labelsChanged) {
-                        window.chart.data.labels = newLabels;
-                        previousLabels = newLabels.slice();
+                        window.location.reload();
+                        return;
                     }
+
+                    // Обновление графика
                     if (actualChanged) {
                         window.chart.data.datasets[0].data = actualData;
                         previousActual = actualData.slice();

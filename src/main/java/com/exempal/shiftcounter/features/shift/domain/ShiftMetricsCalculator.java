@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,7 +52,9 @@ public class ShiftMetricsCalculator {
                 end   = (endFromLabel != null) ? endFromLabel : start.plusHours(1);
             }
 
-            int minutes = (int) Duration.between(start, end).toMinutes();
+            var startDateTime = LocalDate.of(2000, 1, 1).atTime(start);
+            var endDateTime = LocalDate.of(2000, 1, end.isAfter(start) ? 1 : 2).atTime(end);
+            int minutes = (int) Duration.between(startDateTime, endDateTime).toMinutes();
             int plan    = (i < plans.size()) ? plans.get(i) : 0;
 
             usedPlans.add(plan);

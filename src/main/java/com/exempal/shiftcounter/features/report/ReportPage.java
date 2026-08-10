@@ -4,6 +4,7 @@ import com.exempal.shiftcounter.core.PageModel;
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
@@ -15,9 +16,11 @@ import java.util.*;
 public class ReportPage implements PageModel {
 
     private final StoppageRepository repository;
+    private final ProductionDayService productionDays;
 
-    public ReportPage(StoppageRepository repository) {
+    public ReportPage(StoppageRepository repository, ProductionDayService productionDays) {
         this.repository = repository;
+        this.productionDays = productionDays;
     }
 
     @Override
@@ -32,8 +35,9 @@ public class ReportPage implements PageModel {
 
     @Override
     public void populateModel(Model model, Map<String, String> params) {
-        LocalDate from = parseDateParam(params.get("from"), LocalDate.now().minusDays(7));
-        LocalDate to = parseDateParam(params.get("to"), LocalDate.now());
+        LocalDate current = productionDays.current().date();
+        LocalDate from = parseDateParam(params.get("from"), current.minusDays(7));
+        LocalDate to = parseDateParam(params.get("to"), current);
 
         List<Stoppage> entries = repository.findByShiftDateBetween(from, to).stream()
                 .filter(entry -> entry.state() == StoppageState.ACTIVE)

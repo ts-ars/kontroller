@@ -28,7 +28,7 @@ public interface SettingsPort {
             LocalTime start = LocalTime.parse(hourStrings.get(i));
             LocalTime end = (i + 1 < hourStrings.size())
                     ? LocalTime.parse(hourStrings.get(i + 1))
-                    : start.plusHours(1); // последний час по умолчанию — 1 час
+                    : (start.getMinute() == 30 ? start.plusMinutes(30) : start.plusHours(1));
             shiftHours.add(new ShiftHour(start, end));
         }
 

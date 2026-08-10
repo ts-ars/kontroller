@@ -11,7 +11,7 @@ Source of truth: this repository
 | 2 — Comments | APPROVED | DONE |
 | 3 — Stoppage model | APPROVED | DONE |
 | 4 — Reconcile | APPROVED | DONE |
-| 5 — Time | APPROVED | TODO |
+| 5 — Time | APPROVED | DONE |
 | 6 — Signals | APPROVED | TODO |
 | 7 — Transactions | APPROVED | TODO |
 | 8 — Settings | APPROVED | TODO |
@@ -20,7 +20,8 @@ Source of truth: this repository
 
 ## Current action
 
-Stages 2–4 are merged or implemented in order through the local `codex/stage-4-unified-reconcile`
-change set. Begin Stage 5 only through a separate audit and approved change set. Production-day,
-cross-midnight interval semantics and injected `Clock` remain explicitly assigned to Stage 5.
+Stage 5 is implemented in the separately audited and approved change set based on merged
+`main` commit `9c2923b6424d86c00c323ac59b7c37afb89fed42`. Production-day resolution,
+cross-midnight interval semantics, plan-required extension, timestamp redistribution and injected
+`Clock` are verified. Keep the Stage 5 review separate and do not begin Stage 6 in the same change set.
 
