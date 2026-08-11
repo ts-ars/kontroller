@@ -5,8 +5,11 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 1. GitHub repository content is the source of truth for Shift code and architecture.
 2. Roadmap A is fully designed but not implemented.
 3. Production day is `[D 07:00, D+1 07:00)`; exactly `07:00` belongs to the new day.
-4. Each of six sensors has independent signals, actual, plan application, FIXED, TEMPO, explanations and Reconcile.
-5. Sensors 1–4 use one settings group; sensors 5–6 use a second independent group. Shared settings never imply shared actual.
+4. Each of six sensors has independent signals and actual. Sensors 1–4 and Sensor 6 have independent
+   FIXED/TEMPO/explanation workflows; Sensor 5 has no own stoppage workflow and exposes aggregated
+   loss/comment output from Sensors 1–4 with its source sensor.
+5. Sensors 1–4 use one shared editable plan. Sensor 5 derives its plan as that value multiplied by four.
+   Sensor 6 uses an independent editable plan. Shared or derived plans never imply shared signals or actual.
 6. Machine, pouch and washer conversion models are outside the approved design. Routing is by `sensorId` and `settingsGroupId`.
 7. ADAM-6050 operates in Counter Input mode. The application processes counter `delta` and persists the last counter state; daily manual reset is not required.
 8. If a counter poll crosses the `07:00` boundary, the whole delta belongs to the old production day and the current counter becomes the new day's baseline.
@@ -62,4 +65,11 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 41. A settings-group update locks the group and every member sensor for the current production day,
     saves the group and recalculates existing current shifts in one transaction. Time changes
     redistribute persisted signals; plan-only changes preserve Actual. Completed shifts are unchanged.
+42. V9 supersedes only the Stage 8 ownership boundary: it assigns Sensor 5 to the shared plan source,
+    keeps Sensor 6 on the independent plan source and replaces both persisted settings groups with the
+    approved 16-row timeline. V1–V8 and completed shift snapshots remain unchanged.
+43. Settings are read and written as one atomic snapshot through `/api/settings/{groupId}`. Hour is common
+    to all six sensors; plan-only changes affect only the corresponding plan owners and preserve Actual.
+44. Settings extension rotates the half-tail forward by 60 minutes using the nearest previous full plan.
+    Only the last extension row can be deleted, deletion is reversible and extension cannot cross 07:00.
 

@@ -131,14 +131,13 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 ## Stage 8 protection and scenario coverage
 
 - `JpaSettingsGroupAdapterTest` protects two independent persisted groups and paired Time/Plan rows.
-- `Stage8SettingsGroupIntegrationTest` proves plan-only Actual preservation, Time-change signal
-  redistribution, group isolation, completed-shift stability, after-commit events and full rollback of
-  settings, all member shifts and notifications when one member Reconcile fails.
-- `SettingsPageTest` protects explicit group selection and update routing.
+- `SettingsSnapshotIntegrationTest` preserves the Stage 8 Actual/history/rollback guarantees while
+  applying the approved shared/derived/independent ownership revision atomically.
+- `SettingsPageTest` protects the unified table, totals and composite update routing.
 - `Stage8SettingsArchitectureTest` rejects restoration of the global key/value storage or process-local
   settings cache and protects the application transaction/locking boundary.
-- Migration rehearsal proves legacy global Time/Plan values become identical initial settings for both
-  groups and the obsolete global table is removed.
+- Migration rehearsal through V8 proves legacy global Time/Plan values become identical group settings;
+  V9 then replaces them with the approved 16-row snapshot and new ownership.
 
 ## Stage 9 protection and scenario coverage
 
@@ -177,6 +176,18 @@ and protected. Stage 10 production release work was not introduced.
 backup/restore, migration rehearsal, secret rotation, network/TLS/monitoring setup, six-device smoke,
 counter-running restart and database-outage evidence remain external blocking gates.
 
+## V9 Settings ownership follow-up
+
+- `SettingsSnapshotTest` protects the approved totals and reversible 60-minute half-tail rotation up to
+  the 07:00 boundary.
+- `SettingsSnapshotIntegrationTest` covers shared/derived/independent plan application, Sensor 5 Actual
+  preservation, common-Time redistribution, completed-history immutability and transaction rollback.
+- `SettingsRestControllerTest`, `SettingsPageTest` and `SettingsProductionCsrfTest` protect the composite
+  route contract, the single-table UI and production authorization/CSRF boundary.
+- `SettingsV9MigrationContractTest` protects the new migration and confirms V1–V8 remain present and
+  unmodified in the migration chain.
+- Stage 10 remains in progress; this follow-up contains no production action or external release evidence.
+
 ## Reproduction
 
 1. Start Docker Desktop or provide an isolated PostgreSQL instance.
@@ -184,5 +195,5 @@ counter-running restart and database-outage evidence remain external blocking ga
 3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55442/shiftcounter_test`,
    `TEST_DB_USERNAME=shift_test`, the test password and the matching production-isolation variables.
 4. Run `.\mvnw.cmd clean verify`.
-5. Confirm 143 executed / 0 skipped (134 Surefire + 9 Failsafe), zero failures/errors, Flyway V1–V8 and logs for
-   `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.
+5. Confirm zero failures/errors, Flyway V1–V9 and logs for `shiftcounter_test`/`shift_test` with no
+   `[MODBUS] Initialization` message.

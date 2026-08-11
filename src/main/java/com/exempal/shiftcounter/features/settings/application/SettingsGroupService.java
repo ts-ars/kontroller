@@ -94,9 +94,10 @@ public class SettingsGroupService {
 
     private SettingsSnapshot parse(UpdateSettingsCommand command) {
         if (command.hours() == null || command.sharedPlans() == null || command.sensor6Plans() == null
-                || command.hours().isEmpty() || command.hours().size() != command.sharedPlans().size()
+                || command.hours().size() < SettingsSnapshot.STANDARD_ROW_COUNT
+                || command.hours().size() != command.sharedPlans().size()
                 || command.hours().size() != command.sensor6Plans().size()) {
-            throw new IllegalArgumentException("Hour and both editable plans must have the same non-empty size");
+            throw new IllegalArgumentException("Hour and both editable plans must have at least 16 matching rows");
         }
         List<SettingsRow> rows = new ArrayList<>();
         for (int index = 0; index < command.hours().size(); index++) {
