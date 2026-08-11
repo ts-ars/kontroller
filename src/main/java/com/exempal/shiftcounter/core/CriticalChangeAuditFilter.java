@@ -19,10 +19,21 @@ public final class CriticalChangeAuditFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         chain.doFilter(request, response);
-        if ((request.getRequestURI().startsWith("/api/settings") || request.getRequestURI().equals("/settings"))
-                && !"GET".equals(request.getMethod())) {
-            log.info("auditAction=settings-change actor={} method={} path={} result={}",
+        String action = auditAction(request);
+        if (action != null) {
+            log.info("auditAction={} actor={} method={} path={} result={}", action,
                     request.getRemoteUser(), request.getMethod(), request.getRequestURI(), response.getStatus());
         }
+    }
+
+    private static String auditAction(HttpServletRequest request) {
+        if ("GET".equals(request.getMethod())) return null;
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/settings") || path.equals("/settings")) return "settings-change";
+        if (path.equals("/api/stoppages/recalculate")) return "manual-reconcile";
+        if (path.startsWith("/api/stoppages/") && path.contains("/explanations")) {
+            return "explanation-change";
+        }
+        return null;
     }
 }

@@ -19,13 +19,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @Profile("prod")
 public class AdamModbusAdapter {
-    private final ModbusFactory factory = new ModbusFactory();
+    private final ModbusFactory factory;
     private final AdamProperties properties;
     private final Map<String, ModbusMaster> masters = new ConcurrentHashMap<>();
     private final Map<String, Boolean> connected = new ConcurrentHashMap<>();
 
     public AdamModbusAdapter(AdamProperties properties) {
+        this(properties, new ModbusFactory());
+    }
+
+    AdamModbusAdapter(AdamProperties properties, ModbusFactory factory) {
         this.properties = properties;
+        this.factory = factory;
         properties.devices().forEach(device -> connected.put(device.sensorId(), false));
     }
 
@@ -62,6 +67,10 @@ public class AdamModbusAdapter {
                         + (response != null ? response.getExceptionMessage() : "null response"));
             }
             short[] data = response.getShortData();
+            if (data == null || data.length != 2) {
+                throw new IllegalStateException("Counter read returned "
+                        + (data == null ? "null" : data.length) + " registers for sensor " + device.sensorId());
+            }
             long lowWord = Short.toUnsignedLong(data[0]);
             long highWord = Short.toUnsignedLong(data[1]);
             return highWord * 65_536L + lowWord;
@@ -69,6 +78,10 @@ public class AdamModbusAdapter {
             disconnect(device.sensorId());
             log.warn("adamState=disconnected sensor={} result=transport-failure", device.sensorId());
             throw new IllegalStateException("ADAM read failed for " + device.sensorId(), e);
+        } catch (RuntimeException e) {
+            disconnect(device.sensorId());
+            log.warn("adamState=disconnected sensor={} result=invalid-response", device.sensorId());
+            throw e;
         }
     }
 

@@ -42,6 +42,12 @@
   <script>
     const categories = ['ORGANIZATION', 'BREAKDOWN', 'MATERIAL', 'QUALITY'];
 
+    function csrfHeaders() {
+      const token = document.querySelector('meta[name="_csrf"]');
+      const header = document.querySelector('meta[name="_csrf_header"]');
+      return token && header ? {[header.content]: token.content} : {};
+    }
+
     function addExplanation(button) {
       const card = button.closest('.loss-card');
       const row = document.createElement('tr');
@@ -67,7 +73,7 @@
       const url = `/api/stoppages/${stoppageId}/explanations${explanationId ? `/${explanationId}` : ''}`;
       const response = await fetch(url, {
         method: explanationId ? 'PUT' : 'POST',
-        headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+        headers: {'Content-Type': 'application/json', ...csrfHeaders()}, body: JSON.stringify(payload)
       });
       if (!response.ok) return showStatus(card, await errorText(response), true);
       const saved = await response.json();
@@ -82,7 +88,7 @@
       const card = button.closest('.loss-card');
       if (!row.dataset.explanationId) return row.remove();
       const response = await fetch(`/api/stoppages/${card.dataset.stoppageId}/explanations/${row.dataset.explanationId}`,
-              {method: 'DELETE'});
+              {method: 'DELETE', headers: csrfHeaders()});
       if (!response.ok) return showStatus(card, await errorText(response), true);
       window.location.reload();
     }

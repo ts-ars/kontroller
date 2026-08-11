@@ -21,6 +21,9 @@ public record AdamProperties(boolean enabled, Duration pollDelay, Duration timeo
                              @NotEmpty List<@Valid Device> devices) {
 
     public AdamProperties {
+        if (!enabled) {
+            throw new IllegalArgumentException("adam.enabled must be true in production");
+        }
         if (pollDelay == null || pollDelay.isNegative() || pollDelay.isZero()) {
             throw new IllegalArgumentException("adam.poll-delay must be positive");
         }
