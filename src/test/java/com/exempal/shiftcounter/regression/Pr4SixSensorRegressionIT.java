@@ -92,9 +92,10 @@ class Pr4SixSensorRegressionIT {
                         org.assertj.core.groups.Tuple.tuple("sensor-1", "First source row"),
                         org.assertj.core.groups.Tuple.tuple("sensor-1", "Second source row"),
                         org.assertj.core.groups.Tuple.tuple("sensor-2", "Sensor two row"));
-        assertThat(comments.read(date, "sensor-6").rows()).singleElement()
-                .satisfies(row -> assertThat(row.explanations()).singleElement()
-                        .satisfies(value -> assertThat(value.comment()).isEqualTo("Independent six")));
+        assertThat(comments.read(date, "sensor-6").rows())
+                .flatExtracting(row -> row.explanations())
+                .extracting(value -> value.comment())
+                .containsExactly("Independent six");
     }
 
     @Test
