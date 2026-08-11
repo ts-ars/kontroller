@@ -19,6 +19,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(LossExplanationController.class)
@@ -45,5 +47,24 @@ class ProductionCsrfFunctionalTest {
         mvc.perform(post("/api/stoppages/7/explanations").with(user("operator").roles("OPERATOR")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void productionUpdateAndDeleteRequireAndAcceptCsrfToken() throws Exception {
+        String body = "{\"category\":\"QUALITY\",\"comment\":\"Checked\",\"allocatedMinutes\":2}";
+        when(useCase.update(7L, 3L, LossCategory.QUALITY, "Checked", 2))
+                .thenReturn(new LossExplanation(3L, 7L, LossCategory.QUALITY, "Checked", 2, 20));
+
+        mvc.perform(put("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR")))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR")).with(csrf()))
+                .andExpect(status().isNoContent());
     }
 }

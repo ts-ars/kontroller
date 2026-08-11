@@ -18,13 +18,16 @@ class ShiftProjectionUseCaseTest {
 
     private ShiftSettingsPort settings;
     private ActualDataPort actualDataPort;
+    private ShiftExplanationPort explanations;
     private ShiftProjectionUseCase useCase;
 
     @BeforeEach
     void setUp() {
         settings = mock(ShiftSettingsPort.class);
         actualDataPort = mock(ActualDataPort.class);
-        useCase = new ShiftProjectionUseCase(settings, actualDataPort);
+        explanations = mock(ShiftExplanationPort.class);
+        when(explanations.findByInterval(any(), anyString())).thenReturn(java.util.Map.of());
+        useCase = new ShiftProjectionUseCase(settings, actualDataPort, explanations);
     }
 
     @Test
@@ -97,6 +100,27 @@ class ShiftProjectionUseCaseTest {
         assertThat(view.plan()).isEqualTo(List.of(50, 0, 0, 0));
         assertThat(view.actual()).isEqualTo(List.of(10, 20, 0, 0));
         assertThat(view.hours()).isEqualTo(hours);
+    }
+
+    @Test
+    void eveningSliceIncludesAfterTwentyThreeAndKeepsMultipleTypedExplanations() {
+        LocalDate date = LocalDate.of(2026, 8, 7);
+        List<String> hours = List.of("07:00", "15:00", "23:30", "00:30");
+        List<Integer> plan = List.of(100, 200, 300, 400);
+        Shift shift = new Shift(6L, date, "sensor-6", plan, 10,
+                List.of(1, 2, 3, 4), hours);
+        when(actualDataPort.findByDateAndSensorId(date, "sensor-6")).thenReturn(Optional.of(shift));
+        when(settings.getForSensor("sensor-6")).thenReturn(testSettings(hours, plan));
+        when(explanations.findByInterval(date, "sensor-6")).thenReturn(java.util.Map.of(2, List.of(
+                new IntervalExplanationView("sensor-6", "First", 3),
+                new IntervalExplanationView("sensor-6", "Second", 4))));
+
+        ShiftView view = useCase.buildView(date, "sensor-6", ShiftSlice.EVENING);
+
+        assertThat(view.hours()).containsExactly("15:00", "23:30", "00:30");
+        assertThat(view.actual()).containsExactly(2, 3, 4);
+        assertThat(view.explanations().get(1)).extracting(IntervalExplanationView::comment)
+                .containsExactly("First", "Second");
     }
 
     private ShiftSettings testSettings(List<String> labels, List<Integer> plans) {
