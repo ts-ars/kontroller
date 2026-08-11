@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.comment.application;
 
 import com.exempal.shiftcounter.features.comment.application.calculator.*;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.application.ShiftReconcilePort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
@@ -32,6 +33,10 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase, Shi
     @Override
     @Transactional
     public ReconcileResult reconcile(ReconcileStoppagesCommand command) {
+        if (SensorCatalog.SENSOR_5.equals(command.sensorKey())) {
+            return new ReconcileResult(command.intervalIndex() == null ? -1 : command.intervalIndex(),
+                    List.of(), List.of(), 0, true);
+        }
         Shift shift = shifts.findForUpdateByDateAndSensorId(command.shiftDate(), command.sensorKey()).orElse(null);
         if (shift == null) {
             return invalid(-1, "shift not found for " + command.shiftDate());

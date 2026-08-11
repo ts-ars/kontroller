@@ -3,6 +3,7 @@ package com.exempal.shiftcounter.features.comment.application;
 import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,7 +64,11 @@ public class LossExplanationService implements LossExplanationUseCase {
     }
 
     private Stoppage requireSystemLoss(long stoppageId, boolean forUpdate) {
-        return (forUpdate ? stoppages.findForUpdateById(stoppageId) : stoppages.findById(stoppageId))
+        Stoppage stoppage = (forUpdate ? stoppages.findForUpdateById(stoppageId) : stoppages.findById(stoppageId))
                 .orElseThrow(() -> new LossExplanationNotFoundException("stoppage " + stoppageId + " not found"));
+        if (SensorCatalog.SENSOR_5.equals(stoppage.sensorKey())) {
+            throw new LossAllocationException("Sensor 5 has no stoppage explanation workflow");
+        }
+        return stoppage;
     }
 }
