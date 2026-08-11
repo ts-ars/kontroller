@@ -67,4 +67,16 @@ class ReportPageMvcTest {
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
                 .andExpect(content().string(containsString("id=\"signalChart\"")));
     }
+
+    @Test
+    void ordinarySensorRendersOnlyLossChart() throws Exception {
+        when(reports.query(Map.of("sensorId", "sensor-6"))).thenReturn(new ReportView(
+                List.of(), LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10),
+                "sensor-6", 0, 0, List.of(new ReportSignalTotal("sensor-6", 3))));
+
+        mvc.perform(get("/page/report").param("sensorId", "sensor-6"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"lossChart\"")))
+                .andExpect(content().string(not(containsString("id=\"signalChart\""))));
+    }
 }

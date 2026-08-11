@@ -68,12 +68,12 @@
         <section class="report-chart-card">
             <canvas id="lossChart"></canvas>
         </section>
-        <section class="report-chart-card">
+        <section class="report-chart-card" th:if="${sensorId == 'sensor-5'}">
             <canvas id="signalChart"></canvas>
         </section>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script th:inline="javascript">
         const reportRows = /*[[${problems}]]*/ [];
         const reportSignalTotals = /*[[${signalTotals}]]*/ [];
@@ -92,9 +92,7 @@
         const blueDataset = (label, data) => ({
             label,
             data,
-            backgroundColor: '#3b82f6',
-            borderColor: '#3b82f6',
-            borderWidth: 1
+            backgroundColor: '#3b82f6'
         });
 
         new Chart(document.getElementById('lossChart'), {
@@ -106,13 +104,16 @@
             options: chartOptions
         });
 
-        new Chart(document.getElementById('signalChart'), {
-            type: 'bar',
-            data: {
-                labels: reportSignalTotals.map(total => total.sensorId),
-                datasets: [blueDataset('Signals', reportSignalTotals.map(total => total.total))]
-            },
-            options: chartOptions
-        });
+        const signalChart = document.getElementById('signalChart');
+        if (signalChart) {
+            new Chart(signalChart, {
+                type: 'bar',
+                data: {
+                    labels: reportSignalTotals.map(total => total.sensorId),
+                    datasets: [blueDataset('Signals', reportSignalTotals.map(total => total.total))]
+                },
+                options: chartOptions
+            });
+        }
     </script>
 </div>
