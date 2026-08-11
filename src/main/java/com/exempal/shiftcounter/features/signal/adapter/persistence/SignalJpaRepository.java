@@ -29,6 +29,12 @@ public interface SignalJpaRepository extends JpaRepository<SignalEntity, UUID> {
                                                @Param("start") LocalDateTime start,
                                                @Param("end") LocalDateTime end);
 
+    @Query("select count(s) from SignalEntity s where s.sensorId = :sensorId "
+            + "and s.occurredAt >= :start and s.occurredAt < :end")
+    long countInHalfOpenRange(@Param("sensorId") String sensorId,
+                              @Param("start") LocalDateTime start,
+                              @Param("end") LocalDateTime end);
+
     default List<SignalEntity> findAllInHalfOpenRange(LocalDateTime start, LocalDateTime end) {
         return findAllInHalfOpenRange("sensor-1", start, end);
     }
