@@ -13,22 +13,25 @@
 
 | Contract | Executable evidence | Result in this environment |
 |---|---|---|
-| Six stable sensor IDs; independent Signal and Actual | `Pr4SixSensorRegressionIT`, `Stage6SignalRegistrationIntegrationTest`, `ShiftSensorIsolationTest` | New E2E compiled; PostgreSQL execution blocked |
-| Independent stoppages for Sensors 1–4/6 | `Pr4SixSensorRegressionIT`, existing reconcile persistence tests | New E2E compiled; PostgreSQL execution blocked |
-| Sensor 5 has no own stoppage/explanation workflow | `Pr4SixSensorRegressionIT`, `StoppageReconcilesServiceTest`, `LossExplanationServiceTest` | Unit coverage included in existing suite; E2E compiled |
-| Sensor 5 aggregates multiple explanations from Sensors 1–4 with source | `Pr4SixSensorRegressionIT`, `StoppageShiftExplanationAdapterTest`, `CommentsReadServiceTest` | Focused tests PASS; E2E compiled |
-| Sensor 6 comments and loss remain independent | `Pr4SixSensorRegressionIT`, projection/comments tests | Focused tests PASS; E2E compiled |
-| Day and evening slices, including after 23:00 and after midnight | `Pr4SixSensorRegressionIT`, `ShiftSliceTest`, `ShiftProjectionUseCaseTest`, `CommentsPageTest` | Focused tests PASS; E2E compiled |
-| Composite Settings route, CSRF and active-shift semantics | `SettingsRestControllerTest`, `SettingsProductionCsrfTest`, `SettingsSnapshotIntegrationTest` | MVC/CSRF PASS; PostgreSQL integration blocked |
-| Add/Delete half-tail rotation and reversibility | `SettingsSnapshotTest`, `Pr4SixSensorRegressionIT` | Domain test PASS; E2E compiled |
-| Report inclusive production-date range and Sensor 5 four-source totals | `ReportQueryUseCaseTest`, `ReportPageMvcTest`, `Pr4SixSensorRegressionIT` | Unit/MVC PASS; E2E compiled |
+| Six stable sensor IDs; independent Signal and Actual | `Pr4SixSensorRegressionIT`, `Stage6SignalRegistrationIntegrationTest`, `ShiftSensorIsolationTest` | PASS |
+| Independent stoppages for Sensors 1–4/6 | `Pr4SixSensorRegressionIT`, existing reconcile persistence tests | PASS |
+| Sensor 5 has no own stoppage/explanation workflow | `Pr4SixSensorRegressionIT`, `StoppageReconcilesServiceTest`, `LossExplanationServiceTest` | PASS |
+| Sensor 5 aggregates multiple explanations from Sensors 1–4 with source | `Pr4SixSensorRegressionIT`, `StoppageShiftExplanationAdapterTest`, `CommentsReadServiceTest` | PASS |
+| Sensor 6 comments and loss remain independent | `Pr4SixSensorRegressionIT`, projection/comments tests | PASS |
+| Day and evening slices, including after 23:00 and after midnight | `Pr4SixSensorRegressionIT`, `ShiftSliceTest`, `ShiftProjectionUseCaseTest`, `CommentsPageTest` | PASS |
+| Composite Settings route, CSRF and active-shift semantics | `SettingsRestControllerTest`, `SettingsProductionCsrfTest`, `SettingsSnapshotIntegrationTest` | PASS |
+| Add/Delete half-tail rotation and reversibility | `SettingsSnapshotTest`, `Pr4SixSensorRegressionIT` | PASS; stored planless Actual tail is preserved after row deletion |
+| Report inclusive production-date range and Sensor 5 four-source totals | `ReportQueryUseCaseTest`, `ReportPageMvcTest`, `Pr4SixSensorRegressionIT` | PASS |
 | Sensor-scoped WebSocket updates and after-commit/rollback behavior | `CommentsUpdatedListenerTest`, `CommentsAfterCommitPublicationTest`, `ShiftUpdatedListenerTest` | PASS |
-| Historical migration through V9 | `StoppageMigrationRehearsalIT`, `SettingsV9MigrationContractTest` | Static contract PASS; PostgreSQL rehearsal blocked |
-| Isolated clean verification | `mvnw clean verify` with `shiftcounter_test` / `shift_test` | BLOCKED: no isolated PostgreSQL runtime |
-| Load tests | `Stage10SixSensorLoadTest`, `ShiftProductRegistrarMultiHourLoadTest` | BLOCKED: no isolated PostgreSQL runtime |
+| Historical migration through V9 | `StoppageMigrationRehearsalIT`, `SettingsV9MigrationContractTest` | PASS |
+| Isolated clean verification | `mvnw clean verify` with `shiftcounter_test` / `shift_test` | PASS — 209 tests, 0 failures/errors/skips; 10:42 |
+| Load tests | `Stage10SixSensorLoadTest`, `ShiftProductRegistrarMultiHourLoadTest` | NOT COMPLETED — separate run exceeded 20:04 and emitted no completed report |
 
-The focused database-free command executed 58 tests with zero failures, errors or skips. The E2E and
-load rows are not marked PASS because compilation is not execution evidence.
+The focused database-free command executed 58 tests with zero failures, errors or skips. A subsequent
+isolated PostgreSQL 15.13 run in Docker project `kontroller-pr4-postgres` on host port `55442` executed
+197 Surefire and 12 Failsafe tests with zero failures, errors or skips. The separate load command was
+terminated by the local 20-minute command limit before either scenario emitted a completed report, so
+load remains explicitly unverified in this environment.
 
 ## Mockup comparison
 

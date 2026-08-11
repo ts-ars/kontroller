@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-11
-- Branch: `codex/stage-10-release-hardening`, based on merged Stage 10 controls commit `1bd5468`
+- Branch: `codex/pr4-regression`, based on integrated PR 1 + PR 2 + PR 3 commit `16d755e`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -33,11 +33,15 @@
 - `test-compile -DskipTests`: PASS.
 - Focused database-free domain/read-model/MVC/CSRF/WebSocket suite: PASS — 58 executed,
   0 skipped/failures/errors.
-- Isolated PostgreSQL `clean verify`: NOT RUN — Docker daemon and a local PostgreSQL installation
-  were unavailable. No production or user database was contacted.
-- Migration rehearsal through V9 and the new `Pr4SixSensorRegressionIT`: COMPILED, NOT EXECUTED for
-  the same isolated-PostgreSQL limitation.
-- Release load suite: NOT RUN — both load scenarios require the isolated test database.
+- Isolated PostgreSQL 15.13 `clean verify`: PASS — 209 executed (197 Surefire + 12 Failsafe),
+  0 skipped/failures/errors; 10:42. The dedicated Docker project `kontroller-pr4-postgres` used host
+  port `55442`; no production or user database was contacted.
+- Migration rehearsal through V9 and `Pr4SixSensorRegressionIT`: PASS — the PR 4 E2E class executed
+  3 scenarios with 0 skipped/failures/errors, including the preserved planless Actual tail after
+  Settings rows are removed.
+- Release load suite: NOT COMPLETED — the separate two-scenario command exceeded the 20-minute local
+  command limit and produced no completed Surefire report. It is not recorded as PASS or as a product
+  failure.
 - Visual review: source-level HTML/CSS comparison completed against all four approved mockups. Browser
   rendering of local `file://` artifacts was blocked by the in-app browser security policy, so this is
   not pixel-level or browser sign-off.
@@ -55,10 +59,10 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 129 executed, 0 failures, 0 errors, 0 skipped.
-- Failsafe: 9 executed, 0 failures, 0 errors, 0 skipped.
-- Combined: 138 executed, 0 failures, 0 errors, 0 skipped.
-- Release load suite: 2 executed, 0 failures, 0 errors, 0 skipped.
+- Surefire: 197 executed, 0 failures, 0 errors, 0 skipped.
+- Failsafe: 12 executed, 0 failures, 0 errors, 0 skipped.
+- Combined: 209 executed, 0 failures, 0 errors, 0 skipped.
+- PR 4 local release load suite: NOT COMPLETED after 20:04; no completed report was emitted.
 
 ## Test classification
 
