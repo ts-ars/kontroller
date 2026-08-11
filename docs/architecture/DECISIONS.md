@@ -52,7 +52,8 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
     before increment and Reconcile. Concurrent atomicity and recovery after a partial failure remain
     Stage 7.
 37. Stage 6 persists sensor ownership of `settings-group-1` (Sensors 1–4) or `settings-group-2`
-    (Sensors 5–6). Settings storage and reactions to group changes remain Stage 8.
+    (Sensors 5–6). This records the historical Stage 6 boundary; decision 42 supersedes that ownership
+    mapping from V9 onward. Settings storage and reactions to group changes remain Stage 8.
 38. Stage 7 makes signal registration the application transaction boundary. Registration is
     serialized by production date and sensor, and the database conflict on source identity is the
     final concurrent duplicate guard. Shift update delivery occurs only after a successful commit.
@@ -72,4 +73,10 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
     to all six sensors; plan-only changes affect only the corresponding plan owners and preserve Actual.
 44. Settings extension rotates the half-tail forward by 60 minutes using the nearest previous full plan.
     Only the last extension row can be deleted, deletion is reversible and extension cannot cross 07:00.
+45. Plan–Fact and Comments use production slices `07:00–15:00` and `15:00–D+1 07:00`; the evening
+    label remains `15:00–23:00` while its data includes configured continuation after 23:00. Sensor 5
+    reads source-attributed explanations from Sensors 1–4, while Sensor 6 reads only its own data.
+46. Report date filters are inclusive production dates and therefore query the half-open signal range
+    `[from 07:00, to + 1 day 07:00)`. Sensor 5 reports explanation sources and exactly four signal
+    totals for Sensors 1–4; other sensors retain their own rows and signal total.
 
