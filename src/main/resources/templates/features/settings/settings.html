@@ -3,120 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <title>Settings Page</title>
-    <style>
-        body {
-            font-family: sans-serif;
-        }
-
-        input[type="text"], input[type="number"] {
-            width: 100px;
-            padding: 5px;
-            margin: 2px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: none;
-            background-color: white;
-        }
-
-        button {
-            font-size: 14px;
-            padding: 5px 10px;
-            margin: 4px 2px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .delete-button {
-            background: none;
-            color: red;
-            font-size: 20px;
-            border: none;
-            padding: 0;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .delete-button:hover {
-            background: none;
-        }
-
-        .delete-button:focus {
-            outline: none;
-        }
-
-        table {
-            margin-top: 10px;
-        }
-    </style>
 </head>
 <body>
-<div th:fragment="content">
-    <div style="max-width: 800px; margin: auto;">
+<div th:fragment="content" id="settings-page">
+    <style>
+        #settings-page { box-sizing: border-box; width: 100%; padding: 1rem 2rem 2rem; font-family: sans-serif; }
+        #settings-page * { box-sizing: border-box; }
+        #settings-page main { width: 100%; max-width: 1000px; margin: 0 auto; }
+        #settings-page h1 { margin-top: 0; }
+        #settings-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
+        #settings-page th, #settings-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; vertical-align: middle; }
+        #settings-page th:first-child, #settings-page td:first-child { width: 160px; }
+        #settings-page th:last-child, #settings-page td:last-child { width: 50px; padding-inline: .25rem; }
+        #settings-page input[type="text"], #settings-page input[type="number"] {
+            width: 100%; height: 34px; padding: 4px 6px; font-size: 14px; border: 1px solid #ccc;
+            border-radius: 4px; background: #fff; color: #000; text-align: center;
+        }
+        #settings-page tfoot th, #settings-page tfoot td { font-weight: bold; }
+        #settings-page button { margin-top: 1rem; padding: .5rem 1rem; background: #1d4ed8; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+        #settings-page button:hover { background: #2563eb; }
+        #settings-page .delete-row { margin: 0; padding: 0; color: #dc2626; background: none; font-size: 20px; }
+        #settings-page .delete-row:hover { background: none; }
+        #settings-page .settings-error { margin-left: .75rem; color: #b91c1c; }
+        @media (max-width: 800px) {
+            #settings-page { padding-inline: 1rem; }
+            #settings-page .table-wrap { overflow-x: auto; }
+            #settings-page table { min-width: 760px; }
+        }
+    </style>
+
+    <main>
         <h1>Settings Page</h1>
-
-        <nav>
-            <a th:each="group : ${groups}" th:href="@{/page/settings(groupId=${group})}"
-               th:text="${group}" style="margin-right: 12px"></a>
-        </nav>
-        <h2 th:text="${groupName}">Settings group</h2>
-
         <form th:action="@{/settings}" method="post">
-            <input name="groupId" type="hidden" th:value="${groupId}" />
-            <label for="ppm">Line Speed (PPM):</label>
-            <input id="ppm" name="ppm" type="text" th:value="${ppm}" />
-            <!--
-            <label for="pouchesPerCan">Pouches per Can:</label>
-            <input id="pouchesPerCan" name="pouchesPerCan" type="text" th:value="${pouchesPerCan}" />
-            -->
-            <table>
-                <thead>
-                <tr>
-                    <th>Hour</th>
-                    <th>Plan (Cans)</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody id="hourTable">
-                <tr th:each="hour, i : ${hours}">
-                    <td>
-                        <input name="hours" type="text" th:value="${hour}" />
-                    </td>
-                    <td>
-                        <input name="plans" type="text" th:value="${plans[i.index]}" />
-                    </td>
-                    <td>
-                        <button type="button" class="delete-button" onclick="removeRow(this)">×</button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <br/>
-            <button type="button" onclick="addRow()">Add Hour</button>
+            <input name="groupId" type="hidden" th:value="${groupId}">
+            <div class="table-wrap">
+                <table aria-label="Production interval plans" th:attr="data-standard-row-count=${standardRowCount}">
+                    <thead><tr><th>Hour</th><th>Plan Sensors 1–4</th><th>Sensor 5</th><th>Plan Sensor 6</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="row, status : ${rows}" th:classappend="${status.index >= standardRowCount} ? 'extension-row'">
+                        <td><input name="hours" type="text" th:value="${row.hour}" th:attr="aria-label=|Hour ${status.count}|"></td>
+                        <td><input name="sharedPlans" class="shared-plan" type="number" min="0" th:value="${row.sharedPlan}" th:attr="aria-label=|Sensors 1 to 4 plan at ${row.hour}|"></td>
+                        <td><input class="sensor5-plan" type="number" th:value="${row.sensor5Plan}" readonly th:attr="aria-label=|Calculated Sensor 5 plan at ${row.hour}|"></td>
+                        <td><input name="sensor6Plans" class="sensor6-plan" type="number" min="0" th:value="${row.sensor6Plan}" th:attr="aria-label=|Sensor 6 plan at ${row.hour}|"></td>
+                        <td><button th:if="${status.index >= standardRowCount and status.last}" class="delete-row" type="button" aria-label="Delete extension hour">×</button></td>
+                    </tr>
+                    </tbody>
+                    <tfoot><tr><th>Total</th><td data-total="shared" th:text="${sharedTotal}">8450</td><td data-total="sensor5" th:text="${sensor5Total}">33800</td><td data-total="sensor6" th:text="${sensor6Total}">27200</td><td></td></tr></tfoot>
+                </table>
+            </div>
+            <button type="button" class="add-hour">Add Hour</button>
             <button type="submit">Save</button>
+            <span class="settings-error" aria-live="polite"></span>
         </form>
-    </div>
+    </main>
 
     <script>
-        function removeRow(button) {
-            const row = button.closest("tr");
-            row.remove();
-        }
+        (() => {
+            const root = document.getElementById('settings-page');
+            const body = root.querySelector('tbody');
+            const error = root.querySelector('.settings-error');
+            const standardCount = Number(root.querySelector('table').dataset.standardRowCount);
 
-        function addRow() {
-            const table = document.getElementById("hourTable");
-            const row = document.createElement("tr");
-
-            row.innerHTML = `
-                <td><input name="hours" type="text" value="" /></td>
-                <td><input name="plans" type="text" value="140" /></td>
-                <td><button type="button" class="delete-button" onclick="removeRow(this)">×</button></td>
-            `;
-
-            table.appendChild(row);
-        }
+            function number(row, selector) { return Number(row.querySelector(selector).value) || 0; }
+            function recalculate() {
+                let shared = 0, sensor5 = 0, sensor6 = 0;
+                body.querySelectorAll('tr').forEach(row => {
+                    const plan = number(row, '.shared-plan');
+                    row.querySelector('.sensor5-plan').value = plan * 4;
+                    shared += plan; sensor5 += plan * 4; sensor6 += number(row, '.sensor6-plan');
+                });
+                root.querySelector('[data-total="shared"]').textContent = shared;
+                root.querySelector('[data-total="sensor5"]').textContent = sensor5;
+                root.querySelector('[data-total="sensor6"]').textContent = sensor6;
+            }
+            function offset(value) {
+                const [hour, minute] = value.split(':').map(Number);
+                return ((hour * 60 + minute - 420) % 1440 + 1440) % 1440;
+            }
+            function showLastDelete() {
+                body.querySelectorAll('.delete-row').forEach(button => button.remove());
+                const rows = body.querySelectorAll('tr');
+                if (rows.length <= standardCount) return;
+                rows[rows.length - 1].lastElementChild.innerHTML = '<button class="delete-row" type="button" aria-label="Delete extension hour">×</button>';
+            }
+            root.addEventListener('input', event => {
+                if (event.target.matches('.shared-plan, .sensor6-plan')) recalculate();
+            });
+            root.querySelector('.add-hour').addEventListener('click', () => {
+                error.textContent = '';
+                const rows = Array.from(body.querySelectorAll('tr'));
+                const tail = rows[rows.length - 1];
+                const lastHour = tail.querySelector('input[name="hours"]').value;
+                const [hour, minute] = lastHour.split(':').map(Number);
+                const nextMinutes = (hour * 60 + minute + 60) % 1440;
+                const nextHour = `${String(Math.floor(nextMinutes / 60)).padStart(2, '0')}:${String(nextMinutes % 60).padStart(2, '0')}`;
+                if (offset(nextHour) <= offset(lastHour)) {
+                    error.textContent = 'Cannot extend across 07:00.';
+                    return;
+                }
+                const maxShared = Math.max(...rows.map(row => number(row, '.shared-plan')));
+                const maxSensor6 = Math.max(...rows.map(row => number(row, '.sensor6-plan')));
+                const full = rows.slice(0, -1).reverse().find(row =>
+                    number(row, '.shared-plan') === maxShared && number(row, '.sensor6-plan') === maxSensor6);
+                if (!full) { error.textContent = 'A previous full interval is required.'; return; }
+                const tailShared = number(tail, '.shared-plan');
+                const tailSensor6 = number(tail, '.sensor6-plan');
+                tail.querySelector('.shared-plan').value = number(full, '.shared-plan');
+                tail.querySelector('.sensor6-plan').value = number(full, '.sensor6-plan');
+                const row = document.createElement('tr');
+                row.className = 'extension-row';
+                row.innerHTML = `<td><input name="hours" type="text" value="${nextHour}" aria-label="Extension hour"></td>
+                    <td><input name="sharedPlans" class="shared-plan" type="number" min="0" value="${tailShared}" aria-label="Sensors 1 to 4 extension plan"></td>
+                    <td><input class="sensor5-plan" type="number" value="${tailShared * 4}" readonly aria-label="Calculated Sensor 5 extension plan"></td>
+                    <td><input name="sensor6Plans" class="sensor6-plan" type="number" min="0" value="${tailSensor6}" aria-label="Sensor 6 extension plan"></td><td></td>`;
+                body.appendChild(row); showLastDelete(); recalculate();
+            });
+            root.addEventListener('click', event => {
+                if (!event.target.matches('.delete-row')) return;
+                const tail = event.target.closest('tr');
+                if (tail !== body.lastElementChild || body.children.length <= standardCount) return;
+                const previous = tail.previousElementSibling;
+                previous.querySelector('.shared-plan').value = number(tail, '.shared-plan');
+                previous.querySelector('.sensor6-plan').value = number(tail, '.sensor6-plan');
+                tail.remove(); showLastDelete(); recalculate();
+            });
+            recalculate();
+        })();
     </script>
 </div>
 </body>
