@@ -28,6 +28,12 @@ class AdamPropertiesTest {
                 devices(1, 6))).hasMessageContaining("timeout");
     }
 
+    @Test
+    void rejectsDisabledAdamInProduction() {
+        assertThatThrownBy(() -> new AdamProperties(false, Duration.ofMillis(100), Duration.ofSeconds(2), 2,
+                devices(1, 6))).hasMessageContaining("adam.enabled must be true");
+    }
+
     private static AdamProperties properties(List<AdamProperties.Device> devices) {
         return new AdamProperties(true, Duration.ofMillis(100), Duration.ofSeconds(2), 2, devices);
     }

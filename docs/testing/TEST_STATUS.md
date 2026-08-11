@@ -2,8 +2,8 @@
 
 ## Environment
 
-- Date: 2026-08-10
-- Branch: `codex/stage-9-architecture-cleanup`, based on merged Stage 8 `main` commit `2beb964`
+- Date: 2026-08-11
+- Branch: `codex/stage-10-release-hardening`, based on merged Stage 10 controls commit `1bd5468`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -22,7 +22,9 @@
 | Stage 9 final `mvn -q clean verify` | PASS — 131 executed, 0 skipped/failures/errors; 5:16 |
 | Stage 10 CI `./mvnw clean verify` | PASS — 138 executed, 0 skipped/failures/errors; 1:18 |
 | Stage 10 release load suite | PASS — 2 executed, 0 skipped/failures/errors; 2:08 |
-| Stage 10 versioned package/upload | PASS — `shiftcounter-0.0.18.jar` |
+| Stage 10 versioned package/upload | PASS — `shiftcounter-0.0.20.jar` |
+| Stage 10 follow-up `clean verify` | PASS — 143 executed (134 Surefire + 9 Failsafe), 0 skipped/failures/errors; 11:34 |
+| Stage 10 follow-up local load suite | NOT COMPLETED — exceeded the 10-minute local command limit |
 
 Stage 10 adds focused production configuration/startup/ADAM tests and a separately tagged parallel
 six-sensor release load scenario. The local Stage 10 cloud checkout could not resolve Maven
@@ -179,8 +181,8 @@ counter-running restart and database-outage evidence remain external blocking ga
 
 1. Start Docker Desktop or provide an isolated PostgreSQL instance.
 2. Start that isolated instance on an unused host port.
-3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55440/shiftcounter_test`,
+3. Export `TEST_DB_URL=jdbc:postgresql://localhost:55442/shiftcounter_test`,
    `TEST_DB_USERNAME=shift_test`, the test password and the matching production-isolation variables.
 4. Run `.\mvnw.cmd clean verify`.
-5. Confirm 131 executed / 0 skipped, zero failures/errors, Flyway V1–V8 and logs for
+5. Confirm 143 executed / 0 skipped (134 Surefire + 9 Failsafe), zero failures/errors, Flyway V1–V8 and logs for
    `shiftcounter_test`/`shift_test` with no `[MODBUS] Initialization` message.
