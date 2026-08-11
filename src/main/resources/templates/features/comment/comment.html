@@ -1,106 +1,160 @@
-<div th:fragment="content">
-  <h1>Loss explanations</h1>
+<div th:fragment="content" id="comments-page">
+  <style>
+    #comments-page { width: 100%; max-width: 1400px; margin: 0 auto; }
+    #comments-page h1 { margin-top: 0; }
+    #comments-page .view-switches { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: .5rem; }
+    #comments-page .view-switches a { color: #000; text-decoration: none; }
+    #comments-page .view-switches a.active { color: #1d4ed8; text-decoration: underline; }
+    #comments-page .loss-alert { color: #b91c1c; }
+    #comments-page .loss-card { margin-bottom: 2rem; }
+    #comments-page .loss-card + .loss-card { padding-top: .5rem; border-top: 1px solid #ccc; }
+    #comments-page .loss-card h2 { margin-bottom: .5rem; }
+    #comments-page .loss-card p { margin: .5rem 0; }
+    #comments-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
+    #comments-page th, #comments-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; vertical-align: middle; }
+    #comments-page .editor-table th:nth-child(1) { width: 180px; }
+    #comments-page .editor-table th:nth-child(3) { width: 120px; }
+    #comments-page .editor-table th:nth-child(4) { width: 150px; }
+    #comments-page .editor-table th:nth-child(5) { width: 190px; }
+    #comments-page input[type="text"], #comments-page input[type="number"], #comments-page select {
+      width: 100%; padding: 4px 6px; font-size: 14px; height: 34px; box-sizing: border-box;
+      border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #000;
+    }
+    #comments-page input[type="number"] { text-align: center; }
+    #comments-page .actions { display: flex; justify-content: center; gap: .5rem; }
+    #comments-page .add-reason { margin-top: .75rem; }
+    #comments-page .inherited-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; }
+    #comments-page .source-comments h3 { margin-bottom: .5rem; }
+    #comments-page .source-comments p { margin-top: .5rem; }
+    #comments-page .inherited-table { table-layout: auto; }
+    #comments-page .inherited-table th:nth-child(1), #comments-page .inherited-table td:nth-child(1),
+    #comments-page .inherited-table th:nth-child(2), #comments-page .inherited-table td:nth-child(2),
+    #comments-page .inherited-table th:nth-child(4), #comments-page .inherited-table td:nth-child(4) { width: 1%; white-space: nowrap; }
+    #comments-page .inherited-table td:nth-child(3) { text-align: left; }
+    @media (max-width: 900px) {
+      #comments-page .table-wrap { overflow-x: auto; }
+      #comments-page .editor-table { min-width: 850px; }
+      #comments-page .inherited-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 
-  <div th:each="alert : ${alerts}">
-    <p class="loss-alert" th:text="${alert}"></p>
+  <h1>Loss explanations</h1>
+  <div class="view-switches">
+    <div aria-label="Sensor">
+      <th:block th:each="sensor, status : ${sensors}">
+        <a th:href="@{/page/comment(sensorId=${sensor.id.value},shift=${shiftSlice})}"
+           th:classappend="${sensorId == sensor.id.value} ? 'active'"
+           th:text="${#strings.replace(sensor.id.value, 'sensor-', '')}">1</a>
+        <span th:if="${!status.last}" aria-hidden="true"> | </span>
+      </th:block>
+    </div>
+    <div aria-label="Production shift">
+      <span>Shift: </span>
+      <a th:href="@{/page/comment(sensorId=${sensorId},shift='day')}" th:classappend="${shiftSlice == 'day'} ? 'active'">07:00–15:00</a>
+      <span aria-hidden="true"> | </span>
+      <a th:href="@{/page/comment(sensorId=${sensorId},shift='evening')}" th:classappend="${shiftSlice == 'evening'} ? 'active'">15:00–23:00</a>
+    </div>
   </div>
 
-  <div th:if="${#lists.isEmpty(losses)}">No system losses for today.</div>
-
-  <section class="loss-card" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
-    <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00:00</h2>
-    <p>
-      <span th:text="|Loss: ${loss.roundedMinutes} min / ${loss.lostCans} cans|">Loss</span>
-      · <span class="allocation-summary"
-              th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span>
-    </p>
-    <p class="explanation-status" th:text="|Status: ${loss.explanationStatus}|"
-       th:style="${loss.explanationStatus.name() == 'ALLOCATION_CONFLICT'} ? 'color:red;font-weight:bold' : ''">Status</p>
-
-    <table>
-      <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th></tr></thead>
-      <tbody class="explanations">
-      <tr th:each="explanation : ${loss.explanations}" th:attr="data-explanation-id=${explanation.id}">
-        <td><select class="category">
-          <option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}"
-                  th:value="${category}" th:text="${category}"
-                  th:selected="${category == explanation.category}"></option>
-        </select></td>
-        <td><input class="comment" type="text" th:value="${explanation.comment}" /></td>
-        <td><input class="allocated-minutes" type="number" min="0" step="1"
-                   th:value="${explanation.allocatedMinutes}" /></td>
-        <td class="allocated-cans" th:text="${explanation.allocatedCans}">0</td>
-        <td><button type="button" onclick="saveExplanation(this)">Save</button>
-          <button type="button" onclick="deleteExplanation(this)">Delete</button></td>
-      </tr>
-      </tbody>
-    </table>
-    <button type="button" onclick="addExplanation(this)">Add reason</button>
-    <div class="save-status"></div>
+  <section th:if="${readOnlyAggregation}" data-readonly-sensor="sensor-5">
+    <h2>Comments inherited from Sensors 1–4</h2>
+    <p>Read only. Edit these explanations in the source sensor.</p>
+    <div class="inherited-grid">
+      <section class="source-comments" th:each="source : ${sourceComments}">
+        <h3 th:text="${#strings.replace(source.sensorId, 'sensor-', 'Sensor ')}">Sensor 1</h3>
+        <p th:if="${#lists.isEmpty(source.rows)}">No comments for the selected shift.</p>
+        <div class="table-wrap" th:unless="${#lists.isEmpty(source.rows)}">
+          <table class="inherited-table">
+            <thead><tr><th>Time</th><th>Category</th><th>Comment</th><th>Minutes</th></tr></thead>
+            <tbody><tr th:each="row : ${source.rows}">
+              <td th:text="${row.time.toLocalTime()}">08:14:23</td>
+              <td th:text="${row.category}">BREAKDOWN</td>
+              <td th:text="${row.comment}">Comment</td>
+              <td th:text="${row.minutes}">15</td>
+            </tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </section>
 
-  <script>
-    const categories = ['ORGANIZATION', 'BREAKDOWN', 'MATERIAL', 'QUALITY'];
+  <section th:unless="${readOnlyAggregation}">
+    <div th:each="alert : ${alerts}"><p class="loss-alert" th:text="${alert}"></p></div>
+    <div th:if="${#lists.isEmpty(losses)}">No system losses for the selected shift.</div>
 
+    <section class="loss-card" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
+      <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00:00</h2>
+      <p><span th:text="|Loss: ${loss.roundedMinutes} min / ${loss.lostCans} cans|">Loss</span>
+        · <span class="allocation-summary" th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span></p>
+      <p class="explanation-status" th:text="|Status: ${loss.explanationStatus}|">Status</p>
+      <div class="table-wrap"><table class="editor-table">
+        <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th></tr></thead>
+        <tbody class="explanations">
+        <tr th:each="explanation : ${loss.explanations}" th:attr="data-explanation-id=${explanation.id}">
+          <td><select class="category"><option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}"
+              th:value="${category}" th:text="${category}" th:selected="${category == explanation.category}"></option></select></td>
+          <td><input class="comment" type="text" th:value="${explanation.comment}"></td>
+          <td><input class="allocated-minutes" type="number" min="0" step="1" th:value="${explanation.allocatedMinutes}"></td>
+          <td><input class="allocated-cans" type="number" th:value="${explanation.allocatedCans}" readonly aria-label="Allocated cans"></td>
+          <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
+            <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
+        </tr>
+        </tbody>
+      </table></div>
+      <button class="add-reason" type="button" onclick="addExplanation(this)">Add reason</button>
+      <div class="save-status" aria-live="polite"></div>
+    </section>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <script th:inline="javascript">
+    const categories = ['ORGANIZATION', 'BREAKDOWN', 'MATERIAL', 'QUALITY'];
+    const selectedCommentsSensor = /*[[${sensorId}]]*/ 'sensor-1';
     function csrfHeaders() {
       const token = document.querySelector('meta[name="_csrf"]');
       const header = document.querySelector('meta[name="_csrf_header"]');
       return token && header ? {[header.content]: token.content} : {};
     }
-
     function addExplanation(button) {
       const card = button.closest('.loss-card');
       const row = document.createElement('tr');
       row.innerHTML = `<td><select class="category">${categories.map(c => `<option>${c}</option>`).join('')}</select></td>
-        <td><input class="comment" type="text"></td>
-        <td><input class="allocated-minutes" type="number" min="0" step="1" value="0"></td>
-        <td class="allocated-cans">0</td>
-        <td><button type="button" onclick="saveExplanation(this)">Save</button>
-        <button type="button" onclick="deleteExplanation(this)">Delete</button></td>`;
+        <td><input class="comment" type="text"></td><td><input class="allocated-minutes" type="number" min="0" step="1" value="0"></td>
+        <td><input class="allocated-cans" type="number" value="0" readonly aria-label="Allocated cans"></td>
+        <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
+        <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>`;
       card.querySelector('.explanations').appendChild(row);
     }
-
     async function saveExplanation(button) {
-      const row = button.closest('tr');
-      const card = button.closest('.loss-card');
-      const stoppageId = card.dataset.stoppageId;
+      const row = button.closest('tr'); const card = button.closest('.loss-card');
       const explanationId = row.dataset.explanationId;
-      const payload = {
-        category: row.querySelector('.category').value,
-        comment: row.querySelector('.comment').value,
-        allocatedMinutes: Number(row.querySelector('.allocated-minutes').value)
-      };
-      const url = `/api/stoppages/${stoppageId}/explanations${explanationId ? `/${explanationId}` : ''}`;
-      const response = await fetch(url, {
-        method: explanationId ? 'PUT' : 'POST',
-        headers: {'Content-Type': 'application/json', ...csrfHeaders()}, body: JSON.stringify(payload)
-      });
+      const payload = {category: row.querySelector('.category').value, comment: row.querySelector('.comment').value,
+        allocatedMinutes: Number(row.querySelector('.allocated-minutes').value)};
+      const base = `/api/stoppages/${card.dataset.stoppageId}/explanations`;
+      const response = await fetch(explanationId ? `${base}/${explanationId}` : base,
+        {method: explanationId ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json', ...csrfHeaders()}, body: JSON.stringify(payload)});
       if (!response.ok) return showStatus(card, await errorText(response), true);
-      const saved = await response.json();
-      row.dataset.explanationId = saved.id;
-      row.querySelector('.allocated-cans').textContent = saved.allocatedCans;
-      showStatus(card, 'Saved', false);
-      window.location.reload();
+      const saved = await response.json(); row.dataset.explanationId = saved.id;
+      row.querySelector('.allocated-cans').value = saved.allocatedCans; window.location.reload();
     }
-
     async function deleteExplanation(button) {
-      const row = button.closest('tr');
-      const card = button.closest('.loss-card');
+      const row = button.closest('tr'); const card = button.closest('.loss-card');
       if (!row.dataset.explanationId) return row.remove();
       const response = await fetch(`/api/stoppages/${card.dataset.stoppageId}/explanations/${row.dataset.explanationId}`,
-              {method: 'DELETE', headers: csrfHeaders()});
-      if (!response.ok) return showStatus(card, await errorText(response), true);
-      window.location.reload();
+        {method: 'DELETE', headers: csrfHeaders()});
+      if (!response.ok) return showStatus(card, await errorText(response), true); window.location.reload();
     }
+    async function errorText(response) { try { return (await response.json()).detail || 'Request failed'; } catch (_) { return 'Request failed'; } }
+    function showStatus(card, text, error) { const status = card.querySelector('.save-status'); status.textContent = text; status.style.color = error ? 'red' : 'green'; }
 
-    async function errorText(response) {
-      try { return (await response.json()).detail || 'Request failed'; } catch (_) { return 'Request failed'; }
-    }
-
-    function showStatus(card, text, error) {
-      const status = card.querySelector('.save-status');
-      status.textContent = text;
-      status.style.color = error ? 'red' : 'green';
+    if (window.SockJS && window.Stomp) {
+      const client = Stomp.over(new SockJS('/ws')); client.debug = () => {};
+      client.connect({}, () => {
+        const refresh = () => window.location.reload();
+        client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refresh);
+        client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refresh);
+      });
     }
   </script>
 </div>
