@@ -9,6 +9,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class ShiftUpdatedListener {
 
@@ -27,6 +29,10 @@ public class ShiftUpdatedListener {
         ShiftView view = projection.buildView(event.date(), event.sensorId());
         messaging.convertAndSend("/topic/shift-updates/" + event.sensorId(), view);
         if (event.sensorId().equals("sensor-1")) messaging.convertAndSend("/topic/shift-updates", view);
+        if (List.of("sensor-1", "sensor-2", "sensor-3", "sensor-4").contains(event.sensorId())) {
+            ShiftView sensorFive = projection.buildView(event.date(), "sensor-5");
+            messaging.convertAndSend("/topic/shift-updates/sensor-5", sensorFive);
+        }
         log.info("📤 Отправлен ShiftView в /topic/shift-updates: {}", view);
     }
 }

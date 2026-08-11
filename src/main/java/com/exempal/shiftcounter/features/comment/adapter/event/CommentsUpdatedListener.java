@@ -8,6 +8,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -17,9 +18,12 @@ public class CommentsUpdatedListener {
 
     @EventListener
     public void onCommentsUpdated(CommentsUpdatedEvent event) {
-        messagingTemplate.convertAndSend("/topic/shift-comments", Map.of(
+        Map<String, String> payload = Map.of(
                 "date", event.date().toString(),
-                "comments", event.comments()
-        ));
+                "sensorId", event.sensorId());
+        messagingTemplate.convertAndSend("/topic/comments/" + event.sensorId(), payload);
+        if (List.of("sensor-1", "sensor-2", "sensor-3", "sensor-4").contains(event.sensorId())) {
+            messagingTemplate.convertAndSend("/topic/comments/sensor-5", payload);
+        }
     }
 }

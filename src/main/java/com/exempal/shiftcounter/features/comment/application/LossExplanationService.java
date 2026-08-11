@@ -4,6 +4,9 @@ import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
+import com.exempal.shiftcounter.common.domain.EventPublisherPort;
+import com.exempal.shiftcounter.features.comment.application.event.CommentsUpdatedEvent;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +17,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LossExplanationService implements LossExplanationUseCase {
     private final StoppageRepository stoppages;
+    private final ActualDataPort shifts;
+    private final EventPublisherPort events;
 
     @Override
     @Transactional(readOnly = true)
@@ -27,6 +32,7 @@ public class LossExplanationService implements LossExplanationUseCase {
         Stoppage stoppage = requireSystemLoss(stoppageId, true);
         try {
             Stoppage saved = stoppages.save(stoppage.addExplanation(category, comment, allocatedMinutes));
+            publishUpdated(saved);
             return saved.explanations().getLast();
         } catch (IllegalArgumentException exception) {
             throw new LossAllocationException(exception.getMessage());
@@ -41,6 +47,7 @@ public class LossExplanationService implements LossExplanationUseCase {
         try {
             Stoppage saved = stoppages.save(
                     stoppage.updateExplanation(explanationId, category, comment, allocatedMinutes));
+            publishUpdated(saved);
             return saved.explanations().stream().filter(value -> value.id() == explanationId).findFirst()
                     .orElseThrow(() -> new LossExplanationNotFoundException(
                             "explanation " + explanationId + " not found"));
@@ -57,7 +64,8 @@ public class LossExplanationService implements LossExplanationUseCase {
     public void delete(long stoppageId, long explanationId) {
         Stoppage stoppage = requireSystemLoss(stoppageId, true);
         try {
-            stoppages.save(stoppage.removeExplanation(explanationId));
+            Stoppage saved = stoppages.save(stoppage.removeExplanation(explanationId));
+            publishUpdated(saved);
         } catch (IllegalArgumentException exception) {
             throw new LossExplanationNotFoundException("explanation " + explanationId + " not found");
         }
@@ -70,5 +78,11 @@ public class LossExplanationService implements LossExplanationUseCase {
             throw new LossAllocationException("Sensor 5 has no stoppage explanation workflow");
         }
         return stoppage;
+    }
+
+    private void publishUpdated(Stoppage stoppage) {
+        var shift = shifts.findById(stoppage.shiftId())
+                .orElseThrow(() -> new IllegalStateException("shift " + stoppage.shiftId() + " not found"));
+        events.publish(new CommentsUpdatedEvent(shift.getDate(), stoppage.sensorKey()));
     }
 }
