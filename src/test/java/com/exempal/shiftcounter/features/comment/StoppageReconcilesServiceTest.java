@@ -107,6 +107,16 @@ class StoppageReconcilesServiceTest {
         verifyNoInteractions(signals);
     }
 
+    @Test
+    void sensorFiveHasNoOwnStoppageReconcileWorkflow() {
+        ReconcileResult result = service.reconcile(new ReconcileStoppagesCommand(
+                date, "sensor-5", 0, end));
+
+        assertThat(result.persisted()).isTrue();
+        assertThat(result.activeStoppages()).isEmpty();
+        verifyNoInteractions(shifts, signals, stoppages);
+    }
+
     private ReconcileStoppagesCommand command() {
         return new ReconcileStoppagesCommand(date, Stoppage.PRIMARY_SENSOR, 0, end);
     }

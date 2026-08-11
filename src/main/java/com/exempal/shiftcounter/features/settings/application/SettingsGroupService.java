@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -102,7 +103,11 @@ public class SettingsGroupService {
             Integer shared = command.sharedPlans().get(index);
             Integer sensor6 = command.sensor6Plans().get(index);
             if (shared == null || sensor6 == null) throw new IllegalArgumentException("Plan is required");
-            rows.add(new SettingsRow(LocalTime.parse(command.hours().get(index), TIME), shared, sensor6));
+            try {
+                rows.add(new SettingsRow(LocalTime.parse(command.hours().get(index), TIME), shared, sensor6));
+            } catch (DateTimeParseException exception) {
+                throw new IllegalArgumentException("Hour must use HH:mm format", exception);
+            }
         }
         intervalService.resolve(LocalDate.of(2000, 1, 1), command.hours(), command.hours().size());
         return new SettingsSnapshot(rows);

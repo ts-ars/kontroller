@@ -76,4 +76,27 @@ class ShiftTimeCorrectionServiceTest {
         verify(reconcile).resolveRemovedInterval(date, "sensor-1", 2,
                 LocalDateTime.of(2026, 8, 10, 10, 30));
     }
+
+    @Test
+    void sensorFiveRedistributesItsOwnSignalsButDoesNotReconcileOwnStoppages() {
+        LocalDate date = LocalDate.of(2026, 8, 10);
+        Shift current = new Shift(1L, date, "sensor-5", List.of(40, 40), 2,
+                List.of(1, 1), List.of("08:00", "09:00"));
+        ShiftSignalHistoryPort signals = mock(ShiftSignalHistoryPort.class);
+        ActualDataPort shifts = mock(ActualDataPort.class);
+        ShiftReconcilePort reconcile = mock(ShiftReconcilePort.class);
+        when(signals.findTimestamps(eq("sensor-5"), any(), any())).thenReturn(List.of(
+                LocalDateTime.of(2026, 8, 10, 8, 15),
+                LocalDateTime.of(2026, 8, 10, 9, 15)));
+        when(shifts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var service = new ShiftTimeCorrectionService(new ShiftIntervalService(), signals, shifts, reconcile);
+
+        Shift updated = service.apply(current, List.of("08:00", "08:30", "09:00"),
+                List.of(20, 20, 40), true, LocalDateTime.of(2026, 8, 10, 10, 0));
+
+        assertThat(updated.getSensorId()).isEqualTo("sensor-5");
+        assertThat(updated.getHourlyActualValues()).containsExactly(1, 0, 1);
+        assertThat(updated.getActual()).isEqualTo(2);
+        verifyNoInteractions(reconcile);
+    }
 }
