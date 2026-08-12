@@ -23,9 +23,10 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @WebMvcTest(PageController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @Import({PageModelResolver.class, ReportPage.class})
 class ReportPageMvcTest {
     @Autowired
@@ -35,6 +36,7 @@ class ReportPageMvcTest {
     private ReportQueryUseCase reports;
 
     @Test
+    @WithMockUser(username = "Operator", roles = "USER")
     void mapsRangeSensorFiveRowsSourcesAndChartTotalsToTheMvcModel() throws Exception {
         when(reports.query(Map.of("from", "2026-08-09", "to", "2026-08-10", "sensorId", "sensor-5")))
                 .thenReturn(new ReportView(
@@ -84,6 +86,7 @@ class ReportPageMvcTest {
     }
 
     @Test
+    @WithMockUser(username = "Operator", roles = "USER")
     void ordinarySensorRendersOnlyLossChart() throws Exception {
         when(reports.query(Map.of("sensorId", "sensor-6"))).thenReturn(new ReportView(
                 List.of(), LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10),

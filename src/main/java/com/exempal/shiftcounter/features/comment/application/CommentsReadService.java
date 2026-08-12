@@ -50,7 +50,8 @@ public class CommentsReadService implements CommentsReadUseCase {
                 .sorted(chronological())
                 .flatMap(stoppage -> stoppage.explanations().stream().map(explanation ->
                         new ExplanationRow(sensorId, stoppage.startedAt(), explanation.category(),
-                                explanation.comment(), explanation.allocatedMinutes())))
+                                explanation.comment(), explanation.allocatedMinutes(),
+                                explanation.authorDisplayName())))
                 .toList();
     }
 }

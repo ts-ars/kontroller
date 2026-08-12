@@ -20,6 +20,11 @@ public class LossExplanationExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
+    @ExceptionHandler(com.exempal.shiftcounter.features.comment.application.CommentAccessDeniedException.class)
+    ProblemDetail forbidden(RuntimeException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
     @ExceptionHandler(OptimisticLockException.class)
     ProblemDetail conflict(OptimisticLockException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,

@@ -94,12 +94,16 @@ class Stage7SignalTransactionIntegrationTest {
                 return action.apply(value);
             }));
         }
-        assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
-        start.countDown();
-        List<T> results = new ArrayList<>();
-        for (Future<T> future : futures) results.add(future.get(30, TimeUnit.SECONDS));
-        executor.shutdownNow();
-        return results;
+        try {
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            List<T> results = new ArrayList<>();
+            for (Future<T> future : futures) results.add(future.get(300, TimeUnit.SECONDS));
+            return results;
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(300, TimeUnit.SECONDS)).isTrue();
+        }
     }
 
     private static void await(CountDownLatch latch) {

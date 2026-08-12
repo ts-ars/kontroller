@@ -16,6 +16,8 @@
     #comments-page .editor-table th:nth-child(3) { width: 120px; }
     #comments-page .editor-table th:nth-child(4) { width: 150px; }
     #comments-page .editor-table th:nth-child(5) { width: 190px; }
+    #comments-page .editor-table th:nth-child(6) { width: 170px; }
+    #comments-page .author { text-align: left; white-space: nowrap; }
     #comments-page input[type="text"], #comments-page input[type="number"], #comments-page select {
       width: 100%; padding: 4px 6px; font-size: 14px; height: 34px; box-sizing: border-box;
       border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #000;
@@ -65,12 +67,13 @@
         <p th:if="${#lists.isEmpty(source.rows)}">No comments for the selected shift.</p>
         <div class="table-wrap" th:unless="${#lists.isEmpty(source.rows)}">
           <table class="inherited-table">
-            <thead><tr><th>Time</th><th>Category</th><th>Comment</th><th>Minutes</th></tr></thead>
+            <thead><tr><th>Time</th><th>Category</th><th>Comment</th><th>Minutes</th><th>Author</th></tr></thead>
             <tbody><tr th:each="row : ${source.rows}">
               <td th:text="${row.time.toLocalTime()}">08:14:23</td>
               <td th:text="${row.category}">BREAKDOWN</td>
               <td th:text="${row.comment}">Comment</td>
               <td th:text="${row.minutes}">15</td>
+              <td class="author" th:text="${row.authorDisplayName}">Legacy</td>
             </tr></tbody>
           </table>
         </div>
@@ -88,7 +91,7 @@
         · <span class="allocation-summary" th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span></p>
       <p class="explanation-status" th:text="|Status: ${loss.explanationStatus}|">Status</p>
       <div class="table-wrap"><table class="editor-table">
-        <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th><th>Author</th></tr></thead>
         <tbody class="explanations">
         <tr th:each="explanation : ${loss.explanations}" th:attr="data-explanation-id=${explanation.id}">
           <td><select class="category"><option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}"
@@ -98,6 +101,7 @@
           <td><input class="allocated-cans" type="number" th:value="${explanation.allocatedCans}" readonly aria-label="Allocated cans"></td>
           <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
             <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
+          <td class="author" th:text="${explanation.authorDisplayName}">Legacy</td>
         </tr>
         </tbody>
       </table></div>
@@ -111,6 +115,7 @@
   <script th:inline="javascript">
     const categories = ['ORGANIZATION', 'BREAKDOWN', 'MATERIAL', 'QUALITY'];
     const selectedCommentsSensor = /*[[${sensorId}]]*/ 'sensor-1';
+    const currentCommentsAuthor = /*[[${#authentication.name}]]*/ 'User';
     function csrfHeaders() {
       const token = document.querySelector('meta[name="_csrf"]');
       const header = document.querySelector('meta[name="_csrf_header"]');
@@ -123,7 +128,8 @@
         <td><input class="comment" type="text"></td><td><input class="allocated-minutes" type="number" min="0" step="1" value="0"></td>
         <td><input class="allocated-cans" type="number" value="0" readonly aria-label="Allocated cans"></td>
         <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
-        <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>`;
+        <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
+        <td class="author">${currentCommentsAuthor}</td>`;
       card.querySelector('.explanations').appendChild(row);
     }
     async function saveExplanation(button) {
@@ -137,6 +143,7 @@
       if (!response.ok) return showStatus(card, await errorText(response), true);
       const saved = await response.json(); row.dataset.explanationId = saved.id;
       row.querySelector('.allocated-cans').value = saved.allocatedCans;
+      row.querySelector('.author').textContent = saved.authorDisplayName;
       showStatus(card, 'Saved', false);
       refreshComments();
     }

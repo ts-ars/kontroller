@@ -17,7 +17,12 @@ public interface CommentsReadUseCase {
 
     /** Чистые доменные объекты, без DTO и человекочитаемых строк. */
     record ExplanationRow(String sourceSensorId, LocalDateTime time, LossCategory category,
-                          String comment, int minutes) {}
+                          String comment, int minutes, String authorDisplayName) {
+        public ExplanationRow(String sourceSensorId, LocalDateTime time, LossCategory category,
+                              String comment, int minutes) {
+            this(sourceSensorId, time, category, comment, minutes, "");
+        }
+    }
 
     record SourceComments(String sensorId, List<ExplanationRow> rows) {}
 

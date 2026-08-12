@@ -13,6 +13,7 @@ public interface AppUserRepository extends JpaRepository<AppUserEntity, UUID> {
     boolean existsByRole(UserRole role);
     boolean existsByDisplayNameIgnoreCase(String displayName);
     boolean existsByDisplayNameIgnoreCaseAndIdNot(String displayName, UUID id);
+    Optional<AppUserEntity> findByDisplayNameIgnoreCase(String displayName);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select user from AppUserEntity user order by user.displayName")
     List<AppUserEntity> findAllForUpdate();

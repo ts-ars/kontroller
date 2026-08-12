@@ -13,6 +13,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +30,10 @@ class LossExplanationServiceTest {
     private ActualDataPort shifts;
     private EventPublisherPort events;
     private Stoppage stoppage;
+    private CurrentCommentActor currentActor;
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
+    private static final UUID OTHER_ID = UUID.fromString("00000000-0000-0000-0000-000000000102");
+    private static final Instant NOW = Instant.parse("2026-08-07T08:00:00Z");
 
     @BeforeEach
     void setUp() {
@@ -36,7 +43,10 @@ class LossExplanationServiceTest {
         Shift shift = mock(Shift.class);
         when(shift.getDate()).thenReturn(java.time.LocalDate.of(2026, 8, 7));
         when(shifts.findById(1L)).thenReturn(Optional.of(shift));
-        service = new LossExplanationService(stoppages, shifts, events);
+        currentActor = mock(CurrentCommentActor.class);
+        when(currentActor.require()).thenReturn(new CommentActor(USER_ID, "Alex", com.exempal.shiftcounter.features.user.domain.UserRole.USER));
+        service = new LossExplanationService(stoppages, shifts, events, currentActor,
+                Clock.fixed(NOW, ZoneOffset.UTC));
         stoppage = stoppage(List.of());
         when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage));
         when(stoppages.findById(10L)).thenReturn(Optional.of(stoppage));
@@ -49,6 +59,9 @@ class LossExplanationServiceTest {
         assertThat(saved.stoppageId()).isEqualTo(10L);
         assertThat(saved.allocatedMinutes()).isEqualTo(4);
         assertThat(saved.allocatedCans()).isEqualTo(40);
+        assertThat(saved.authorUserId()).isEqualTo(USER_ID);
+        assertThat(saved.authorDisplayName()).isEqualTo("Alex");
+        assertThat(saved.createdAt()).isEqualTo(NOW);
         verify(events).publish(new CommentsUpdatedEvent(java.time.LocalDate.of(2026, 8, 7), "sensor-1"));
     }
 
@@ -72,6 +85,30 @@ class LossExplanationServiceTest {
     void updateCannotMoveExplanationFromAnotherLoss() {
         assertThatThrownBy(() -> service.update(10L, 3L, LossCategory.MATERIAL, "Move", 1))
                 .isInstanceOf(LossExplanationNotFoundException.class);
+    }
+
+    @Test
+    void userCannotEditOrDeleteAnotherUsersComment() {
+        LossExplanation other = authored(2L, OTHER_ID, "Maria");
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage(List.of(other))));
+        assertThatThrownBy(() -> service.update(10L, 2L, LossCategory.QUALITY, "changed", 2))
+                .isInstanceOf(CommentAccessDeniedException.class);
+        assertThatThrownBy(() -> service.delete(10L, 2L)).isInstanceOf(CommentAccessDeniedException.class);
+        verify(stoppages, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ADMIN", "OWNER"})
+    void privilegedUserMayEditAnyCommentWithoutReplacingAuthor(String role) {
+        LossExplanation other = authored(2L, OTHER_ID, "Maria");
+        when(currentActor.require()).thenReturn(new CommentActor(USER_ID, "Alex",
+                com.exempal.shiftcounter.features.user.domain.UserRole.valueOf(role)));
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage(List.of(other))));
+        LossExplanation saved = service.update(10L, 2L, LossCategory.QUALITY, "fixed", 2);
+        assertThat(saved.authorUserId()).isEqualTo(OTHER_ID);
+        assertThat(saved.authorDisplayName()).isEqualTo("Maria");
+        assertThat(saved.lastModifiedBy()).isEqualTo(USER_ID);
+        assertThat(saved.updatedAt()).isEqualTo(NOW);
     }
 
     @Test
@@ -111,10 +148,18 @@ class LossExplanationServiceTest {
         List<LossExplanation> values = source.explanations().stream()
                 .map(value -> value.id() == null
                         ? new LossExplanation(1L, 10L, value.category(), value.comment(),
-                        value.allocatedMinutes(), value.allocatedCans(), 0L) : value)
+                        value.allocatedMinutes(), value.allocatedCans(), value.authorUserId(),
+                        value.authorDisplayName(), value.createdAt(), value.updatedAt(),
+                        value.lastModifiedBy(), 0L) : value)
                 .toList();
         return new Stoppage(source.id(), source.detectionKey(), source.shiftId(), source.sensorKey(),
                 source.intervalIndex(), source.startedAt(), source.exactDuration(), source.roundedMinutes(),
                 source.lostCans(), source.detectionType(), source.state(), values, source.version());
+    }
+
+
+    private LossExplanation authored(long id, UUID authorId, String name) {
+        return new LossExplanation(id, 10L, LossCategory.QUALITY, "Existing", 2, 20,
+                authorId, name, NOW.minusSeconds(60), NOW.minusSeconds(60), null, 0L);
     }
 }

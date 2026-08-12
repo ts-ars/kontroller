@@ -16,6 +16,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class JpaStoppageAdapter implements StoppageRepository {
     private final StoppageJpaRepository repository;
+    private final com.exempal.shiftcounter.features.user.adapter.persistence.AppUserRepository users;
 
     @Override
     public Optional<Stoppage> findById(long id) {
@@ -109,6 +110,13 @@ public class JpaStoppageAdapter implements StoppageRepository {
             entity.setComment(explanation.comment());
             entity.setAllocatedMinutes(explanation.allocatedMinutes());
             entity.setAllocatedCans(explanation.allocatedCans());
+            if (entity.getAuthor() == null) {
+                entity.setAuthor(users.getReferenceById(Objects.requireNonNull(explanation.authorUserId(), "authorUserId")));
+                entity.setCreatedAt(Objects.requireNonNull(explanation.createdAt(), "createdAt"));
+            }
+            entity.setUpdatedAt(Objects.requireNonNull(explanation.updatedAt(), "updatedAt"));
+            entity.setLastModifiedBy(explanation.lastModifiedBy() == null ? null
+                    : users.getReferenceById(explanation.lastModifiedBy()));
         }
         target.getExplanations().removeIf(value -> value.getId() != null && !retained.contains(value.getId()));
     }
@@ -124,7 +132,10 @@ public class JpaStoppageAdapter implements StoppageRepository {
     private Stoppage toDomain(StoppageEntity entity) {
         List<LossExplanation> explanations = entity.getExplanations().stream()
                 .map(value -> new LossExplanation(value.getId(), entity.getId(), value.getCategory(),
-                        value.getComment(), value.getAllocatedMinutes(), value.getAllocatedCans(), value.getVersion()))
+                        value.getComment(), value.getAllocatedMinutes(), value.getAllocatedCans(),
+                        value.getAuthor().getId(), value.getAuthor().getDisplayName(), value.getCreatedAt(),
+                        value.getUpdatedAt(), value.getLastModifiedBy() == null ? null
+                                : value.getLastModifiedBy().getId(), value.getVersion()))
                 .toList();
         return new Stoppage(entity.getId(), entity.getDetectionKey(), entity.getIncidentKey(),
                 entity.getShiftId(),

@@ -11,6 +11,7 @@ import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -24,6 +25,7 @@ class PageControllerTest {
     private StoppageRepository stoppageRepository;
 
     @Test
+    @WithMockUser(username = "Operator", roles = "USER")
     void shiftPageShouldReturnOkAndLayout() throws Exception {
         mockMvc.perform(get("/page/shift"))
                 .andExpect(status().isOk())
@@ -32,6 +34,7 @@ class PageControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "Administrator", roles = "ADMIN")
     void settingsPageShouldReturnOkAndLayout() throws Exception {
         mockMvc.perform(get("/page/settings"))
                 .andExpect(status().isOk())
@@ -40,6 +43,7 @@ class PageControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "Operator", roles = "USER")
     void reportPageShouldReturnOkAndLayout() throws Exception {
         mockMvc.perform(get("/page/report")
                         .param("from", "2026-08-09")
