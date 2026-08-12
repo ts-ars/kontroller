@@ -20,6 +20,11 @@ spring:
 application:
   time-zone: ${APP_TIME_ZONE:Europe/Warsaw}
 
+security:
+  bootstrap-owner:
+    name: ${BOOTSTRAP_OWNER_NAME:}
+    pin: ${BOOTSTRAP_OWNER_PIN:}
+
 server:
   shutdown: graceful
   error:

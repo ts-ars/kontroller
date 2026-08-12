@@ -87,6 +87,14 @@ canvas {
     margin: 0 auto;
 }
 
+nav .session { margin-left: auto; display: flex; gap: 1rem; align-items: baseline; }
+nav .session form { display: inline; }
+.link-button { background: none; color: #1d4ed8; padding: 0; }
+.signin-body { min-height: 70vh; display: grid; place-items: center; }
+.signin-card { width: min(100%, 320px); }
+.signin-card input[type="password"] { height: 34px; border: 1px solid #ccc; border-radius: 4px; padding: 4px 6px; box-sizing: border-box; }
+.signin-error { color: #b91c1c; }
+
 .report-sensors {
     margin-bottom: 0.5rem;
 }

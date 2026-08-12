@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.settings.adapter.web;
 
-import com.exempal.shiftcounter.core.ProductionSecurityConfiguration;
+import com.exempal.shiftcounter.core.SecurityConfiguration;
+import com.exempal.shiftcounter.features.user.adapter.security.LocalPinAuthenticationProvider;
 import com.exempal.shiftcounter.features.settings.application.SettingsGroupService;
 import com.exempal.shiftcounter.features.settings.application.UpdateSettingsCommand;
 import com.exempal.shiftcounter.features.settings.domain.SettingsRow;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({SettingsRestController.class, SettingsExceptionHandler.class})
-@Import(ProductionSecurityConfiguration.class)
+@Import(SecurityConfiguration.class)
 @ActiveProfiles("prod")
 @TestPropertySource(properties = {
         "security.operator.username=operator", "security.operator.password=operator-secret",
@@ -35,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SettingsProductionCsrfTest {
     @Autowired MockMvc mvc;
     @MockBean SettingsGroupService service;
+    @MockBean LocalPinAuthenticationProvider authenticationProvider;
 
     @Test
     void productionSettingsMutationRequiresAdminAndCsrf() throws Exception {

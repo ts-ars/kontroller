@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.comment;
 
-import com.exempal.shiftcounter.core.ProductionSecurityConfiguration;
+import com.exempal.shiftcounter.core.SecurityConfiguration;
+import com.exempal.shiftcounter.features.user.adapter.security.LocalPinAuthenticationProvider;
 import com.exempal.shiftcounter.features.comment.adapter.web.LossExplanationController;
 import com.exempal.shiftcounter.features.comment.application.LossExplanationUseCase;
 import com.exempal.shiftcounter.features.comment.domain.LossCategory;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(LossExplanationController.class)
-@Import(ProductionSecurityConfiguration.class)
+@Import(SecurityConfiguration.class)
 @ActiveProfiles("prod")
 @TestPropertySource(properties = {
         "security.operator.username=operator", "security.operator.password=operator-secret",
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProductionCsrfFunctionalTest {
     @Autowired MockMvc mvc;
     @MockBean LossExplanationUseCase useCase;
+    @MockBean LocalPinAuthenticationProvider authenticationProvider;
 
     @Test
     void productionExplanationMutationRequiresAndAcceptsCsrfToken() throws Exception {
@@ -40,11 +42,11 @@ class ProductionCsrfFunctionalTest {
         when(useCase.create(7L, LossCategory.MATERIAL, "Roll change", 4))
                 .thenReturn(new LossExplanation(3L, 7L, LossCategory.MATERIAL, "Roll change", 4, 40));
 
-        mvc.perform(post("/api/stoppages/7/explanations").with(user("operator").roles("OPERATOR"))
+        mvc.perform(post("/api/stoppages/7/explanations").with(user("operator").roles("USER"))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isForbidden());
 
-        mvc.perform(post("/api/stoppages/7/explanations").with(user("operator").roles("OPERATOR")).with(csrf())
+        mvc.perform(post("/api/stoppages/7/explanations").with(user("operator").roles("USER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
     }
@@ -55,16 +57,16 @@ class ProductionCsrfFunctionalTest {
         when(useCase.update(7L, 3L, LossCategory.QUALITY, "Checked", 2))
                 .thenReturn(new LossExplanation(3L, 7L, LossCategory.QUALITY, "Checked", 2, 20));
 
-        mvc.perform(put("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR"))
+        mvc.perform(put("/api/stoppages/7/explanations/3").with(user("operator").roles("USER"))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isForbidden());
-        mvc.perform(put("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR")).with(csrf())
+        mvc.perform(put("/api/stoppages/7/explanations/3").with(user("operator").roles("USER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
 
-        mvc.perform(delete("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR")))
+        mvc.perform(delete("/api/stoppages/7/explanations/3").with(user("operator").roles("USER")))
                 .andExpect(status().isForbidden());
-        mvc.perform(delete("/api/stoppages/7/explanations/3").with(user("operator").roles("OPERATOR")).with(csrf()))
+        mvc.perform(delete("/api/stoppages/7/explanations/3").with(user("operator").roles("USER")).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 }
