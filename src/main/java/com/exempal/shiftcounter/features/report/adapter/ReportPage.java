@@ -2,6 +2,7 @@ package com.exempal.shiftcounter.features.report.adapter;
 
 import com.exempal.shiftcounter.core.PageModel;
 import com.exempal.shiftcounter.features.report.application.ReportQueryUseCase;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
@@ -23,7 +24,7 @@ public class ReportPage implements PageModel {
 
     @Override
     public void populateModel(Model model) {
-        // Не используется — вызовется перегруженный метод с params
+        // The parameter-aware overload is used by PageModelResolver.
     }
 
     @Override
@@ -35,5 +36,7 @@ public class ReportPage implements PageModel {
         model.addAttribute("sensorId", report.sensorId());
         model.addAttribute("totalMinutes", report.totalMinutes());
         model.addAttribute("totalCans", report.totalCans());
+        model.addAttribute("signalTotals", report.signalTotals());
+        model.addAttribute("sensorOptions", SensorCatalog.all());
     }
 }

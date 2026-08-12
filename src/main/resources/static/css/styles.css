@@ -81,3 +81,79 @@ canvas {
     display: block;
     margin: 0 auto;
 }
+
+.report-page {
+    width: min(100%, 1400px);
+    margin: 0 auto;
+}
+
+.report-filters {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.report-filters label {
+    min-width: 170px;
+}
+
+.report-filters input,
+.report-filters select {
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.report-table .report-source-column {
+    width: 12%;
+}
+
+.report-table .report-type-column {
+    width: 26%;
+}
+
+.report-table .report-number-column {
+    width: 10%;
+}
+
+.report-table .report-reason-column {
+    width: auto;
+}
+
+.report-table .report-reason {
+    text-align: left;
+}
+
+.report-table .report-empty {
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.report-charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.report-charts.sensor-five {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-chart-card {
+    height: 190px;
+    min-width: 0;
+}
+
+.report-chart-card canvas {
+    width: 100% !important;
+    height: 190px !important;
+}
+
+@media (max-width: 800px) {
+    .report-charts.sensor-five {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

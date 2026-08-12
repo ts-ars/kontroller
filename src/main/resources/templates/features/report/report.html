@@ -1,82 +1,119 @@
-<div th:fragment="content">
-    <h1>Shift Report</h1>
+<div th:fragment="content" class="report-page">
+    <h1>Report</h1>
 
-    <!-- 📅 Форма выбора диапазона -->
-    <form method="get" style="margin-bottom: 1.5rem;">
+    <form method="get" class="report-filters">
         <label>
-            From:
+            From
             <input type="date" name="from" th:value="${startDate}" />
         </label>
-        <label style="margin-left: 1rem;">
-            To:
+        <label>
+            To
             <input type="date" name="to" th:value="${endDate}" />
         </label>
-        <button type="submit" style="margin-left: 1rem;">Filter</button>
+        <label>
+            Sensor
+            <select name="sensorId">
+                <option th:each="sensor : ${sensorOptions}"
+                        th:value="${sensor.id.value}"
+                        th:text="${#strings.capitalize(#strings.replace(sensor.id.value, '-', ' '))}"
+                        th:selected="${sensor.id.value == sensorId}"></option>
+            </select>
+        </label>
+        <button type="submit">Apply</button>
     </form>
 
-    <!-- 📋 Таблица отчёта -->
-    <table style="width: 100%; border-collapse: collapse;">
+    <table class="report-table">
+        <colgroup>
+            <col th:if="${sensorId == 'sensor-5'}" class="report-source-column" />
+            <col class="report-type-column" />
+            <col class="report-number-column" />
+            <col class="report-number-column" />
+            <col class="report-reason-column" />
+        </colgroup>
         <thead>
         <tr>
-            <th style="border: 1px solid #ccc; padding: 6px;">Type</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">Minutes</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">Cans</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">Reason</th>
+            <th th:if="${sensorId == 'sensor-5'}">Source</th>
+            <th>Type</th>
+            <th>Minutes</th>
+            <th>Cans</th>
+            <th>Reason</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="problem : ${problems}">
-            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.type}"></td>
-            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.minutes}"></td>
-            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.cans}"></td>
-            <td style="border: 1px solid #ccc; padding: 6px;" th:text="${problem.reason}"></td>
+            <td th:if="${sensorId == 'sensor-5'}" th:text="${problem.source}"></td>
+            <td th:text="${problem.type}"></td>
+            <td th:text="${problem.minutes}"></td>
+            <td th:text="${problem.cans}"></td>
+            <td class="report-reason" th:text="${problem.reason}"></td>
         </tr>
         <tr th:if="${problems.isEmpty()}">
-            <td colspan="4" style="text-align: center; padding: 12px;">No data for selected range</td>
+            <td th:colspan="${sensorId == 'sensor-5' ? 5 : 4}" class="report-empty">
+                No data for selected range
+            </td>
         </tr>
         </tbody>
         <tfoot>
         <tr>
-            <th style="text-align: right; padding: 6px;">Total:</th>
-            <th style="padding: 6px;" th:text="${totalMinutes}"></th>
-            <th style="padding: 6px;" th:text="${totalCans}"></th>
+            <th th:if="${sensorId == 'sensor-5'}"></th>
+            <th>Total</th>
+            <th th:text="${totalMinutes}"></th>
+            <th th:text="${totalCans}"></th>
             <th></th>
         </tr>
         </tfoot>
     </table>
 
-    <!-- 📈 График потерь по типу -->
-    <canvas id="typeChart" width="600" height="300" style="margin-top: 2rem;"></canvas>
+    <div class="report-charts" th:classappend="${sensorId == 'sensor-5'} ? ' sensor-five'">
+        <section class="report-chart-card">
+            <canvas id="lossChart"></canvas>
+        </section>
+        <section class="report-chart-card" th:if="${sensorId == 'sensor-5'}">
+            <canvas id="signalChart"></canvas>
+        </section>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script th:inline="javascript">
-        const rawData = /*[[${problems}]]*/ [];
-        const typeTotals = {};
+        const reportRows = /*[[${problems}]]*/ [];
+        const reportSignalTotals = /*[[${signalTotals}]]*/ [];
+        const lossTotals = {};
 
-        rawData.forEach(p => {
-            const type = p.type;
-            const minutes = parseFloat(p.minutes || 0);
-            typeTotals[type] = (typeTotals[type] || 0) + minutes;
+        reportRows.forEach(row => {
+            lossTotals[row.type] = (lossTotals[row.type] || 0) + Number(row.minutes || 0);
         });
 
-        const ctx = document.getElementById('typeChart').getContext('2d');
-        new Chart(ctx, {
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+        };
+        const blueDataset = (label, data) => ({
+            label,
+            data,
+            backgroundColor: '#3b82f6'
+        });
+
+        new Chart(document.getElementById('lossChart'), {
             type: 'bar',
             data: {
-                labels: Object.keys(typeTotals),
-                datasets: [{
-                    label: 'Lost Minutes per Type',
-                    data: Object.values(typeTotals),
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
+                labels: Object.keys(lossTotals),
+                datasets: [blueDataset('Lost minutes by type', Object.values(lossTotals))]
             },
-            options: {
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
+            options: chartOptions
         });
+
+        const signalChart = document.getElementById('signalChart');
+        if (signalChart) {
+            new Chart(signalChart, {
+                type: 'bar',
+                data: {
+                    labels: reportSignalTotals.map(total => total.sensorId),
+                    datasets: [blueDataset('Signals', reportSignalTotals.map(total => total.total))]
+                },
+                options: chartOptions
+            });
+        }
     </script>
 </div>
