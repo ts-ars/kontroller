@@ -40,7 +40,7 @@ load remains explicitly unverified in this environment.
 | Plan–Fact | `source-faithful-plan-fact.html` | Matches 1632px workspace, two-column sensor grid, 600×190 chart frame, 88px Time/Plan/Actual columns, solid `#3b82f6`, top legend and separate comment lines |
 | Comments | `comments-layout.html` | Matches 1400px workspace, editor widths, centered Minutes, readonly Allocated cans and Sensor 5 source grid 2×2 |
 | Settings | `settings-layout.html` | Matches 1000px table, shared/derived/independent columns, readonly Sensor 5, totals and tail controls |
-| Report | `report-layout.html` | Matches 1400px workspace, Type 26%, 190px charts and two-column Sensor 5 chart layout; PR 4 removed the ordinary-sensor signal chart and chart borders |
+| Report | `report-layout.html` | Matches 1400px workspace, Type 26%, 190px charts and two-column Sensor 5 chart layout; the PR 3 Report layer hides the ordinary-sensor signal chart and removes chart borders |
 
 The in-app browser refused local `file://` navigation. Therefore this comparison validates source
 structure and styling, not computed browser layout, CDN rendering or pixel equivalence. Browser visual
