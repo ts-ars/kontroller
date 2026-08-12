@@ -15,6 +15,7 @@ public class SecurityConfiguration {
           .authorizeHttpRequests(auth -> auth
             .requestMatchers("/css/**","/signin","/actuator/health/**","/actuator/info").permitAll()
             .requestMatchers("/api/signal/**").permitAll()
+            .requestMatchers("/page/users","/users","/users/**").hasRole("OWNER")
             .requestMatchers("/page/settings","/settings/**","/api/settings/**").hasAnyRole("ADMIN","OWNER")
             .requestMatchers("/page/shift","/shift/**","/page/comment","/comments/**","/api/comments/**","/page/report","/report/**","/api/report/**").hasAnyRole("USER","ADMIN","OWNER")
             .anyRequest().authenticated())

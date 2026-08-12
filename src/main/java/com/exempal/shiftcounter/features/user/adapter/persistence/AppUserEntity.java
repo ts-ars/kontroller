@@ -18,6 +18,7 @@ public class AppUserEntity {
     @Column(name="locked_until") private Instant lockedUntil;
     @Column(name="created_at", nullable=false) private Instant createdAt;
     @Column(name="updated_at", nullable=false) private Instant updatedAt;
+    @Version private long version;
 
     protected AppUserEntity() {}
     public AppUserEntity(UUID id, String displayName, String pinHash, UserRole role, Instant now) {
@@ -28,6 +29,10 @@ public class AppUserEntity {
     public String getPinHash(){return pinHash;} public UserRole getRole(){return role;}
     public UserStatus getStatus(){return status;} public int getFailedAttempts(){return failedAttempts;}
     public Instant getLockedUntil(){return lockedUntil;}
+    public long getVersion(){return version;}
+    public void updateProfile(String displayName, UserRole role, Instant now){this.displayName=displayName;this.role=role;this.updatedAt=now;}
+    public void changePin(String pinHash, Instant now){this.pinHash=pinHash;this.failedAttempts=0;this.lockedUntil=null;this.updatedAt=now;}
+    public void changeStatus(UserStatus status, Instant now){this.status=status;this.failedAttempts=0;this.lockedUntil=null;this.updatedAt=now;}
     public boolean maySignIn(Instant now){return status==UserStatus.ACTIVE && (lockedUntil==null || !lockedUntil.isAfter(now));}
     public void signInSucceeded(Instant now){failedAttempts=0; lockedUntil=null; updatedAt=now;}
     public void signInFailed(Instant now, int maxAttempts, java.time.Duration lockDuration){

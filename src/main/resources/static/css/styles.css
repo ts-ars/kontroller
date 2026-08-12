@@ -94,6 +94,13 @@ nav .session form { display: inline; }
 .signin-card { width: min(100%, 320px); }
 .signin-card input[type="password"] { height: 34px; border: 1px solid #ccc; border-radius: 4px; padding: 4px 6px; box-sizing: border-box; }
 .signin-error { color: #b91c1c; }
+.success { color: #166534; }
+.users-page { width: min(100%, 900px); margin: 0 auto; }
+.user-create, .user-card { border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
+.user-card { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; }
+.user-card form { min-width: 0; }
+.users-page input[type="password"] { height: 34px; border: 1px solid #ccc; border-radius: 4px; padding: 4px 6px; box-sizing: border-box; }
+@media (max-width: 800px) { .user-card { grid-template-columns: 1fr; } }
 
 .report-sensors {
     margin-bottom: 0.5rem;

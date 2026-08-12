@@ -8,4 +8,6 @@ class SecurityContractMvcTest {@Autowired MockMvc mvc; @MockBean PageModelResolv
  @BeforeEach void controllerBoundary(){when(resolver.resolve(anyString(),any(),any())).thenReturn("redirect:/signin");}
  @Test void anonymousRequestRedirectsToSignIn() throws Exception {mvc.perform(get("/page/shift")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/signin"));}
  @Test void userCannotOpenSettings() throws Exception {mvc.perform(get("/page/settings").with(user("Sam").roles("USER"))).andExpect(status().isForbidden());}
- @Test void adminCanReachSettingsBoundary() throws Exception {mvc.perform(get("/page/settings").with(user("Ada").roles("ADMIN"))).andExpect(status().is3xxRedirection());}}
+ @Test void adminCanReachSettingsBoundary() throws Exception {mvc.perform(get("/page/settings").with(user("Ada").roles("ADMIN"))).andExpect(status().is3xxRedirection());}
+ @Test void adminCannotOpenUsers() throws Exception {mvc.perform(get("/page/users").with(user("Ada").roles("ADMIN"))).andExpect(status().isForbidden());}
+ @Test void ownerCanReachUsersBoundary() throws Exception {mvc.perform(get("/page/users").with(user("Ola").roles("OWNER"))).andExpect(status().is3xxRedirection());}}

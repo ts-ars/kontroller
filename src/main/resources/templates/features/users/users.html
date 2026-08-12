@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body><div th:fragment="content" class="users-page">
+<h1>Users</h1><p class="success" th:if="${message}" th:text="${message}"></p><p class="signin-error" th:if="${error}" th:text="${error}"></p>
+<section class="user-create"><h2>Add user</h2><form th:action="@{/users}" method="post">
+<label>Display name<input type="text" name="displayName" maxlength="120" required></label>
+<label>PIN<input type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label>
+<label>Role<select name="role"><option th:each="role : ${roles}" th:value="${role}" th:text="${role}"></option></select></label><button type="submit">Add user</button></form></section>
+<section><h2>Existing users</h2><div class="user-card" th:each="user : ${users}"><form th:action="@{|/users/${user.id}/profile|}" method="post">
+<label>Display name<input type="text" name="displayName" th:value="${user.displayName}" maxlength="120" required></label><label>Role<select name="role"><option th:each="role : ${roles}" th:value="${role}" th:text="${role}" th:selected="${role == user.role}"></option></select></label><button type="submit">Save</button></form>
+<form th:action="@{|/users/${user.id}/pin|}" method="post"><label>New PIN<input type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label><button type="submit">Change PIN</button></form>
+<form th:action="@{|/users/${user.id}/status|}" method="post"><input type="hidden" name="status" th:value="${user.status.name() == 'ACTIVE' ? 'BLOCKED' : 'ACTIVE'}"><span th:text="${user.status}"></span><button type="submit" th:text="${user.status.name() == 'ACTIVE' ? 'Block' : 'Activate'}"></button></form></div></section>
+</div></body></html>
