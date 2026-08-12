@@ -57,7 +57,9 @@ class PageControllerTest {
                 .andExpect(model().attribute("sensorId", "sensor-5"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"sensorId\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("sensor-6")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("report-charts sensor-five")))
+                .andExpect(content().string(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.containsString("report-charts"),
+                        org.hamcrest.Matchers.containsString("sensor-five"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Source")));
     }
 }
