@@ -27,51 +27,42 @@ import static org.mockito.Mockito.*;
 
 class ReportQueryUseCaseTest {
     private StoppageRepository stoppages;
-    private ReportSignalQueryPort signals;
     private ReportQueryUseCase reports;
 
     @BeforeEach
     void setUp() {
         stoppages = mock(StoppageRepository.class);
-        signals = mock(ReportSignalQueryPort.class);
         reports = new ReportQueryUseCase(stoppages, new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC)), signals);
+                Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC)));
     }
 
     @Test
-    void queriesInclusiveProductionDatesAndHalfOpenSevenAmSignalRange() {
+    void queriesInclusiveProductionDates() {
         reports.query(Map.of("from", "2026-08-08", "to", "2026-08-10", "sensorId", "sensor-2"));
 
         verify(stoppages).findByShiftDateBetweenAndSensorId(
                 LocalDate.of(2026, 8, 8), LocalDate.of(2026, 8, 10), "sensor-2");
-        verify(signals).count("sensor-2",
-                LocalDateTime.of(2026, 8, 8, 7, 0),
-                LocalDateTime.of(2026, 8, 11, 7, 0));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"sensor-1", "sensor-2", "sensor-3", "sensor-4", "sensor-6"})
-    void ownSensorsReturnOnlyTheirOwnExplanationsAndSignals(String sensorId) {
+    void ownSensorsReturnOnlyTheirOwnExplanationsAndLostCans(String sensorId) {
         when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq(sensorId)))
                 .thenReturn(List.of(stoppage(10, sensorId, 7, 21, "own")));
-        when(signals.count(eq(sensorId), any(), any())).thenReturn(9L);
 
         ReportView view = reports.query(Map.of("sensorId", sensorId));
 
         assertThat(view.rows()).containsExactly(
                 new ReportRow(sensorId, LossCategory.BREAKDOWN, 7, 21, "own"));
-        assertThat(view.signalTotals()).containsExactly(new ReportSignalTotal(sensorId, 9));
-        verify(signals).count(eq(sensorId), any(), any());
-        verifyNoMoreInteractions(signals);
+        assertThat(view.lossTotals()).containsExactly(new ReportLossTotal(sensorId, 21));
     }
 
     @Test
-    void sensorFiveAggregatesExplanationsAndFourSourceSignalTotals() {
+    void sensorFiveAggregatesExplanationsAndFourSourceLostCanTotals() {
         for (int sensor = 1; sensor <= 4; sensor++) {
             String source = "sensor-" + sensor;
             when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq(source)))
                     .thenReturn(List.of(stoppage(sensor, source, sensor, sensor * 10, "reason-" + sensor)));
-            when(signals.count(eq(source), any(), any())).thenReturn((long) sensor * 100);
         }
 
         ReportView view = reports.query(Map.of(
@@ -81,13 +72,12 @@ class ReportQueryUseCaseTest {
                 .containsExactly("sensor-1", "sensor-2", "sensor-3", "sensor-4");
         assertThat(view.totalMinutes()).isEqualTo(10);
         assertThat(view.totalCans()).isEqualTo(100);
-        assertThat(view.signalTotals()).containsExactly(
-                new ReportSignalTotal("sensor-1", 100),
-                new ReportSignalTotal("sensor-2", 200),
-                new ReportSignalTotal("sensor-3", 300),
-                new ReportSignalTotal("sensor-4", 400));
+        assertThat(view.lossTotals()).containsExactly(
+                new ReportLossTotal("sensor-1", 10),
+                new ReportLossTotal("sensor-2", 20),
+                new ReportLossTotal("sensor-3", 30),
+                new ReportLossTotal("sensor-4", 40));
         verify(stoppages, never()).findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-5"));
-        verify(signals, never()).count(eq("sensor-5"), any(), any());
     }
 
     @Test

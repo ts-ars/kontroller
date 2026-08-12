@@ -4,7 +4,6 @@ import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
-import com.exempal.shiftcounter.features.shift.domain.ProductionDay;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,18 +12,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Service
 public class ReportQueryUseCase {
     private final StoppageRepository repository;
     private final ProductionDayService productionDays;
-    private final ReportSignalQueryPort signals;
 
-    public ReportQueryUseCase(StoppageRepository repository, ProductionDayService productionDays,
-                              ReportSignalQueryPort signals) {
+    public ReportQueryUseCase(StoppageRepository repository, ProductionDayService productionDays) {
         this.repository = repository;
         this.productionDays = productionDays;
-        this.signals = signals;
     }
 
     @Transactional(readOnly = true)
@@ -40,6 +37,8 @@ public class ReportQueryUseCase {
         List<String> explanationSources = SensorCatalog.SENSOR_5.equals(sensorId)
                 ? List.of("sensor-1", "sensor-2", "sensor-3", "sensor-4")
                 : List.of(sensorId);
+        Map<String, Integer> lostCansBySource = new LinkedHashMap<>();
+        explanationSources.forEach(source -> lostCansBySource.put(source, 0));
         for (String source : explanationSources) {
             for (var stoppage : repository.findByShiftDateBetweenAndSensorId(from, to, source)) {
                 if (stoppage.state() != StoppageState.ACTIVE) continue;
@@ -48,18 +47,14 @@ public class ReportQueryUseCase {
                             explanation.allocatedCans(), explanation.comment()));
                     minutes += explanation.allocatedMinutes();
                     cans += explanation.allocatedCans();
+                    lostCansBySource.merge(source, explanation.allocatedCans(), Integer::sum);
                 }
             }
         }
-        var rangeStart = ProductionDay.of(from).start();
-        var rangeEnd = ProductionDay.of(to).end();
-        List<String> signalSources = SensorCatalog.SENSOR_5.equals(sensorId)
-                ? explanationSources
-                : List.of(sensorId);
-        List<ReportSignalTotal> signalTotals = signalSources.stream()
-                .map(source -> new ReportSignalTotal(source, signals.count(source, rangeStart, rangeEnd)))
+        List<ReportLossTotal> lossTotals = lostCansBySource.entrySet().stream()
+                .map(entry -> new ReportLossTotal(entry.getKey(), entry.getValue()))
                 .toList();
-        return new ReportView(rows, from, to, sensorId, minutes, cans, signalTotals);
+        return new ReportView(rows, from, to, sensorId, minutes, cans, lossTotals);
     }
 
     private LocalDate parseDate(String raw, LocalDate fallback) {

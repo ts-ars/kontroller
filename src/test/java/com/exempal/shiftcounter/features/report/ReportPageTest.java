@@ -4,7 +4,6 @@ import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import com.exempal.shiftcounter.features.report.application.ReportQueryUseCase;
-import com.exempal.shiftcounter.features.report.application.ReportSignalQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
@@ -35,9 +34,8 @@ class ReportPageTest {
                 DetectionType.FIXED, StoppageState.ACTIVE, List.of(explanation), 0L);
         when(repository.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-1")))
                 .thenReturn(List.of(stoppage));
-        ReportSignalQueryPort signals = mock(ReportSignalQueryPort.class);
         page = new ReportPage(new ReportQueryUseCase(repository, new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)), signals));
+                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC))));
     }
 
     @Test
@@ -54,7 +52,7 @@ class ReportPageTest {
         assertEquals(400, model.getAttribute("totalCans"));
         assertNotNull(model.getAttribute("startDate"));
         assertNotNull(model.getAttribute("endDate"));
-        assertInstanceOf(List.class, model.getAttribute("signalTotals"));
+        assertInstanceOf(List.class, model.getAttribute("lossTotals"));
         assertEquals(6, ((List<?>) model.getAttribute("sensorOptions")).size());
     }
 }

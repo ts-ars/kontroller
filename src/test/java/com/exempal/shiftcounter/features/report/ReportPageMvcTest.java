@@ -4,7 +4,7 @@ import com.exempal.shiftcounter.core.PageController;
 import com.exempal.shiftcounter.core.PageModelResolver;
 import com.exempal.shiftcounter.features.report.application.ReportQueryUseCase;
 import com.exempal.shiftcounter.features.report.application.ReportRow;
-import com.exempal.shiftcounter.features.report.application.ReportSignalTotal;
+import com.exempal.shiftcounter.features.report.application.ReportLossTotal;
 import com.exempal.shiftcounter.features.report.application.ReportView;
 import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import org.junit.jupiter.api.Test;
@@ -41,10 +41,10 @@ class ReportPageMvcTest {
                         List.of(new ReportRow("sensor-2", LossCategory.BREAKDOWN, 12, 48, "belt")),
                         LocalDate.of(2026, 8, 9), LocalDate.of(2026, 8, 10), "sensor-5", 12, 48,
                         List.of(
-                                new ReportSignalTotal("sensor-1", 10),
-                                new ReportSignalTotal("sensor-2", 20),
-                                new ReportSignalTotal("sensor-3", 30),
-                                new ReportSignalTotal("sensor-4", 40))));
+                                new ReportLossTotal("sensor-1", 10),
+                                new ReportLossTotal("sensor-2", 20),
+                                new ReportLossTotal("sensor-3", 30),
+                                new ReportLossTotal("sensor-4", 40))));
         mvc.perform(get("/page/report")
                         .param("from", "2026-08-09")
                         .param("to", "2026-08-10")
@@ -56,7 +56,7 @@ class ReportPageMvcTest {
                 .andExpect(model().attribute("endDate", "2026-08-10"))
                 .andExpect(model().attribute("sensorId", "sensor-5"))
                 .andExpect(model().attribute("problems", hasSize(1)))
-                .andExpect(model().attribute("signalTotals", hasSize(4)))
+                .andExpect(model().attribute("lossTotals", hasSize(4)))
                 .andExpect(model().attribute("sensorOptions", hasSize(6)))
                 .andExpect(content().string(containsString("Shift Report")))
                 .andExpect(content().string(containsString(">Filter</button>")))
@@ -79,19 +79,20 @@ class ReportPageMvcTest {
                 .andExpect(content().string(containsString(">Source</th>")))
                 .andExpect(content().string(containsString("sensor-2")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
-                .andExpect(content().string(containsString("id=\"signalChart\"")));
+                .andExpect(content().string(containsString("id=\"sourceLossChart\"")))
+                .andExpect(content().string(containsString("Lost cans by sensor")));
     }
 
     @Test
     void ordinarySensorRendersOnlyLossChart() throws Exception {
         when(reports.query(Map.of("sensorId", "sensor-6"))).thenReturn(new ReportView(
                 List.of(), LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10),
-                "sensor-6", 0, 0, List.of(new ReportSignalTotal("sensor-6", 3))));
+                "sensor-6", 0, 0, List.of(new ReportLossTotal("sensor-6", 3))));
 
         mvc.perform(get("/page/report").param("sensorId", "sensor-6"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("class=\"active\">6</a>")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
-                .andExpect(content().string(not(containsString("id=\"signalChart\""))));
+                .andExpect(content().string(not(containsString("id=\"sourceLossChart\""))));
     }
 }

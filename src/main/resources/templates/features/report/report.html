@@ -70,14 +70,14 @@
             <canvas id="lossChart"></canvas>
         </section>
         <section class="report-chart-card" th:if="${sensorId == 'sensor-5'}">
-            <canvas id="signalChart"></canvas>
+            <canvas id="sourceLossChart"></canvas>
         </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script th:inline="javascript">
         const reportRows = /*[[${problems}]]*/ [];
-        const reportSignalTotals = /*[[${signalTotals}]]*/ [];
+        const reportLossTotals = /*[[${lossTotals}]]*/ [];
         const lossTotals = {};
 
         reportRows.forEach(row => {
@@ -105,13 +105,13 @@
             options: chartOptions
         });
 
-        const signalChart = document.getElementById('signalChart');
-        if (signalChart) {
-            new Chart(signalChart, {
+        const sourceLossChart = document.getElementById('sourceLossChart');
+        if (sourceLossChart) {
+            new Chart(sourceLossChart, {
                 type: 'bar',
                 data: {
-                    labels: reportSignalTotals.map(total => total.sensorId),
-                    datasets: [blueDataset('Signals', reportSignalTotals.map(total => total.total))]
+                    labels: reportLossTotals.map(total => total.sensorId),
+                    datasets: [blueDataset('Lost cans by sensor', reportLossTotals.map(total => total.lostCans))]
                 },
                 options: chartOptions
             });

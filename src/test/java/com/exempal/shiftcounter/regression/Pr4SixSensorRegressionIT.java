@@ -172,12 +172,12 @@ class Pr4SixSensorRegressionIT {
                 .containsExactly("sensor-1", "sensor-2", "sensor-3", "sensor-4");
         assertThat(report.rows()).extracting(row -> row.reason())
                 .containsExactly("Range 1", "Range 2", "Range 3", "Range 4");
-        assertThat(report.signalTotals()).extracting(value -> value.sensorId(), value -> value.total())
+        assertThat(report.lossTotals()).extracting(value -> value.sensorId(), value -> value.lostCans())
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("sensor-1", 2L),
-                        org.assertj.core.groups.Tuple.tuple("sensor-2", 2L),
-                        org.assertj.core.groups.Tuple.tuple("sensor-3", 2L),
-                        org.assertj.core.groups.Tuple.tuple("sensor-4", 2L));
+                        org.assertj.core.groups.Tuple.tuple("sensor-1", report.rows().get(0).cans()),
+                        org.assertj.core.groups.Tuple.tuple("sensor-2", report.rows().get(1).cans()),
+                        org.assertj.core.groups.Tuple.tuple("sensor-3", report.rows().get(2).cans()),
+                        org.assertj.core.groups.Tuple.tuple("sensor-4", report.rows().get(3).cans()));
     }
 
     private RegisterSignalCommand command(String sensorId, LocalDateTime occurredAt, String identity) {

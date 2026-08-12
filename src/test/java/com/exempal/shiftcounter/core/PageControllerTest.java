@@ -8,7 +8,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
-import com.exempal.shiftcounter.features.report.application.ReportSignalQueryPort;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -23,9 +22,6 @@ class PageControllerTest {
     // Оставляем только нужные моки, которые нельзя подставить настоящими
     @MockBean
     private StoppageRepository stoppageRepository;
-
-    @MockBean
-    private ReportSignalQueryPort reportSignals;
 
     @Test
     void shiftPageShouldReturnOkAndLayout() throws Exception {

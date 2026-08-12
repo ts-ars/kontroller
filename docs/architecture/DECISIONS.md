@@ -76,7 +76,7 @@ This file contains only final cross-stage decisions. Detailed contracts and Defi
 45. Plan–Fact and Comments use production slices `07:00–15:00` and `15:00–D+1 07:00`; the evening
     label remains `15:00–23:00` while its data includes configured continuation after 23:00. Sensor 5
     reads source-attributed explanations from Sensors 1–4, while Sensor 6 reads only its own data.
-46. Report date filters are inclusive production dates and therefore query the half-open signal range
-    `[from 07:00, to + 1 day 07:00)`. Sensor 5 reports explanation sources and exactly four signal
-    totals for Sensors 1–4; other sensors retain their own rows and signal total.
+46. Report date filters are inclusive production dates. Sensor 5 reports explanation sources and
+    exactly four lost-can totals for Sensors 1–4, derived from the same allocated explanation cans
+    shown in the selected report range; other sensors retain their own loss rows and totals.
 

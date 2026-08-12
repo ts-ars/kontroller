@@ -10,10 +10,10 @@ public record ReportView(
         String sensorId,
         int totalMinutes,
         int totalCans,
-        List<ReportSignalTotal> signalTotals
+        List<ReportLossTotal> lossTotals
 ) {
     public ReportView {
         rows = List.copyOf(rows);
-        signalTotals = List.copyOf(signalTotals);
+        lossTotals = List.copyOf(lossTotals);
     }
 }
