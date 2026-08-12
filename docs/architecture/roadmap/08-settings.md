@@ -1,8 +1,12 @@
-# Stage 8 — Two Settings Groups
+# Stage 8 — Persisted Settings Groups
 
 Status: **APPROVED / IMPLEMENTED**
 
 ## Model
+
+The model and update sections below preserve the approved historical V8 contract. They are not
+rewritten retroactively. The later **Approved V9 ownership revision** is authoritative wherever the
+original 4+2 ownership conflicts with the six-sensor UI contract.
 
 Settings belong to a sensor group, not globally to the application and not directly to a delivery adapter.
 
@@ -16,8 +20,8 @@ SettingsGroup
   FIXED/TEMPO/Reconcile parameters
 ```
 
-- Group 1 applies to Sensors 1–4.
-- Group 2 applies to Sensors 5–6.
+- In V8, Group 1 applied to Sensors 1–4.
+- In V8, Group 2 applied to Sensors 5–6.
 - Each sensor belongs to exactly one group.
 - Time and Plan are stored together as interval records, not as parallel arrays.
 - Duration is derived from neighboring Time values.
@@ -66,4 +70,10 @@ The later six-sensor UI contract deliberately supersedes only the original 4+2 s
 - The existing active-shift guarantees remain: plan-only preserves Actual, Time redistributes persisted
   signals, affected sensors Reconcile, completed history is immutable and a failure rolls everything back.
 - `/api/settings/{groupId}` remains the route but transports one composite Settings snapshot.
+- Add/Delete rotates only the half-tail: the nearest previous full plan fills the old tail, the old
+  half-plan moves forward by 60 minutes, only the last extension can be removed, and deletion restores
+  the previous snapshot exactly without crossing the next `07:00` boundary.
+- Regression evidence must cover all six active shifts in one common-Time update, derived Sensor 5
+  plans without Sensor 5 Reconcile, independent Sensor 6 plans, Actual preservation for plan-only
+  changes, timestamp redistribution for Time changes, completed-history stability and rollback.
 

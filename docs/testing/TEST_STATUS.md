@@ -3,7 +3,7 @@
 ## Environment
 
 - Date: 2026-08-11
-- Branch: `codex/stage-10-release-hardening`, based on merged Stage 10 controls commit `1bd5468`
+- Branch: `codex/pr4-regression`, based on integrated PR 1 + PR 2 + PR 3 commit `16d755e`
 - Spring profile: `test`
 - Required database: `shiftcounter_test`
 - Required database user: `shift_test`
@@ -26,6 +26,27 @@
 | Stage 10 follow-up `clean verify` | PASS — 143 executed (134 Surefire + 9 Failsafe), 0 skipped/failures/errors; 11:34 |
 | Stage 10 follow-up local load suite | NOT COMPLETED — exceeded the 10-minute local command limit |
 
+## PR 4 integrated regression attempt
+
+- Integration base: `16d755e088806044e8531b818eb9408b7e76b6c0` (PR 1 + PR 2 + PR 3 bundle),
+  verified as a descendant of `7a083371c84dc3bd6aca9ff62ae33b505abafe87`.
+- `test-compile -DskipTests`: PASS.
+- Focused database-free domain/read-model/MVC/CSRF/WebSocket suite: PASS — 58 executed,
+  0 skipped/failures/errors.
+- Isolated PostgreSQL 15.13 `clean verify`: PASS — 209 executed (197 Surefire + 12 Failsafe),
+  0 skipped/failures/errors; 10:42. The dedicated Docker project `kontroller-pr4-postgres` used host
+  port `55442`; no production or user database was contacted.
+- Migration rehearsal through V9 and `Pr4SixSensorRegressionIT`: PASS — the PR 4 E2E class executed
+  3 scenarios with 0 skipped/failures/errors, including the preserved planless Actual tail after
+  Settings rows are removed.
+- Release load suite: NOT COMPLETED — the separate two-scenario command exceeded the 20-minute local
+  command limit and produced no completed Surefire report. It is not recorded as PASS or as a product
+  failure.
+- Visual review: source-level HTML/CSS comparison completed against all four approved mockups. Browser
+  rendering of local `file://` artifacts was blocked by the in-app browser security policy, so this is
+  not pixel-level or browser sign-off.
+- Detailed coverage and limitations: `docs/testing/PR4_REGRESSION_EVIDENCE.md`.
+
 Stage 10 adds focused production configuration/startup/ADAM tests and a separately tagged parallel
 six-sensor release load scenario. The local Stage 10 cloud checkout could not resolve Maven
 dependencies because its Maven cache was empty and outbound Maven Central/JitPack access was
@@ -38,10 +59,10 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 
 ## Latest test totals
 
-- Surefire: 129 executed, 0 failures, 0 errors, 0 skipped.
-- Failsafe: 9 executed, 0 failures, 0 errors, 0 skipped.
-- Combined: 138 executed, 0 failures, 0 errors, 0 skipped.
-- Release load suite: 2 executed, 0 failures, 0 errors, 0 skipped.
+- Surefire: 197 executed, 0 failures, 0 errors, 0 skipped.
+- Failsafe: 12 executed, 0 failures, 0 errors, 0 skipped.
+- Combined: 209 executed, 0 failures, 0 errors, 0 skipped.
+- PR 4 local release load suite: NOT COMPLETED after 20:04; no completed report was emitted.
 
 ## Test classification
 
@@ -60,10 +81,10 @@ user project container `shift-postgres` on port `5432` was not modified or used.
 - `TestEnvironmentIsolationIT` verifies the active profile, JDBC catalog/user, Flyway history,
   bean gating and denial of `shift_test` access to production.
 - Spring integration tests use a centralized database reset listener.
-- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V8 data,
+- `StoppageMigrationRehearsalIT` migrates a separate schema through historical V1–V9 data,
   verifies deterministic valid-row backfill, `primary` to `sensor-1`, the six-row catalog and
-  counter-state schema and both settings groups with paired Time/Plan rows, records migration reports
-  for invalid legacy rows, then removes the schema.
+  counter-state schema, V9 Sensor 5/Sensor 6 ownership, both approved 16-row plan sources and totals,
+  records migration reports for invalid legacy rows, then removes the schema.
 
 ## Stage 4 protection and scenario coverage
 
