@@ -139,12 +139,18 @@ class Pr4SixSensorRegressionIT {
         SettingsSnapshot restored = extended.deleteLastExtension().deleteLastExtension();
         assertThat(restored).isEqualTo(original);
         update(restored);
-        for (int number = 1; number <= 6; number++) {
+        assertThat(settings.getSnapshot(SensorCatalog.SHARED_SETTINGS_GROUP)).isEqualTo(original);
+        for (int number = 1; number <= 5; number++) {
             String sensorId = "sensor-" + number;
             Shift current = shifts.findByDateAndSensorId(date, sensorId).orElseThrow();
             assertThat(current.getHourlyLabels()).hasSize(SettingsSnapshot.STANDARD_ROW_COUNT);
             assertThat(current.getActual()).as(sensorId).isEqualTo(1);
         }
+        Shift sensor6 = shifts.findByDateAndSensorId(date, "sensor-6").orElseThrow();
+        assertThat(sensor6.getHourlyPlanValues()).hasSize(SettingsSnapshot.STANDARD_ROW_COUNT);
+        assertThat(sensor6.getHourlyLabels()).endsWith("23:00", "00:00");
+        assertThat(sensor6.getHourlyActualValues()).endsWith(1, 1);
+        assertThat(sensor6.getActual()).isEqualTo(3);
     }
 
     @Test
