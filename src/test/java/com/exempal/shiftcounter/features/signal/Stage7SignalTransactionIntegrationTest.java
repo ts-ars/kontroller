@@ -37,7 +37,9 @@ class Stage7SignalTransactionIntegrationTest {
         assertThat(signals.count()).isEqualTo(deliveries);
         var shift = shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), "sensor-2").orElseThrow();
         assertThat(shift.getActual()).isEqualTo(deliveries);
-        assertThat(shift.getHourlyActualValues()).startsWith(deliveries);
+        int eight = shift.getHourlyLabels().indexOf("08:00");
+        assertThat(eight).isNotNegative();
+        assertThat(shift.getHourlyActualValues().get(eight)).isEqualTo(deliveries);
     }
 
     @Test

@@ -1,44 +1,37 @@
 package com.exempal.shiftcounter.features.settings.adapter.web;
 
-import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.settings.application.SettingsGroupService;
-import com.exempal.shiftcounter.features.settings.application.UpdateSettingsGroupCommand;
+import com.exempal.shiftcounter.features.settings.application.UpdateSettingsCommand;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/settings")
 public class SettingsRestController {
-
     private final SettingsGroupService settings;
 
     public SettingsRestController(SettingsGroupService settings) {
         this.settings = settings;
     }
 
-    @PostMapping({"", "/{groupId}"})
-    public void updateSettings(@PathVariable(required = false) String groupId,
-                               @RequestBody @Valid SettingsRequest request) {
-        String selected = groupId == null ? SensorCatalog.GROUP_1 : groupId;
-        List<Integer> plans = request.hourlyPlans() == null ? null
-                : request.hourlyPlans().stream().map(Integer::parseInt).toList();
-        settings.update(new UpdateSettingsGroupCommand(selected,
-                request.name() == null ? selected : request.name(),
-                request.enabled() == null || request.enabled(), request.hours(),
-                plans));
+    @PostMapping("/{groupId}")
+    public ResponseEntity<SettingsResponse> updateSettings(@PathVariable String groupId,
+                                                            @RequestBody @Valid SettingsRequest request) {
+        var updated = settings.update(new UpdateSettingsCommand(groupId, request.hours(),
+                request.sensors1To4Plans(), request.sensor6Plans()));
+        return ResponseEntity.ok(SettingsResponse.from(groupId, updated));
     }
 
-    @GetMapping({"", "/{groupId}"})
-    public ResponseEntity<SettingsResponse> getSettings(@PathVariable(required = false) String groupId) {
-        String selected = groupId == null ? SensorCatalog.GROUP_1 : groupId;
-        var current = settings.get(selected);
-        return ResponseEntity.ok(new SettingsResponse(current.id(), current.name(), current.enabled(),
-                current.intervals().stream().map(value -> value.startTime().toString()).toList(),
-                current.intervals().stream().map(value -> String.valueOf(value.plan())).toList()));
+    @GetMapping("/{groupId}")
+    public ResponseEntity<SettingsResponse> getSettings(@PathVariable String groupId) {
+        return ResponseEntity.ok(SettingsResponse.from(groupId, settings.getSnapshot(groupId)));
     }
 }

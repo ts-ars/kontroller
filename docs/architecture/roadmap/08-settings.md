@@ -54,3 +54,16 @@ Two independent groups exist; every sensor has one group; interval settings are 
   `enabled` is persisted as group state; no operational enable/disable behavior is invented because
   the approved Stage 8 contract does not define one. Stages 9 and 10 remain outside this change set.
 
+## Approved V9 ownership revision
+
+The later six-sensor UI contract deliberately supersedes only the original 4+2 settings ownership:
+
+- Sensors 1–4 share one editable plan; Sensor 5 derives that plan at ×4; Sensor 6 is independent.
+- Hour is one timeline saved atomically for all six sensors.
+- Sensor 5 keeps independent signals and Actual but has no own FIXED/TEMPO/LossExplanation workflow.
+- V9 force-loads the approved 16 rows and updates persisted sensor ownership without editing V1–V8 or
+  completed shift snapshots.
+- The existing active-shift guarantees remain: plan-only preserves Actual, Time redistributes persisted
+  signals, affected sensors Reconcile, completed history is immutable and a failure rolls everything back.
+- `/api/settings/{groupId}` remains the route but transports one composite Settings snapshot.
+

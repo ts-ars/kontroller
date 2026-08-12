@@ -18,12 +18,13 @@ public class ShiftSettingsProvider implements ShiftSettingsPort {
 
     @Override
     public ShiftSettings getForSensor(String sensorId) {
-        return toShiftSettings(settings.findById(SensorCatalog.require(sensorId).settingsGroupId()));
+        var sensor = SensorCatalog.require(sensorId);
+        return toShiftSettings(settings.findById(sensor.settingsGroupId()), sensor.planMultiplier());
     }
 
-    private ShiftSettings toShiftSettings(SettingsGroup group) {
+    private ShiftSettings toShiftSettings(SettingsGroup group, int multiplier) {
         var values = group.intervals();
         return new ShiftSettings(values.stream().map(value -> value.startTime().toString()).toList(),
-                values.stream().map(value -> value.plan()).toList());
+                values.stream().map(value -> Math.multiplyExact(value.plan(), multiplier)).toList());
     }
 }

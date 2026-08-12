@@ -1,6 +1,7 @@
 package com.exempal.shiftcounter.features.shift.application;
 
 import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.shift.domain.ProductionDay;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import com.exempal.shiftcounter.features.shift.domain.ShiftInterval;
@@ -54,6 +55,7 @@ public class ShiftTimeCorrectionService {
 
         Shift updated = current.withUpdatedStructure(labels, configuredPlans, actuals);
         Shift saved = shifts.save(updated);
+        if (SensorCatalog.SENSOR_5.equals(saved.getSensorId())) return saved;
         for (int index = 0; index < configuredPlans.size(); index++) {
             reconcile.reconcile(saved.getDate(), saved.getSensorId(), index, calculationTime);
         }

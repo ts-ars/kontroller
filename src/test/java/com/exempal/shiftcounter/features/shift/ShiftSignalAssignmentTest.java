@@ -39,8 +39,8 @@ class ShiftSignalAssignmentTest {
         shiftInitializer.createNewShift(today);
 
         // Сигналы в 2 интервала
-        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 2)));  // → 11:00
-        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 59))); // → 11:00
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 32))); // → 11:30
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 59))); // → 11:30
 
         productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(12, 30))); // → 12:30
         productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(12, 45))); // → 12:30
@@ -49,10 +49,10 @@ class ShiftSignalAssignmentTest {
         List<String> labels = shift.getHourlyLabels(); // ["08:00", ..., "15:30"]
         List<Integer> actuals = shift.getHourlyActualValues(); // [0, 0, ..., N]
 
-        int index11 = labels.indexOf("11:00");
+        int index11 = labels.indexOf("11:30");
         int index1230 = labels.indexOf("12:30");
 
-        assertEquals(2, actuals.get(index11), "11:00 должен содержать 2 сигнала");
+        assertEquals(2, actuals.get(index11), "11:30 должен содержать 2 сигнала");
         assertEquals(2, actuals.get(index1230), "12:30 должен содержать 2 сигнала");
 
         for (int i = 0; i < actuals.size(); i++) {

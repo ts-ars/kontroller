@@ -60,9 +60,24 @@ class LossExplanationServiceTest {
                 .isInstanceOf(LossExplanationNotFoundException.class);
     }
 
+    @Test
+    void sensorFiveCannotOwnLossExplanations() {
+        stoppage = stoppage("sensor-5", List.of());
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage));
+
+        assertThatThrownBy(() -> service.create(10L, LossCategory.MATERIAL, "Not owned", 1))
+                .isInstanceOf(LossAllocationException.class)
+                .hasMessageContaining("Sensor 5");
+        verify(stoppages, never()).save(any());
+    }
+
     private Stoppage stoppage(List<LossExplanation> explanations) {
+        return stoppage(Stoppage.PRIMARY_SENSOR, explanations);
+    }
+
+    private Stoppage stoppage(String sensorId, List<LossExplanation> explanations) {
         return new Stoppage(10L, UUID.fromString("00000000-0000-0000-0000-000000000010"), 1L,
-                Stoppage.PRIMARY_SENSOR, 0, LocalDateTime.of(2026, 8, 7, 8, 0), Duration.ofMinutes(10),
+                sensorId, 0, LocalDateTime.of(2026, 8, 7, 8, 0), Duration.ofMinutes(10),
                 10, 100, DetectionType.FIXED, StoppageState.ACTIVE, explanations, 0L);
     }
 

@@ -36,8 +36,8 @@ class ShiftProductRegistrarTest {
 
     @Test
     void eachSignalShouldGoToItsOwnTimeSlot() {
-        // simulate 2 signals for hour 11:00
-        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 2)));
+        // simulate 2 signals for the approved 11:30 interval
+        productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 32)));
         productRegistrar.registerProduct(LocalDateTime.of(today, LocalTime.of(11, 59)));
 
         // simulate 2 signals for hour 12:30
@@ -50,7 +50,7 @@ class ShiftProductRegistrarTest {
         List<String> labels = shift.getHourlyLabels(); // ["08:00", "09:00", ..., "15:30"]
         List<Integer> actuals = shift.getHourlyActualValues();
 
-        int index11 = labels.indexOf("11:00");
+        int index11 = labels.indexOf("11:30");
         int index1230 = labels.indexOf("12:30");
 
         assertThat(actuals.get(index11)).isEqualTo(2);
