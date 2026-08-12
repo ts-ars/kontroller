@@ -2,8 +2,14 @@ package com.exempal.shiftcounter.features.comment;
 
 import com.exempal.shiftcounter.features.comment.application.*;
 import com.exempal.shiftcounter.features.comment.domain.*;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.domain.Shift;
+import com.exempal.shiftcounter.common.domain.EventPublisherPort;
+import com.exempal.shiftcounter.features.comment.application.event.CommentsUpdatedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -18,12 +24,19 @@ import static org.mockito.Mockito.*;
 class LossExplanationServiceTest {
     private StoppageRepository stoppages;
     private LossExplanationService service;
+    private ActualDataPort shifts;
+    private EventPublisherPort events;
     private Stoppage stoppage;
 
     @BeforeEach
     void setUp() {
         stoppages = mock(StoppageRepository.class);
-        service = new LossExplanationService(stoppages);
+        shifts = mock(ActualDataPort.class);
+        events = mock(EventPublisherPort.class);
+        Shift shift = mock(Shift.class);
+        when(shift.getDate()).thenReturn(java.time.LocalDate.of(2026, 8, 7));
+        when(shifts.findById(1L)).thenReturn(Optional.of(shift));
+        service = new LossExplanationService(stoppages, shifts, events);
         stoppage = stoppage(List.of());
         when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage));
         when(stoppages.findById(10L)).thenReturn(Optional.of(stoppage));
@@ -36,6 +49,7 @@ class LossExplanationServiceTest {
         assertThat(saved.stoppageId()).isEqualTo(10L);
         assertThat(saved.allocatedMinutes()).isEqualTo(4);
         assertThat(saved.allocatedCans()).isEqualTo(40);
+        verify(events).publish(new CommentsUpdatedEvent(java.time.LocalDate.of(2026, 8, 7), "sensor-1"));
     }
 
     @Test
@@ -69,6 +83,18 @@ class LossExplanationServiceTest {
                 .isInstanceOf(LossAllocationException.class)
                 .hasMessageContaining("Sensor 5");
         verify(stoppages, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"sensor-1", "sensor-2", "sensor-3", "sensor-4", "sensor-6"})
+    void editableSensorsOwnIndependentExplanationCrud(String sensorId) {
+        stoppage = stoppage(sensorId, List.of());
+        when(stoppages.findForUpdateById(10L)).thenReturn(Optional.of(stoppage));
+
+        LossExplanation saved = service.create(10L, LossCategory.QUALITY, sensorId, 2);
+
+        assertThat(saved.comment()).isEqualTo(sensorId);
+        verify(events).publish(new CommentsUpdatedEvent(java.time.LocalDate.of(2026, 8, 7), sensorId));
     }
 
     private Stoppage stoppage(List<LossExplanation> explanations) {

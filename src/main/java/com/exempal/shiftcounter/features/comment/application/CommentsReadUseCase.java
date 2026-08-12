@@ -1,9 +1,11 @@
 package com.exempal.shiftcounter.features.comment.application;
 
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
+import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CommentsReadUseCase {
@@ -14,5 +16,15 @@ public interface CommentsReadUseCase {
     }
 
     /** Чистые доменные объекты, без DTO и человекочитаемых строк. */
-    record Data(Shift shift, List<Stoppage> rows, List<Stoppage> missing) {}
+    record ExplanationRow(String sourceSensorId, LocalDateTime time, LossCategory category,
+                          String comment, int minutes) {}
+
+    record SourceComments(String sensorId, List<ExplanationRow> rows) {}
+
+    record Data(Shift shift, List<Stoppage> rows, List<Stoppage> missing,
+                List<SourceComments> sourceComments) {
+        public Data(Shift shift, List<Stoppage> rows, List<Stoppage> missing) {
+            this(shift, rows, missing, List.of());
+        }
+    }
 }

@@ -5,6 +5,7 @@ import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
+import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,12 @@ public class CommentsReadService implements CommentsReadUseCase {
     @Transactional(readOnly = true)
     public Data read(LocalDate date, String sensorId) {
         Shift shift = actualDataPort.findByDateAndSensorId(date, sensorId).orElse(null);
+        if (SensorCatalog.SENSOR_5.equals(sensorId)) {
+            List<SourceComments> sources = List.of("sensor-1", "sensor-2", "sensor-3", "sensor-4").stream()
+                    .map(source -> new SourceComments(source, explanationRows(date, source)))
+                    .toList();
+            return new Data(shift, List.of(), List.of(), sources);
+        }
         if (shift == null) return new Data(null, List.of(), List.of());
         List<Stoppage> rows = repository.findByShiftDateAndSensorId(date, sensorId).stream()
                 .filter(value -> value.state() == StoppageState.ACTIVE)
@@ -35,5 +42,15 @@ public class CommentsReadService implements CommentsReadUseCase {
                 .filter(value -> value.explanationStatus() == ExplanationStatus.UNEXPLAINED)
                 .toList();
         return new Data(shift, rows, missing);
+    }
+
+    private List<ExplanationRow> explanationRows(LocalDate date, String sensorId) {
+        return repository.findByShiftDateAndSensorId(date, sensorId).stream()
+                .filter(value -> value.state() == StoppageState.ACTIVE)
+                .sorted(chronological())
+                .flatMap(stoppage -> stoppage.explanations().stream().map(explanation ->
+                        new ExplanationRow(sensorId, stoppage.startedAt(), explanation.category(),
+                                explanation.comment(), explanation.allocatedMinutes())))
+                .toList();
     }
 }

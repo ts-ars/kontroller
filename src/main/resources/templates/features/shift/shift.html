@@ -1,156 +1,97 @@
-<div th:fragment="content">
-    <div style="max-width: 800px; margin: auto;">
-        <h1>Plan–Fact</h1>
+<div th:fragment="content" id="plan-fact-page">
+    <style>
+        #plan-fact-page { width: 100%; max-width: 1632px; margin: auto; }
+        #plan-fact-page h1 { margin-top: 0; }
+        #plan-fact-page .view-switches { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: .5rem; }
+        #plan-fact-page .view-switches a { color: #000; text-decoration: none; }
+        #plan-fact-page .view-switches a.active { color: #1d4ed8; text-decoration: underline; }
+        #plan-fact-page .sensor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; row-gap: 1rem; align-items: start; }
+        #plan-fact-page .sensor-panel { width: 100%; max-width: 800px; min-width: 0; }
+        #plan-fact-page .sensor-panel:nth-child(even) { justify-self: end; }
+        #plan-fact-page .sensor-panel h2 { margin: .5em 0; }
+        #plan-fact-page .chart-frame { width: 600px; max-width: 100%; height: 190px; margin: 0 auto; }
+        #plan-fact-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
+        #plan-fact-page th, #plan-fact-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; }
+        #plan-fact-page th:nth-child(-n+3), #plan-fact-page td:nth-child(-n+3) { width: 88px; vertical-align: middle; }
+        #plan-fact-page td.comment-cell { text-align: left; vertical-align: top; }
+        #plan-fact-page .comment-line + .comment-line { margin-top: .25rem; }
+        @media (max-width: 1000px) {
+            #plan-fact-page .sensor-grid { grid-template-columns: 1fr; }
+            #plan-fact-page .sensor-panel, #plan-fact-page .sensor-panel:nth-child(even) { justify-self: center; }
+        }
+    </style>
 
-        <canvas height="250" id="shiftChart" width="600"></canvas>
-
-        <table>
-            <thead>
-            <tr>
-                <th>Time</th>
-                <th>Plan</th>
-                <th>Actual</th>
-                <th>Comment</th>
-            </tr>
-            </thead>
-            <tbody id="shiftTableBody">
-            <tr th:each="hour, i : ${hours}">
-                <td th:text="${hour}">08:00</td>
-                <td th:text="${planSupplied == null || planSupplied[i.index] ? plan[i.index] : 'Plan required'}">140</td>
-                <td class="actual-cell" th:text="${actual[i.index]}">0</td>
-                <td th:text="${comments != null ? comments[i.index] : ''}"></td>
-            </tr>
-            </tbody>
-        </table>
+    <h1>Plan–Fact</h1>
+    <div class="view-switches">
+        <div aria-label="Sensor range">
+            <a th:href="@{/page/shift(sensors='1-4',shift=${shiftSlice})}" th:classappend="${sensorGroup == '1-4'} ? 'active'">1–4</a>
+            <span aria-hidden="true"> | </span>
+            <a th:href="@{/page/shift(sensors='5-6',shift=${shiftSlice})}" th:classappend="${sensorGroup == '5-6'} ? 'active'">5–6</a>
+        </div>
+        <div aria-label="Production shift">
+            <span>Shift: </span>
+            <a th:href="@{/page/shift(sensors=${sensorGroup},shift='day')}" th:classappend="${shiftSlice == 'day'} ? 'active'">07:00–15:00</a>
+            <span aria-hidden="true"> | </span>
+            <a th:href="@{/page/shift(sensors=${sensorGroup},shift='evening')}" th:classappend="${shiftSlice == 'evening'} ? 'active'">15:00–23:00</a>
+        </div>
     </div>
 
-    <!-- Chart.js и WebSocket -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div class="sensor-grid">
+        <section class="sensor-panel" th:each="view : ${views}" th:attr="data-sensor=${view.sensorId}">
+            <h2 th:text="${#strings.replace(view.sensorId, 'sensor-', 'Sensor ')}">Sensor 1</h2>
+            <div class="chart-frame"><canvas height="190" th:attr="aria-label=|${view.sensorId} cans chart|"></canvas></div>
+            <table th:attr="aria-label=|${view.sensorId} Plan–Fact|">
+                <thead><tr><th>Time</th><th>Plan</th><th>Actual</th><th>Comment</th></tr></thead>
+                <tbody>
+                <tr th:each="hour, i : ${view.hours}">
+                    <td th:text="${hour}">07:00</td>
+                    <td th:text="${view.planSupplied[i.index] ? view.plan[i.index] : 'Plan required'}">450</td>
+                    <td th:text="${view.actual[i.index]}">0</td>
+                    <td class="comment-cell">
+                        <div class="comment-line" th:each="explanation : ${view.explanations[i.index]}"
+                             th:text="${view.sensorId == 'sensor-5'
+                                ? #strings.replace(explanation.sourceSensorId, 'sensor-', 'Sensor ') + ': ' + explanation.comment + ' — ' + explanation.minutes + ' min'
+                                : explanation.comment + ' — ' + explanation.minutes + ' min'}"></div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-
     <script th:inline="javascript">
-        let labels = /*[[${hours}]]*/ [];
-        let initialActual = /*[[${actual}]]*/ [];
-        let initialPlan = /*[[${plan}]]*/ [];
-        let previousLabels = labels.slice();
-        let previousActual = initialActual.slice();
-        let previousComments = /*[[${comments}]]*/ [];
-        let previousPlan = initialPlan.slice();
-
-        const ctx = document.getElementById('shiftChart');
-        window.chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Cans',
-                    data: initialActual,
-                    backgroundColor: '#3b82f6'
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {display: true, position: 'top'},
-                    tooltip: {enabled: true}
-                },
-                scales: {
-                    x: {title: {display: true, text: 'Time'}},
-                    y: {
-                        title: {display: true, text: 'Cans'},
-                        beginAtZero: true,
-                        suggestedMax: 100,
-                        ticks: {
-                            stepSize: 20,
-                            maxTicksLimit: 10
-                        }
-                    }
-                }
-            }
-        });
-
-        console.log("📡 Инициализация WebSocket...");
-        const socket = new SockJS('/ws');
-        const stompClient = Stomp.over(socket);
-        stompClient.debug = str => console.log('[STOMP]', str);
-
-        stompClient.connect({}, () => {
-            console.log("🟢 WebSocket подключен");
-
-            // Подписка на общие обновления смены
-            stompClient.subscribe('/topic/shift-updates', message => {
-                console.log("📩 WS shift-updates получено");
-                try {
-                    const data = JSON.parse(message.body);
-                    const actualData = data.actual ?? [];
-                    const planData = data.plan ?? previousPlan;
-                    const newLabels = data.hours ?? labels;
-
-                    const labelsChanged = JSON.stringify(newLabels) !== JSON.stringify(previousLabels);
-                    const actualChanged = JSON.stringify(actualData) !== JSON.stringify(previousActual);
-                    const planChanged = JSON.stringify(planData) !== JSON.stringify(previousPlan);
-
-                    if (labelsChanged) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    // Обновление графика
-                    if (actualChanged) {
-                        window.chart.data.datasets[0].data = actualData;
-                        previousActual = actualData.slice();
-                    }
-                    if (labelsChanged || actualChanged) {
-                        window.chart.update();
-                    }
-
-                    // Обновление таблицы
-                    const tableBody = document.getElementById('shiftTableBody');
-                    const actualCells = tableBody.querySelectorAll('.actual-cell');
-                    actualData.forEach((value, index) => {
-                        if (actualCells[index] && actualCells[index].textContent !== String(value)) {
-                            actualCells[index].textContent = value;
-                        }
-                    });
-
-                    if (planChanged) {
-                        const planCells = tableBody.querySelectorAll('td:nth-child(2)');
-                        planData.forEach((value, index) => {
-                            if (planCells[index] && planCells[index].textContent !== String(value)) {
-                                planCells[index].textContent = value;
-                            }
-                        });
-                        previousPlan = planData.slice();
-                    }
-
-                } catch (e) {
-                    console.error("❌ Ошибка shift-updates:", e);
-                }
+        (() => {
+            const views = /*[[${views}]]*/ [];
+            document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
+                const view = views.find(item => item.sensorId === panel.dataset.sensor);
+                if (!view || !window.Chart) return;
+                new Chart(panel.querySelector('canvas'), {
+                    type: 'bar',
+                    data: {labels: view.hours, datasets: [{label: 'Cans', data: view.actual, backgroundColor: '#3b82f6'}]},
+                    options: {responsive: true, maintainAspectRatio: false,
+                        plugins: {legend: {display: true, position: 'top'}, tooltip: {enabled: true}},
+                        scales: {x: {title: {display: true, text: 'Time'}},
+                            y: {title: {display: true, text: 'Cans'}, beginAtZero: true,
+                                suggestedMax: 100, ticks: {stepSize: 20, maxTicksLimit: 10}}}}
+                });
             });
 
-            // Подписка на отдельные комментарии
-            stompClient.subscribe('/topic/shift-comments', message => {
-                console.log("📩 WS shift-comments получено");
-                try {
-                    const data = JSON.parse(message.body);
-                    const comments = data.comments ?? [];
-
-                    const commentInputs = document.querySelectorAll('input[name="comment"]');
-                    comments.forEach((text, index) => {
-                        if (commentInputs[index] && commentInputs[index].value !== text) {
-                            commentInputs[index].value = text;
-                        }
-                    });
-
-                    previousComments = comments.slice();
-
-                } catch (e) {
-                    console.error("❌ Ошибка shift-comments:", e);
-                }
-            });
-
-        }, error => {
-            console.error("🔴 Ошибка подключения WebSocket:", error);
-        });
+            if (!window.SockJS || !window.Stomp) return;
+            const client = Stomp.over(new SockJS('/ws'));
+            client.debug = () => {};
+            let reloadScheduled = false;
+            const refresh = () => {
+                if (reloadScheduled) return;
+                reloadScheduled = true;
+                window.setTimeout(() => window.location.reload(), 50);
+            };
+            client.connect({}, () => views.forEach(view => {
+                client.subscribe(`/topic/shift-updates/${view.sensorId}`, refresh);
+                client.subscribe(`/topic/comments/${view.sensorId}`, refresh);
+            }));
+        })();
     </script>
 </div>
