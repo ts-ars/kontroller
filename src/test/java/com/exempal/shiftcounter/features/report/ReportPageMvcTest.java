@@ -76,18 +76,19 @@ class ReportPageMvcTest {
                         containsString("name=\"from\" value=\"2026-08-09\""),
                         containsString("name=\"to\" value=\"2026-08-10\""),
                         containsString("class=\"report-table\""))))
-                .andExpect(content().string(allOf(
-                        containsString("report-charts"), containsString("sensor-five"))))
+                .andExpect(content().string(containsString("report-charts")))
                 .andExpect(content().string(containsString(">Source</th>")))
+                .andExpect(content().string(containsString(">Author</th>")))
+                .andExpect(content().string(containsString("Export Excel")))
                 .andExpect(content().string(containsString("sensor-2")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
-                .andExpect(content().string(containsString("id=\"sourceLossChart\"")))
+                .andExpect(content().string(containsString("id=\"cansChart\"")))
                 .andExpect(content().string(containsString("Lost cans by sensor")));
     }
 
     @Test
     @WithMockUser(username = "Operator", roles = "USER")
-    void ordinarySensorRendersOnlyLossChart() throws Exception {
+    void ordinarySensorRendersBothRequiredCharts() throws Exception {
         when(reports.query(Map.of("sensorId", "sensor-6"))).thenReturn(new ReportView(
                 List.of(), LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10),
                 "sensor-6", 0, 0, List.of(new ReportLossTotal("sensor-6", 3))));
@@ -96,6 +97,7 @@ class ReportPageMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("class=\"active\">6</a>")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
-                .andExpect(content().string(not(containsString("id=\"sourceLossChart\""))));
+                .andExpect(content().string(containsString("id=\"cansChart\"")))
+                .andExpect(content().string(containsString("Lost cans over time")));
     }
 }

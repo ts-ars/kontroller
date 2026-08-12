@@ -1,120 +1,36 @@
 <div th:fragment="content" class="report-page">
     <h1>Shift Report</h1>
-
     <nav class="report-sensors" aria-label="Sensor">
         <th:block th:each="sensor, iteration : ${sensorOptions}">
-            <a th:href="@{/page/report(from=${startDate},to=${endDate},sensorId=${sensor.id.value})}"
-               th:classappend="${sensor.id.value == sensorId} ? 'active'"
-               th:text="${#strings.substringAfter(sensor.id.value, 'sensor-')}">1</a>
-            <span th:if="${!iteration.last}" aria-hidden="true"> | </span>
+            <a th:href="@{/page/report(from=${startDate},to=${endDate},sensorId=${sensor.id.value})}" th:classappend="${sensor.id.value == sensorId} ? 'active'" th:text="${#strings.substringAfter(sensor.id.value, 'sensor-')}">1</a><span th:if="${!iteration.last}" aria-hidden="true"> | </span>
         </th:block>
     </nav>
-
     <form method="get" class="report-filters">
-        <label>
-            From
-            <input type="date" name="from" th:value="${startDate}" />
-        </label>
-        <label>
-            To
-            <input type="date" name="to" th:value="${endDate}" />
-        </label>
+        <label>From <input type="date" name="from" th:value="${startDate}" /></label>
+        <label>To <input type="date" name="to" th:value="${endDate}" /></label>
         <input type="hidden" name="sensorId" th:value="${sensorId}" />
-        <button type="submit">Filter</button>
+        <button type="submit">Filter</button><button type="submit" formaction="/report/export.xlsx">Export Excel</button>
     </form>
-
-    <table class="report-table">
-        <colgroup>
-            <col th:if="${sensorId == 'sensor-5'}" class="report-source-column" />
-            <col class="report-type-column" />
-            <col class="report-number-column" />
-            <col class="report-number-column" />
-            <col class="report-reason-column" />
-        </colgroup>
-        <thead>
-        <tr>
-            <th th:if="${sensorId == 'sensor-5'}">Source</th>
-            <th>Type</th>
-            <th>Minutes</th>
-            <th>Cans</th>
-            <th>Reason</th>
-        </tr>
-        </thead>
+    <div class="report-table-wrap"><table class="report-table">
+        <colgroup><col th:if="${sensorId == 'sensor-5'}" class="report-source-column" /><col class="report-type-column" /><col class="report-number-column" /><col class="report-number-column" /><col class="report-reason-column" /><col class="report-author-column" /></colgroup>
+        <thead><tr><th th:if="${sensorId == 'sensor-5'}">Source</th><th>Type</th><th>Minutes</th><th>Cans</th><th>Reason</th><th>Author</th></tr></thead>
         <tbody>
-        <tr th:each="problem : ${problems}">
-            <td th:if="${sensorId == 'sensor-5'}" th:text="${problem.source}"></td>
-            <td th:text="${problem.type}"></td>
-            <td th:text="${problem.minutes}"></td>
-            <td th:text="${problem.cans}"></td>
-            <td class="report-reason" th:text="${problem.reason}"></td>
-        </tr>
-        <tr th:if="${problems.isEmpty()}">
-            <td th:colspan="${sensorId == 'sensor-5' ? 5 : 4}" class="report-empty">
-                No data for selected range
-            </td>
-        </tr>
+        <tr th:each="problem : ${problems}"><td th:if="${sensorId == 'sensor-5'}" th:text="${problem.source}"></td><td th:text="${problem.type}"></td><td th:text="${problem.minutes}"></td><td th:text="${problem.cans}"></td><td class="report-reason" th:text="${problem.reason}"></td><td class="report-author" th:text="${problem.author}"></td></tr>
+        <tr th:if="${problems.isEmpty()}"><td th:colspan="${sensorId == 'sensor-5' ? 6 : 5}" class="report-empty">No data for selected range</td></tr>
         </tbody>
-        <tfoot>
-        <tr>
-            <th th:if="${sensorId == 'sensor-5'}"></th>
-            <th>Total</th>
-            <th th:text="${totalMinutes}"></th>
-            <th th:text="${totalCans}"></th>
-            <th></th>
-        </tr>
-        </tfoot>
-    </table>
-
-    <div class="report-charts" th:classappend="${sensorId == 'sensor-5'} ? ' sensor-five'">
-        <section class="report-chart-card">
-            <canvas id="lossChart"></canvas>
-        </section>
-        <section class="report-chart-card" th:if="${sensorId == 'sensor-5'}">
-            <canvas id="sourceLossChart"></canvas>
-        </section>
-    </div>
-
+        <tfoot><tr><th th:if="${sensorId == 'sensor-5'}"></th><th>Total</th><th th:text="${totalMinutes}"></th><th th:text="${totalCans}"></th><th></th><th></th></tr></tfoot>
+    </table></div>
+    <div class="report-charts"><section class="report-chart-card"><canvas id="lossChart"></canvas></section><section class="report-chart-card"><canvas id="cansChart"></canvas></section></div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script th:inline="javascript">
-        const reportRows = /*[[${problems}]]*/ [];
-        const reportLossTotals = /*[[${lossTotals}]]*/ [];
-        const lossTotals = {};
-
-        reportRows.forEach(row => {
-            lossTotals[row.type] = (lossTotals[row.type] || 0) + Number(row.minutes || 0);
-        });
-
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
-            scales: { y: { beginAtZero: true } }
-        };
-        const blueDataset = (label, data) => ({
-            label,
-            data,
-            backgroundColor: '#3b82f6'
-        });
-
-        new Chart(document.getElementById('lossChart'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(lossTotals),
-                datasets: [blueDataset('Lost minutes by type', Object.values(lossTotals))]
-            },
-            options: chartOptions
-        });
-
-        const sourceLossChart = document.getElementById('sourceLossChart');
-        if (sourceLossChart) {
-            new Chart(sourceLossChart, {
-                type: 'bar',
-                data: {
-                    labels: reportLossTotals.map(total => total.sensorId),
-                    datasets: [blueDataset('Lost cans by sensor', reportLossTotals.map(total => total.lostCans))]
-                },
-                options: chartOptions
-            });
-        }
+        const reportRows = /*[[${problems}]]*/ [], reportLossTotals = /*[[${lossTotals}]]*/ [], reportTimeTotals = /*[[${timeTotals}]]*/ [];
+        const reportSensorId = /*[[${sensorId}]]*/ 'sensor-1', reportTimeGrouping = /*[[${timeGrouping}]]*/ 'daily';
+        const lossTotalsByType = {}; reportRows.forEach(row => lossTotalsByType[row.type] = (lossTotalsByType[row.type] || 0) + Number(row.minutes || 0));
+        const compactLabel = label => reportTimeGrouping === 'daily' ? label.slice(5).replace('-', '.') : label;
+        const chartOptions = {responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0}},y:{beginAtZero:true}}};
+        const blueDataset = (label,data) => ({label,data,backgroundColor:'#3b82f6'});
+        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:Object.keys(lossTotalsByType),datasets:[blueDataset('Lost minutes by type',Object.values(lossTotalsByType))]},options:chartOptions});
+        const sensorFive = reportSensorId === 'sensor-5', cansValues = sensorFive ? reportLossTotals : reportTimeTotals;
+        new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:cansValues.map(value => sensorFive ? value.sensorId : compactLabel(value.label)),datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',cansValues.map(value => Number(value.lostCans || 0)))]},options:chartOptions});
     </script>
 </div>

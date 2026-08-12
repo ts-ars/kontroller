@@ -59,7 +59,8 @@ class PageControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("sensor-6")))
                 .andExpect(content().string(org.hamcrest.Matchers.allOf(
                         org.hamcrest.Matchers.containsString("report-charts"),
-                        org.hamcrest.Matchers.containsString("sensor-five"))))
+                        org.hamcrest.Matchers.containsString("id=\"lossChart\""),
+                        org.hamcrest.Matchers.containsString("id=\"cansChart\""))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Source")));
     }
 }

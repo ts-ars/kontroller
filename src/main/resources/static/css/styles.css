@@ -155,6 +155,11 @@ nav .session form { display: inline; }
     width: auto;
 }
 
+.report-table-wrap { overflow-x: auto; }
+.report-table { min-width: 900px; table-layout: fixed; }
+.report-table .report-author-column { width: 18%; }
+.report-table .report-author { text-align: left; }
+
 .report-table .report-reason {
     text-align: left;
 }
@@ -166,17 +171,12 @@ nav .session form { display: inline; }
 
 .report-charts {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.5rem;
     margin-top: 2rem;
-    width: min(100%, 600px);
+    width: min(100%, 1200px);
     margin-left: auto;
     margin-right: auto;
-}
-
-.report-charts.sensor-five {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: min(100%, 1200px);
 }
 
 .report-chart-card {
@@ -195,7 +195,7 @@ nav .session form { display: inline; }
 }
 
 @media (max-width: 800px) {
-    .report-charts.sensor-five {
+    .report-charts {
         grid-template-columns: minmax(0, 1fr);
     }
 }

@@ -37,6 +37,8 @@ public class ReportPage implements PageModel {
         model.addAttribute("totalMinutes", report.totalMinutes());
         model.addAttribute("totalCans", report.totalCans());
         model.addAttribute("lossTotals", report.lossTotals());
+        model.addAttribute("timeTotals", report.timeTotals());
+        model.addAttribute("timeGrouping", report.timeGrouping());
         model.addAttribute("sensorOptions", SensorCatalog.all());
     }
 }
