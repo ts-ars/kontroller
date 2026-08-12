@@ -53,7 +53,9 @@ class Stage10SixSensorLoadTest {
             String sensorId = "sensor-" + number;
             var shift = shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), sensorId).orElseThrow();
             assertThat(shift.getActual()).as(sensorId).isEqualTo(perSensor);
-            assertThat(shift.getHourlyActualValues()).startsWith(perSensor);
+            int eight = shift.getHourlyLabels().indexOf("08:00");
+            assertThat(eight).as(sensorId).isNotNegative();
+            assertThat(shift.getHourlyActualValues().get(eight)).as(sensorId).isEqualTo(perSensor);
         }
     }
 

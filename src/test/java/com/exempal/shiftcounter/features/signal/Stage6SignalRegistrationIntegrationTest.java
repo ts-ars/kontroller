@@ -33,10 +33,14 @@ class Stage6SignalRegistrationIntegrationTest {
         assertThat(registration.register(sensor3).accepted()).isTrue();
 
         assertThat(signals.count()).isEqualTo(2);
-        assertThat(shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), "sensor-2").orElseThrow()
-                .getHourlyActualValues()).startsWith(1);
-        assertThat(shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), "sensor-3").orElseThrow()
-                .getHourlyActualValues()).startsWith(1);
+        assertAtEight(shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), "sensor-2").orElseThrow(), 1);
+        assertAtEight(shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), "sensor-3").orElseThrow(), 1);
         assertThat(shifts.findByDateAndSensorId(LocalDate.of(2026, 8, 10), "sensor-1")).isEmpty();
+    }
+
+    private void assertAtEight(com.exempal.shiftcounter.features.shift.domain.Shift shift, int expected) {
+        int index = shift.getHourlyLabels().indexOf("08:00");
+        assertThat(index).isNotNegative();
+        assertThat(shift.getHourlyActualValues().get(index)).isEqualTo(expected);
     }
 }
