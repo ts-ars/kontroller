@@ -71,7 +71,20 @@ class StoppageMigrationRehearsalIT {
             assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA
                     + ".settings_groups", Integer.class)).isEqualTo(2);
             assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA
-                    + ".interval_settings", Integer.class)).isEqualTo(16);
+                    + ".interval_settings", Integer.class)).isEqualTo(32);
+            assertThat(jdbc.queryForObject("SELECT settings_group_id FROM " + SCHEMA
+                    + ".sensors WHERE id='sensor-5'", String.class)).isEqualTo("settings-group-1");
+            assertThat(jdbc.queryForObject("SELECT settings_group_id FROM " + SCHEMA
+                    + ".sensors WHERE id='sensor-6'", String.class)).isEqualTo("settings-group-2");
+            assertThat(jdbc.queryForObject("SELECT sum(plan) FROM " + SCHEMA
+                    + ".interval_settings WHERE settings_group_id='settings-group-1'", Integer.class))
+                    .isEqualTo(8450);
+            assertThat(jdbc.queryForObject("SELECT sum(plan) FROM " + SCHEMA
+                    + ".interval_settings WHERE settings_group_id='settings-group-2'", Integer.class))
+                    .isEqualTo(27200);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM " + SCHEMA
+                    + ".interval_settings WHERE start_time=TIME '22:30' AND plan IN (300,960)", Integer.class))
+                    .isEqualTo(2);
             assertThat(jdbc.queryForObject("SELECT to_regclass('" + SCHEMA
                     + ".settings') IS NULL", Boolean.class)).isTrue();
         } finally {
