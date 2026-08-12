@@ -65,10 +65,11 @@
     <script th:inline="javascript">
         (() => {
             const views = /*[[${views}]]*/ [];
+            const charts = new Map();
             document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
                 const view = views.find(item => item.sensorId === panel.dataset.sensor);
                 if (!view || !window.Chart) return;
-                new Chart(panel.querySelector('canvas'), {
+                const chart = new Chart(panel.querySelector('canvas'), {
                     type: 'bar',
                     data: {labels: view.hours, datasets: [{label: 'Cans', data: view.actual, backgroundColor: '#3b82f6'}]},
                     options: {responsive: true, maintainAspectRatio: false,
@@ -77,20 +78,63 @@
                             y: {title: {display: true, text: 'Cans'}, beginAtZero: true,
                                 suggestedMax: 100, ticks: {stepSize: 20, maxTicksLimit: 10}}}}
                 });
+                charts.set(view.sensorId, chart);
             });
+
+            const sameIntervals = (left, right) => left.length === right.length
+                && left.every((hour, index) => hour === right[index]);
+            const renderExplanations = (cell, explanations, sensorId) => {
+                cell.replaceChildren(...explanations.map(explanation => {
+                    const line = document.createElement('div');
+                    line.className = 'comment-line';
+                    const source = sensorId === 'sensor-5'
+                        ? `${explanation.sourceSensorId.replace('sensor-', 'Sensor ')}: ` : '';
+                    line.textContent = `${source}${explanation.comment} — ${explanation.minutes} min`;
+                    return line;
+                }));
+            };
+            const updatePanel = nextView => {
+                const panel = document.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${nextView.sensorId}"]`);
+                const currentView = views.find(item => item.sensorId === nextView.sensorId);
+                if (!panel || !currentView || !sameIntervals(currentView.hours, nextView.hours)) {
+                    window.location.reload();
+                    return;
+                }
+                const rows = panel.querySelectorAll('tbody tr');
+                if (rows.length !== nextView.hours.length) {
+                    window.location.reload();
+                    return;
+                }
+                rows.forEach((row, index) => {
+                    row.cells[1].textContent = nextView.planSupplied[index] ? nextView.plan[index] : 'Plan required';
+                    row.cells[2].textContent = nextView.actual[index];
+                    renderExplanations(row.querySelector('.comment-cell'), nextView.explanations[index], nextView.sensorId);
+                });
+                Object.assign(currentView, nextView);
+                const chart = charts.get(nextView.sensorId);
+                if (chart) {
+                    chart.data.datasets[0].data = nextView.actual.slice();
+                    chart.update('none');
+                }
+            };
+            const refreshComments = async sensorId => {
+                const response = await fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+                if (!response.ok) return;
+                const documentCopy = new DOMParser().parseFromString(await response.text(), 'text/html');
+                const current = document.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${sensorId}"] tbody`);
+                const fresh = documentCopy.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${sensorId}"] tbody`);
+                if (!current || !fresh || current.rows.length !== fresh.rows.length) return window.location.reload();
+                Array.from(current.rows).forEach((row, index) => {
+                    row.querySelector('.comment-cell').replaceWith(fresh.rows[index].querySelector('.comment-cell'));
+                });
+            };
 
             if (!window.SockJS || !window.Stomp) return;
             const client = Stomp.over(new SockJS('/ws'));
             client.debug = () => {};
-            let reloadScheduled = false;
-            const refresh = () => {
-                if (reloadScheduled) return;
-                reloadScheduled = true;
-                window.setTimeout(() => window.location.reload(), 50);
-            };
             client.connect({}, () => views.forEach(view => {
-                client.subscribe(`/topic/shift-updates/${view.sensorId}`, refresh);
-                client.subscribe(`/topic/comments/${view.sensorId}`, refresh);
+                client.subscribe(`/topic/shift-updates/${view.sensorId}`, message => updatePanel(JSON.parse(message.body)));
+                client.subscribe(`/topic/comments/${view.sensorId}`, () => refreshComments(view.sensorId));
             }));
         })();
     </script>

@@ -60,7 +60,20 @@ class ReportPageMvcTest {
                 .andExpect(model().attribute("sensorOptions", hasSize(6)))
                 .andExpect(content().string(containsString("Shift Report")))
                 .andExpect(content().string(containsString(">Filter</button>")))
-                .andExpect(content().string(containsString("sensorId=sensor-6")))
+                .andExpect(content().string(allOf(
+                        containsString("aria-label=\"Sensor\""),
+                        containsString(">1</a>"), containsString(">2</a>"),
+                        containsString(">3</a>"), containsString(">4</a>"),
+                        containsString(">5</a>"), containsString(">6</a>"))))
+                .andExpect(content().string(allOf(
+                        containsString("from=2026-08-09"),
+                        containsString("to=2026-08-10"),
+                        containsString("sensorId=sensor-6"))))
+                .andExpect(content().string(allOf(
+                        containsString("name=\"sensorId\" value=\"sensor-5\""),
+                        containsString("name=\"from\" value=\"2026-08-09\""),
+                        containsString("name=\"to\" value=\"2026-08-10\""),
+                        containsString("class=\"report-table\""))))
                 .andExpect(content().string(allOf(
                         containsString("report-charts"), containsString("sensor-five"))))
                 .andExpect(content().string(containsString(">Source</th>")))
@@ -77,6 +90,7 @@ class ReportPageMvcTest {
 
         mvc.perform(get("/page/report").param("sensorId", "sensor-6"))
                 .andExpect(status().isOk())
+                .andExpect(content().string(containsString("class=\"active\">6</a>")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
                 .andExpect(content().string(not(containsString("id=\"signalChart\""))));
     }

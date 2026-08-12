@@ -69,6 +69,9 @@ class ShiftPageTest {
                 "backgroundColor: '#3b82f6'", "/topic/shift-updates/${view.sensorId}",
                 "/topic/comments/${view.sensorId}", "15:00–23:00");
         assertThat(template).doesNotContain("input[name=\"comment\"]", "/topic/shift-comments");
+        assertThat(template).contains("const charts = new Map()", "chart.update('none')",
+                "updatePanel(JSON.parse(message.body))", "sameIntervals(currentView.hours, nextView.hours)");
+        assertThat(template).doesNotContain("window.setTimeout(() => window.location.reload(), 50)");
     }
 
     private ShiftView view(String sensorId) {

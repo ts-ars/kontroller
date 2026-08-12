@@ -87,6 +87,10 @@ class CommentsPageTest {
         assertThat(template).contains("class=\"inherited-grid\"", "readonly aria-label=\"Allocated cans\"",
                 "Category", "Comment", "Minutes", "Allocated cans", "sensor-5", "15:00–23:00");
         assertThat(template).doesNotContain("Reasons for Stoppages", "name=\"comment\"");
+        assertThat(template).contains("function editorState()", "function restoreEditorState(state)",
+                "client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refreshComments)",
+                "client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refreshComments)");
+        assertThat(template).doesNotContain("window.location.reload()");
     }
 
     private CommentsPage page(CommentsReadUseCase useCase) {

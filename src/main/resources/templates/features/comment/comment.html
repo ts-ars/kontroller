@@ -136,24 +136,79 @@
         {method: explanationId ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json', ...csrfHeaders()}, body: JSON.stringify(payload)});
       if (!response.ok) return showStatus(card, await errorText(response), true);
       const saved = await response.json(); row.dataset.explanationId = saved.id;
-      row.querySelector('.allocated-cans').value = saved.allocatedCans; window.location.reload();
+      row.querySelector('.allocated-cans').value = saved.allocatedCans;
+      showStatus(card, 'Saved', false);
+      refreshComments();
     }
     async function deleteExplanation(button) {
       const row = button.closest('tr'); const card = button.closest('.loss-card');
       if (!row.dataset.explanationId) return row.remove();
       const response = await fetch(`/api/stoppages/${card.dataset.stoppageId}/explanations/${row.dataset.explanationId}`,
         {method: 'DELETE', headers: csrfHeaders()});
-      if (!response.ok) return showStatus(card, await errorText(response), true); window.location.reload();
+      if (!response.ok) return showStatus(card, await errorText(response), true);
+      row.remove();
+      refreshComments();
     }
     async function errorText(response) { try { return (await response.json()).detail || 'Request failed'; } catch (_) { return 'Request failed'; } }
     function showStatus(card, text, error) { const status = card.querySelector('.save-status'); status.textContent = text; status.style.color = error ? 'red' : 'green'; }
 
+    function editorState() {
+      const active = document.activeElement;
+      return {
+        rows: Array.from(document.querySelectorAll('.loss-card')).flatMap(card =>
+          Array.from(card.querySelectorAll('.explanations tr')).map((row, index) => ({
+            key: `${card.dataset.stoppageId}:${row.dataset.explanationId || `new-${index}`}`,
+            category: row.querySelector('.category').value,
+            comment: row.querySelector('.comment').value,
+            minutes: row.querySelector('.allocated-minutes').value
+          }))),
+        focus: active && active.closest('.loss-card') ? {
+          stoppageId: active.closest('.loss-card').dataset.stoppageId,
+          explanationId: active.closest('tr')?.dataset.explanationId,
+          className: Array.from(active.classList).find(name => ['category', 'comment', 'allocated-minutes'].includes(name)),
+          start: active.selectionStart,
+          end: active.selectionEnd
+        } : null
+      };
+    }
+    function restoreEditorState(state) {
+      const saved = new Map(state.rows.map(row => [row.key, row]));
+      document.querySelectorAll('.loss-card').forEach(card => Array.from(card.querySelectorAll('.explanations tr')).forEach((row, index) => {
+        const value = saved.get(`${card.dataset.stoppageId}:${row.dataset.explanationId || `new-${index}`}`);
+        if (!value) return;
+        row.querySelector('.category').value = value.category;
+        row.querySelector('.comment').value = value.comment;
+        row.querySelector('.allocated-minutes').value = value.minutes;
+      }));
+      if (!state.focus?.className) return;
+      const card = document.querySelector(`.loss-card[data-stoppage-id="${state.focus.stoppageId}"]`);
+      const row = state.focus.explanationId
+        ? card?.querySelector(`tr[data-explanation-id="${state.focus.explanationId}"]`) : null;
+      const field = (row || card)?.querySelector(`.${state.focus.className}`);
+      field?.focus();
+      if (field?.setSelectionRange && state.focus.start != null) field.setSelectionRange(state.focus.start, state.focus.end);
+    }
+    let commentsRefresh;
+    function refreshComments() {
+      window.clearTimeout(commentsRefresh);
+      commentsRefresh = window.setTimeout(async () => {
+        const state = editorState();
+        const response = await fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+        if (!response.ok) return;
+        const copy = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const current = document.querySelector('#comments-page > section:last-of-type');
+        const fresh = copy.querySelector('#comments-page > section:last-of-type');
+        if (!current || !fresh) return;
+        current.replaceWith(fresh);
+        restoreEditorState(state);
+      }, 75);
+    }
+
     if (window.SockJS && window.Stomp) {
       const client = Stomp.over(new SockJS('/ws')); client.debug = () => {};
       client.connect({}, () => {
-        const refresh = () => window.location.reload();
-        client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refresh);
-        client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refresh);
+        client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refreshComments);
+        client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refreshComments);
       });
     }
   </script>

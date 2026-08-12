@@ -17,6 +17,9 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
+application:
+  time-zone: ${APP_TIME_ZONE:Europe/Warsaw}
+
 server:
   shutdown: graceful
   error:
