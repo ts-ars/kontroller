@@ -87,23 +87,41 @@ canvas {
     margin: 0 auto;
 }
 
+.report-sensors {
+    margin-bottom: 0.5rem;
+}
+
+.report-sensors a {
+    color: #000;
+    text-decoration: none;
+}
+
+.report-sensors a.active {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
 .report-filters {
     display: flex;
     flex-direction: row;
     align-items: flex-end;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .report-filters label {
-    min-width: 170px;
+    min-width: 0;
+    font-weight: 600;
 }
 
 .report-filters input,
 .report-filters select {
-    width: 100%;
     margin-top: 0.25rem;
+}
+
+.report-filters input[type="date"] {
+    width: 130px;
 }
 
 .report-table .report-source-column {
@@ -136,10 +154,14 @@ canvas {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
     margin-top: 2rem;
+    width: min(100%, 600px);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .report-charts.sensor-five {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 1200px);
 }
 
 .report-chart-card {
@@ -148,6 +170,11 @@ canvas {
 }
 
 .report-chart-card canvas {
+    width: 100% !important;
+    height: 190px !important;
+}
+
+#plan-fact-page .chart-frame canvas {
     width: 100% !important;
     height: 190px !important;
 }

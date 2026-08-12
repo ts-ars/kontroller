@@ -1,5 +1,14 @@
 <div th:fragment="content" class="report-page">
-    <h1>Report</h1>
+    <h1>Shift Report</h1>
+
+    <nav class="report-sensors" aria-label="Sensor">
+        <th:block th:each="sensor, iteration : ${sensorOptions}">
+            <a th:href="@{/page/report(from=${startDate},to=${endDate},sensorId=${sensor.id.value})}"
+               th:classappend="${sensor.id.value == sensorId} ? 'active'"
+               th:text="${#strings.substringAfter(sensor.id.value, 'sensor-')}">1</a>
+            <span th:if="${!iteration.last}" aria-hidden="true"> | </span>
+        </th:block>
+    </nav>
 
     <form method="get" class="report-filters">
         <label>
@@ -10,16 +19,8 @@
             To
             <input type="date" name="to" th:value="${endDate}" />
         </label>
-        <label>
-            Sensor
-            <select name="sensorId">
-                <option th:each="sensor : ${sensorOptions}"
-                        th:value="${sensor.id.value}"
-                        th:text="${#strings.capitalize(#strings.replace(sensor.id.value, '-', ' '))}"
-                        th:selected="${sensor.id.value == sensorId}"></option>
-            </select>
-        </label>
-        <button type="submit">Apply</button>
+        <input type="hidden" name="sensorId" th:value="${sensorId}" />
+        <button type="submit">Filter</button>
     </form>
 
     <table class="report-table">

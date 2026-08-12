@@ -58,8 +58,9 @@ class ReportPageMvcTest {
                 .andExpect(model().attribute("problems", hasSize(1)))
                 .andExpect(model().attribute("signalTotals", hasSize(4)))
                 .andExpect(model().attribute("sensorOptions", hasSize(6)))
-                .andExpect(content().string(containsString("name=\"sensorId\"")))
-                .andExpect(content().string(containsString("sensor-6")))
+                .andExpect(content().string(containsString("Shift Report")))
+                .andExpect(content().string(containsString(">Filter</button>")))
+                .andExpect(content().string(containsString("sensorId=sensor-6")))
                 .andExpect(content().string(allOf(
                         containsString("report-charts"), containsString("sensor-five"))))
                 .andExpect(content().string(containsString(">Source</th>")))
