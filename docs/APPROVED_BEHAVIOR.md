@@ -71,6 +71,11 @@ Before any visual or behavioral change:
 - Add reason is always available:
   - for an existing stoppage it adds another explanation row;
   - when no system stoppage exists, the operator may choose an interval and create a MANUAL stoppage.
+- A MANUAL stoppage is the boundary between the two Add reason behaviors:
+  - Add reason on a system-detected stoppage adds an explanation to that same stoppage;
+  - Add reason on an existing MANUAL stoppage starts creation of a new MANUAL stoppage and opens the interval selector again.
+- The interval selector is not a one-time control. After every successfully saved MANUAL stoppage, the operator can invoke Add reason again and select any available interval for the next stoppage.
+- Creating a later MANUAL stoppage must not append an explanation to, overwrite or move an earlier MANUAL stoppage.
 - A manual stoppage belongs to the date, sensor, shift and interval currently opened on Comments.
 - Manual lost production uses the hourly plan:
 

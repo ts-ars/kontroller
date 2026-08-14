@@ -113,9 +113,9 @@
 
   <section th:unless="${readOnlyAggregation}">
     <div th:each="alert : ${alerts}"><p class="loss-alert" th:text="${alert}"></p></div>
-    <section th:if="${#lists.isEmpty(losses)}" id="manual-fallback">
-      <div>No system losses for the selected shift.</div>
-      <button class="add-reason" type="button" onclick="openManualInterval()">Add reason</button>
+    <section id="manual-fallback">
+      <div th:if="${#lists.isEmpty(losses)}">No system losses for the selected shift.</div>
+      <button th:if="${#lists.isEmpty(losses)}" class="add-reason" type="button" onclick="openManualInterval()">Add reason</button>
       <label id="manual-interval-step" class="manual-interval" hidden>Interval
         <select id="manual-interval" onchange="openManualRow()"><option value="">Select interval</option><option th:each="interval : ${intervalOptions}" th:value="${interval.index}" th:text="${interval.label}" th:attr="data-plan=${interval.plan},data-duration=${interval.durationMinutes}"></option></select>
       </label>
@@ -160,7 +160,8 @@
         </tr>
         </tbody>
       </table></div>
-      <button class="add-reason" type="button" onclick="addExplanation(this)">Add reason</button>
+      <button class="add-reason" type="button"
+              th:attr="onclick=${loss.detectionType == 'MANUAL'} ? 'openManualInterval()' : 'addExplanation(this)'">Add reason</button>
       <div class="save-status" aria-live="polite"></div>
     </section>
   </section>

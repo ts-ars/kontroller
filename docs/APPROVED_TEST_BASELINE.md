@@ -52,6 +52,8 @@ Database restore is not part of ordinary application rollback. Restore the test 
 - Report uses the approved column widths and chart grouping.
 - Report Delete opens the centered application dialog on the same page.
 - Manual stoppage Save succeeds.
+- After a MANUAL stoppage is saved, its Add reason button opens the interval selector again so another MANUAL stoppage can be created in a different available interval.
+- Add reason on a system stoppage still adds an explanation to that stoppage and does not open manual interval selection.
 - Plan 600 / 15 minutes shows and saves 150 lost cans.
 - No production container, database, network, secret or data is changed.
 

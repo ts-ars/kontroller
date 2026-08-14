@@ -114,7 +114,10 @@ class CommentsPageTest {
                 "white-space: nowrap",
                 ".source-comments { min-width: 0; max-width: 100%; }",
                 ".inherited-table { table-layout: fixed; }",
-                "overflow-wrap: anywhere");
+                "overflow-wrap: anywhere",
+                "<section id=\"manual-fallback\">",
+                "loss.detectionType == 'MANUAL'",
+                "'openManualInterval()' : 'addExplanation(this)'");
         assertThat(template).doesNotContain("window.location.reload()",
                 "width: 1100px; min-width: 1100px",
                 "grid-template-columns: 115px minmax(0, 1fr)");
