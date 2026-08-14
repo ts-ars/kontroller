@@ -1,0 +1,4 @@
+ALTER TABLE stoppages ADD COLUMN excluded BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE stoppages ADD COLUMN excluded_at TIMESTAMP;
+ALTER TABLE stoppages ADD COLUMN excluded_by VARCHAR(128);
+ALTER TABLE stoppages ADD COLUMN exclusion_reason VARCHAR(500);

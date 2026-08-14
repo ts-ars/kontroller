@@ -38,4 +38,8 @@ public enum ShiftSlice {
         }
         throw new IllegalArgumentException("Unknown shift slice: " + value);
     }
+
+    public static ShiftSlice current(LocalTime time) {
+        return !time.isBefore(DAY.start) && time.isBefore(DAY.end) ? DAY : EVENING;
+    }
 }

@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Validated
-@Profile("prod")
+@Profile({"prod", "test-adam"})
 @ConfigurationProperties("adam")
 public record AdamProperties(boolean enabled, Duration pollDelay, Duration timeout, @Min(0) int retries,
                              @NotEmpty List<@Valid Device> devices) {

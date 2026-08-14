@@ -7,15 +7,23 @@ import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
 import java.util.*;
+import com.exempal.shiftcounter.features.comment.application.CurrentCommentActor;
+import com.exempal.shiftcounter.features.user.domain.UserRole;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
 public class ReportPage implements PageModel {
 
     private final ReportQueryUseCase reports;
+    private final CurrentCommentActor actors;
 
-    public ReportPage(ReportQueryUseCase reports) {
+    @Autowired
+    public ReportPage(ReportQueryUseCase reports, CurrentCommentActor actors) {
         this.reports = reports;
+        this.actors = actors;
     }
+
+    public ReportPage(ReportQueryUseCase reports) { this(reports, null); }
 
     @Override
     public String getPageName() {
@@ -40,5 +48,7 @@ public class ReportPage implements PageModel {
         model.addAttribute("timeTotals", report.timeTotals());
         model.addAttribute("timeGrouping", report.timeGrouping());
         model.addAttribute("sensorOptions", SensorCatalog.all());
+        var role = actors == null ? null : actors.require().role();
+        model.addAttribute("canExclude", role == UserRole.ADMIN || role == UserRole.OWNER);
     }
 }

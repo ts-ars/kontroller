@@ -55,7 +55,7 @@ class ReportQueryUseCaseTest {
 
         assertThat(view.rows()).extracting(ReportRow::source, ReportRow::type, ReportRow::minutes,
                         ReportRow::cans, ReportRow::reason, ReportRow::productionDate)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple(sensorId, LossCategory.BREAKDOWN,
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(sensorId, "BREAKDOWN",
                         7, 21, "own", LocalDate.of(2026, 8, 10)));
         assertThat(view.lossTotals()).containsExactly(new ReportLossTotal(sensorId, 21));
     }
@@ -84,16 +84,16 @@ class ReportQueryUseCaseTest {
     }
 
     @Test
-    void resolvedStoppagesDoNotContributeRowsOrTotals() {
+    void resolvedStoppagesKeepSavedExplanationsInReport() {
         Stoppage resolved = stoppage(20, "sensor-6", 8, 16, "resolved").resolve();
         when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-6")))
                 .thenReturn(List.of(resolved));
 
         ReportView view = reports.query(Map.of("sensorId", "sensor-6"));
 
-        assertThat(view.rows()).isEmpty();
-        assertThat(view.totalMinutes()).isZero();
-        assertThat(view.totalCans()).isZero();
+        assertThat(view.rows()).extracting(ReportRow::reason).containsExactly("resolved");
+        assertThat(view.totalMinutes()).isEqualTo(8);
+        assertThat(view.totalCans()).isEqualTo(16);
     }
 
     @ParameterizedTest

@@ -1,0 +1,36 @@
+adam:
+  enabled: true
+  poll-delay: ${ADAM_POLL_DELAY:1000}
+  timeout: ${ADAM_TIMEOUT:2s}
+  retries: ${ADAM_RETRIES:1}
+  devices:
+    - sensor-id: sensor-1
+      host: ${ADAM_HOST:192.168.1.240}
+      port: ${ADAM_PORT:502}
+      slave-id: ${ADAM_SLAVE_ID:1}
+      counter-channel: 1
+    - sensor-id: sensor-2
+      host: ${ADAM_HOST:192.168.1.240}
+      port: ${ADAM_PORT:502}
+      slave-id: ${ADAM_SLAVE_ID:1}
+      counter-channel: 2
+    - sensor-id: sensor-3
+      host: ${ADAM_HOST:192.168.1.240}
+      port: ${ADAM_PORT:502}
+      slave-id: ${ADAM_SLAVE_ID:1}
+      counter-channel: 3
+    - sensor-id: sensor-4
+      host: ${ADAM_HOST:192.168.1.240}
+      port: ${ADAM_PORT:502}
+      slave-id: ${ADAM_SLAVE_ID:1}
+      counter-channel: 4
+    - sensor-id: sensor-5
+      host: ${ADAM_HOST:192.168.1.240}
+      port: ${ADAM_PORT:502}
+      slave-id: ${ADAM_SLAVE_ID:1}
+      counter-channel: 5
+    - sensor-id: sensor-6
+      host: ${ADAM_HOST:192.168.1.240}
+      port: ${ADAM_PORT:502}
+      slave-id: ${ADAM_SLAVE_ID:1}
+      counter-channel: 6

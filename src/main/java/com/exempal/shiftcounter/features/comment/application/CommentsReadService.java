@@ -36,7 +36,6 @@ public class CommentsReadService implements CommentsReadUseCase {
         }
         if (shift == null) return new Data(null, List.of(), List.of());
         List<Stoppage> rows = repository.findByShiftDateAndSensorId(date, sensorId).stream()
-                .filter(value -> value.state() == StoppageState.ACTIVE)
                 .sorted(chronological()).toList();
         List<Stoppage> missing = rows.stream()
                 .filter(value -> value.explanationStatus() == ExplanationStatus.UNEXPLAINED)
@@ -46,7 +45,6 @@ public class CommentsReadService implements CommentsReadUseCase {
 
     private List<ExplanationRow> explanationRows(LocalDate date, String sensorId) {
         return repository.findByShiftDateAndSensorId(date, sensorId).stream()
-                .filter(value -> value.state() == StoppageState.ACTIVE)
                 .sorted(chronological())
                 .flatMap(stoppage -> stoppage.explanations().stream().map(explanation ->
                         new ExplanationRow(sensorId, stoppage.startedAt(), explanation.category(),

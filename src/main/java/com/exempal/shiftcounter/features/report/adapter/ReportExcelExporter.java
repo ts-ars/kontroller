@@ -74,7 +74,7 @@ public class ReportExcelExporter {
         for (ReportRow row : report.rows()) {
             xml.append("<row r=\"").append(rowNumber++).append("\">");
             if (sensorFive) textCell(xml, row.source(), false);
-            textCell(xml, row.type().name(), false);
+            textCell(xml, row.type(), false);
             numberCell(xml, row.minutes());
             numberCell(xml, row.cans());
             textCell(xml, row.reason(), false);

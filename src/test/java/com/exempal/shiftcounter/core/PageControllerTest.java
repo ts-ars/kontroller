@@ -30,7 +30,9 @@ class PageControllerTest {
         mockMvc.perform(get("/page/shift"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
-                .andExpect(model().attribute("currentPage", "shift"));
+                .andExpect(model().attribute("currentPage", "shift"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "name=\"viewport\" content=\"width=device-width, initial-scale=1\"")));
     }
 
     @Test

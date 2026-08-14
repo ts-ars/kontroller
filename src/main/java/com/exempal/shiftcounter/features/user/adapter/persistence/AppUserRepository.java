@@ -10,6 +10,7 @@ import java.util.*;
 
 public interface AppUserRepository extends JpaRepository<AppUserEntity, UUID> {
     List<AppUserEntity> findAllByOrderByDisplayNameAsc();
+    List<AppUserEntity> findAllByStatusOrderByDisplayNameAsc(UserStatus status);
     boolean existsByRole(UserRole role);
     boolean existsByDisplayNameIgnoreCase(String displayName);
     boolean existsByDisplayNameIgnoreCaseAndIdNot(String displayName, UUID id);

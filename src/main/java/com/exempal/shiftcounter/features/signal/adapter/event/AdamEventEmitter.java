@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @Component
-@Profile("prod")
+@Profile({"prod", "test-adam"})
 public class AdamEventEmitter {
     private final AdamModbusAdapter modbusAdapter;
     private final CounterInputPort counters;

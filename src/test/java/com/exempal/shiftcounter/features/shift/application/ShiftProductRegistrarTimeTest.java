@@ -30,7 +30,7 @@ class ShiftProductRegistrarTimeTest {
     }
 
     @Test
-    void afterMidnightSignalUsesPreviousProductionDateAndNightInterval() {
+    void afterMidnightSignalUsesPreviousProductionDateAndDoesNotFinalizeOpenInterval() {
         LocalDate productionDate = LocalDate.of(2026, 8, 9);
         Shift shift = shift(productionDate, List.of(10, 10, 10), List.of(0, 0, 0),
                 List.of("23:00", "00:00", "06:00"));
@@ -42,8 +42,7 @@ class ShiftProductRegistrarTimeTest {
         ArgumentCaptor<Shift> saved = ArgumentCaptor.forClass(Shift.class);
         verify(planner).updateShift(saved.capture());
         assertThat(saved.getValue().getHourlyActualValues()).containsExactly(0, 1, 0);
-        verify(reconcile).reconcile(productionDate, "sensor-1", 1,
-                LocalDateTime.of(2026, 8, 10, 0, 15));
+        verifyNoInteractions(reconcile);
     }
 
     @Test

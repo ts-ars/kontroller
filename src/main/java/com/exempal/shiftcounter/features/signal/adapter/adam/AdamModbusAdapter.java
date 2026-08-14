@@ -10,6 +10,7 @@ import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.annotation.PreDestroy;
 import java.util.Map;
@@ -17,13 +18,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
-@Profile("prod")
+@Profile({"prod", "test-adam"})
 public class AdamModbusAdapter {
     private final ModbusFactory factory;
     private final AdamProperties properties;
     private final Map<String, ModbusMaster> masters = new ConcurrentHashMap<>();
     private final Map<String, Boolean> connected = new ConcurrentHashMap<>();
 
+    @Autowired
     public AdamModbusAdapter(AdamProperties properties) {
         this(properties, new ModbusFactory());
     }

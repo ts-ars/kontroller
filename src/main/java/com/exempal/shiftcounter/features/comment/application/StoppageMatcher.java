@@ -20,7 +20,8 @@ public class StoppageMatcher {
         List<ReconcileDiagnostic> diagnostics = new ArrayList<>();
         List<Stoppage> target = existingRange.stream()
                 .filter(value -> value.intervalIndex() == context.intervalIndex()
-                        && value.state() == StoppageState.ACTIVE).toList();
+                        && value.state() == StoppageState.ACTIVE
+                        && value.detectionType() != DetectionType.MANUAL).toList();
         List<Stoppage> existingFixed = target.stream()
                 .filter(value -> value.detectionType() == DetectionType.FIXED).toList();
         List<Stoppage> existingTempo = target.stream()

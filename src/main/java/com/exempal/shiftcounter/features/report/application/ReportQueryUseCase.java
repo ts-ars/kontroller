@@ -1,7 +1,6 @@
 package com.exempal.shiftcounter.features.report.application;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
-import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import org.springframework.stereotype.Service;
@@ -44,14 +43,34 @@ public class ReportQueryUseCase {
         explanationSources.forEach(source -> lostCansBySource.put(source, 0));
         for (String source : explanationSources) {
             for (var stoppage : repository.findByShiftDateBetweenAndSensorId(from, to, source)) {
-                if (stoppage.state() != StoppageState.ACTIVE) continue;
+                int explainedMinutes = 0;
+                int explainedCans = 0;
                 for (var explanation : stoppage.explanations()) {
-                    rows.add(new ReportRow(source, explanation.category(), explanation.allocatedMinutes(),
+                    rows.add(new ReportRow(source, explanation.category().name(), explanation.allocatedMinutes(),
                             explanation.allocatedCans(), explanation.comment(), explanation.authorDisplayName(),
-                            productionDays.resolve(stoppage.startedAt()).date()));
+                            productionDays.resolve(stoppage.startedAt()).date(), stoppage.id()));
                     minutes += explanation.allocatedMinutes();
                     cans += explanation.allocatedCans();
+                    explainedMinutes += explanation.allocatedMinutes();
+                    explainedCans += explanation.allocatedCans();
                     lostCansBySource.merge(source, explanation.allocatedCans(), Integer::sum);
+                }
+                if (!stoppage.endedAt().isAfter(productionDays.now())) {
+                    int remainingMinutes = Math.max(0, stoppage.roundedMinutes() - explainedMinutes);
+                    int remainingCans = Math.max(0, stoppage.lostCans() - explainedCans);
+                    if (explainedMinutes > stoppage.roundedMinutes()) {
+                        rows.add(new ReportRow(source, "ALLOCATION_CONFLICT", 0, 0,
+                                "Allocated " + explainedMinutes + " min exceeds stoppage "
+                                        + stoppage.roundedMinutes() + " min", "",
+                                productionDays.resolve(stoppage.startedAt()).date(), stoppage.id()));
+                    } else if (remainingMinutes > 0 || remainingCans > 0) {
+                        rows.add(new ReportRow(source, "UNEXPLAINED", remainingMinutes, remainingCans,
+                                "No explanation provided", "",
+                                productionDays.resolve(stoppage.startedAt()).date(), stoppage.id()));
+                        minutes += remainingMinutes;
+                        cans += remainingCans;
+                        lostCansBySource.merge(source, remainingCans, Integer::sum);
+                    }
                 }
             }
         }

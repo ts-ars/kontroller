@@ -26,6 +26,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CommentsPageTest {
     private static final LocalDate DATE = LocalDate.of(2026, 8, 7);
 
+    @Test
+    void defaultsToSensorFiveAndCurrentShift() {
+        CommentsReadUseCase useCase = mock(CommentsReadUseCase.class);
+        when(useCase.read(DATE, "sensor-5"))
+                .thenReturn(new CommentsReadUseCase.Data(null, List.of(), List.of(), List.of()));
+        ConcurrentModel model = new ConcurrentModel();
+
+        page(useCase).populateModel(model);
+
+        assertThat(model.getAttribute("sensorId")).isEqualTo("sensor-5");
+        assertThat(model.getAttribute("shiftSlice")).isEqualTo("day");
+        assertThat(model.getAttribute("readOnlyAggregation")).isEqualTo(true);
+        verify(useCase).read(DATE, "sensor-5");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"sensor-1", "sensor-2", "sensor-3", "sensor-4", "sensor-5", "sensor-6"})
     void acceptsEveryCatalogSensor(String sensorId) {
@@ -84,17 +99,38 @@ class CommentsPageTest {
     @Test
     void templateContainsEditableReadonlyAndSensorFiveReferenceLayouts() throws Exception {
         String template = Files.readString(Path.of("src/main/resources/templates/features/comment/comment.html"));
+        String styles = Files.readString(Path.of("src/main/resources/static/css/styles.css"));
         assertThat(template).contains("class=\"inherited-grid\"", "readonly aria-label=\"Allocated cans\"",
                 "Category", "Comment", "Minutes", "Allocated cans", "sensor-5", "15:00–23:00");
         assertThat(template).doesNotContain("Reasons for Stoppages", "name=\"comment\"");
         assertThat(template).contains("function editorState()", "function restoreEditorState(state)",
                 "client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refreshComments)",
-                "client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refreshComments)");
-        assertThat(template).doesNotContain("window.location.reload()");
+                "client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refreshComments)",
+                "document.querySelector('.explanations tr:not([data-explanation-id])')",
+                "max-width: 100%; min-width: 0; overflow: visible",
+                "@media (max-width: 1100px)",
+                "@media (max-width: 700px)",
+                "mobile-column-label", ">Min<", ">Cans<", ">By<",
+                "white-space: nowrap",
+                ".source-comments { min-width: 0; max-width: 100%; }",
+                ".inherited-table { table-layout: fixed; }",
+                "overflow-wrap: anywhere");
+        assertThat(template).doesNotContain("window.location.reload()",
+                "width: 1100px; min-width: 1100px",
+                "grid-template-columns: 115px minmax(0, 1fr)");
+        assertThat(template).contains("container-name: comment-card", "container-type: inline-size");
+        assertThat(styles).contains("@container comment-card (max-width: 820px)",
+                "grid-template-areas: 'category minutes cans author actions' 'comment comment comment comment comment'",
+                "grid-area: comment", "grid-area: actions");
     }
 
     private CommentsPage page(CommentsReadUseCase useCase) {
+        var settings = mock(com.exempal.shiftcounter.features.shift.application.ShiftSettingsPort.class);
+        when(settings.getForSensor(anyString())).thenReturn(
+                new com.exempal.shiftcounter.features.shift.application.ShiftSettings(
+                        List.of("07:00", "08:00"), List.of(60, 60)));
         return new CommentsPage(useCase, mock(StoppageTimeService.class), new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)));
+                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)), settings,
+                new com.exempal.shiftcounter.features.shift.application.ShiftIntervalService());
     }
 }
