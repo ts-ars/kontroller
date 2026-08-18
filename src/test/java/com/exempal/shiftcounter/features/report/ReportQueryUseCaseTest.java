@@ -192,7 +192,11 @@ class ReportQueryUseCaseTest {
 
     @Test
     void defaultsToSensorFive() {
-        assertThat(reports.query(Map.of()).sensorId()).isEqualTo("sensor-5");
+        ReportView report = reports.query(Map.of());
+
+        assertThat(report.sensorId()).isEqualTo("sensor-5");
+        assertThat(report.from()).isEqualTo(LocalDate.of(2026, 8, 11));
+        assertThat(report.to()).isEqualTo(LocalDate.of(2026, 8, 11));
     }
 
     private Stoppage authoredStoppage(long id, String sensorId, LossCategory category,

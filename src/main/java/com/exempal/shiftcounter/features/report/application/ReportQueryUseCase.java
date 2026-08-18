@@ -36,7 +36,7 @@ public class ReportQueryUseCase {
     @Transactional(readOnly = true)
     public ReportView query(Map<String, String> params) {
         LocalDate current = productionDays.current().date();
-        LocalDate from = parseDate(params.get("from"), current.minusDays(7));
+        LocalDate from = parseDate(params.get("from"), current);
         LocalDate to = parseDate(params.get("to"), current);
         String sensorId = params.getOrDefault("sensorId", SensorCatalog.SENSOR_5);
         SensorCatalog.require(sensorId);
