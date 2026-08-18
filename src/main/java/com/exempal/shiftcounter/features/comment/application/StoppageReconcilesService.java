@@ -108,12 +108,14 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase, Shi
     }
 
     @Override
+    @Transactional
     public void reconcile(java.time.LocalDate shiftDate, String sensorId, int intervalIndex,
                           LocalDateTime calculationTime) {
         reconcile(new ReconcileStoppagesCommand(shiftDate, sensorId, intervalIndex, calculationTime));
     }
 
     @Override
+    @Transactional
     public void resolveRemovedInterval(java.time.LocalDate shiftDate, String sensorId, int intervalIndex,
                                        LocalDateTime calculationTime) {
         reconcile(ReconcileStoppagesCommand.resolveRemovedInterval(
