@@ -208,16 +208,15 @@ nav .session form { display: inline; }
 
 .report-charts {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-    width: min(100%, 1200px);
-    margin-left: auto;
-    margin-right: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+    width: calc(100vw - 120px);
+    margin: 2rem 0 .75rem 50%;
+    transform: translateX(-50%);
 }
 
 .report-chart-card {
-    height: 190px;
+    height: 220px;
     min-width: 0;
 }
 
@@ -225,6 +224,22 @@ nav .session form { display: inline; }
     width: 100% !important;
     height: 190px !important;
 }
+
+.report-production-card { text-align: center; }
+.report-production-total { display: block; margin-top: .2rem; font-size: 12px; }
+
+.report-filter-heading { padding: 0; position: relative; }
+.report-filter-heading details { position: relative; }
+.report-filter-heading summary { height: 100%; padding: .5rem 2rem .5rem 1rem; cursor: pointer; list-style: none; }
+.report-filter-heading summary::-webkit-details-marker { display: none; }
+.report-filter-icon { position: absolute; right: .75rem; top: .55rem; width: 14px; height: 14px; font-size: 0; }
+.report-filter-icon::before { content: ''; display: block; width: 14px; height: 14px; background: #334155; clip-path: polygon(0 10%,100% 10%,62% 52%,62% 87%,40% 100%,40% 52%); }
+.report-column-filter { position: absolute; z-index: 20; top: 100%; left: -1px; min-width: 220px; padding: .75rem; background: #fff; border: 1px solid #aaa; box-shadow: 0 4px 12px #0002; text-align: left; font-weight: 400; }
+.report-column-filter select, .report-column-filter input { width: 100%; min-height: 34px; padding: .25rem .4rem; }
+.report-column-filter > div { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .75rem; }
+.report-column-filter button { padding: .45rem .75rem; }
+.report-column-filter .report-filter-clear { color: #111; background: #eee; border: 1px solid #bbb; }
+.report-text-filter { min-width: 280px; }
 
 #plan-fact-page .chart-frame canvas {
     width: 100% !important;
@@ -234,6 +249,9 @@ nav .session form { display: inline; }
 @media (max-width: 800px) {
     .report-charts {
         grid-template-columns: minmax(0, 1fr);
+        width: 100%;
+        transform: none;
+        margin-left: 0;
     }
 }
 

@@ -7,6 +7,10 @@ import com.exempal.shiftcounter.features.report.application.ReportRow;
 import com.exempal.shiftcounter.features.report.application.ReportLossTotal;
 import com.exempal.shiftcounter.features.report.application.ReportView;
 import com.exempal.shiftcounter.features.comment.domain.LossCategory;
+import com.exempal.shiftcounter.features.comment.application.CommentActor;
+import com.exempal.shiftcounter.features.comment.application.CurrentCommentActor;
+import com.exempal.shiftcounter.features.user.domain.UserRole;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
@@ -34,6 +39,14 @@ class ReportPageMvcTest {
 
     @MockBean
     private ReportQueryUseCase reports;
+
+    @MockBean
+    private CurrentCommentActor actors;
+
+    @BeforeEach
+    void currentActor() {
+        when(actors.require()).thenReturn(new CommentActor(UUID.randomUUID(), "Operator", UserRole.USER));
+    }
 
     @Test
     @WithMockUser(username = "Operator", roles = "USER")
@@ -75,10 +88,10 @@ class ReportPageMvcTest {
                         containsString("name=\"sensorId\" value=\"sensor-5\""),
                         containsString("name=\"from\" value=\"2026-08-09\""),
                         containsString("name=\"to\" value=\"2026-08-10\""),
-                        containsString("class=\"report-table\""))))
+                        containsString("class=\"report-table "))))
                 .andExpect(content().string(containsString("report-charts")))
-                .andExpect(content().string(containsString(">Source</th>")))
-                .andExpect(content().string(containsString(">Author</th>")))
+                .andExpect(content().string(containsString(">Source<span class=\"report-filter-icon\"")))
+                .andExpect(content().string(containsString(">Author<span class=\"report-filter-icon\"")))
                 .andExpect(content().string(containsString("Export Excel")))
                 .andExpect(content().string(containsString("sensor-2")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
@@ -98,6 +111,8 @@ class ReportPageMvcTest {
                 .andExpect(content().string(containsString("class=\"active\">6</a>")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
                 .andExpect(content().string(containsString("id=\"cansChart\"")))
+                .andExpect(content().string(containsString("id=\"productionChart\"")))
+                .andExpect(content().string(containsString("id=\"unexplainedChart\"")))
                 .andExpect(content().string(containsString("Lost cans over time")));
     }
 }

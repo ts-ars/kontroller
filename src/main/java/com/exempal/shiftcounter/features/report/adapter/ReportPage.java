@@ -2,6 +2,7 @@ package com.exempal.shiftcounter.features.report.adapter;
 
 import com.exempal.shiftcounter.core.PageModel;
 import com.exempal.shiftcounter.features.report.application.ReportQueryUseCase;
+import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
@@ -47,8 +48,17 @@ public class ReportPage implements PageModel {
         model.addAttribute("lossTotals", report.lossTotals());
         model.addAttribute("timeTotals", report.timeTotals());
         model.addAttribute("timeGrouping", report.timeGrouping());
+        model.addAttribute("productionTotals", report.productionTotals());
+        model.addAttribute("totalProduction", report.totalProduction());
+        model.addAttribute("unexplainedPlanTotals", report.unexplainedPlanTotals());
         model.addAttribute("sensorOptions", SensorCatalog.all());
         var role = actors == null ? null : actors.require().role();
         model.addAttribute("canExclude", role == UserRole.ADMIN || role == UserRole.OWNER);
+        model.addAttribute("sourceOptions", List.of("sensor-1", "sensor-2", "sensor-3", "sensor-4"));
+        model.addAttribute("typeOptions", LossCategory.values());
+        model.addAttribute("sourceFilter", params.getOrDefault("source", ""));
+        model.addAttribute("typeFilter", params.getOrDefault("type", ""));
+        model.addAttribute("reasonFilter", params.getOrDefault("reason", ""));
+        model.addAttribute("authorFilter", params.getOrDefault("author", ""));
     }
 }

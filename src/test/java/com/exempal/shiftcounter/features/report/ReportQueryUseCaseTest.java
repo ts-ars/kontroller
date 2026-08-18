@@ -7,6 +7,8 @@ import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
+import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,6 +24,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -29,12 +32,14 @@ import static org.mockito.Mockito.*;
 class ReportQueryUseCaseTest {
     private StoppageRepository stoppages;
     private ReportQueryUseCase reports;
+    private ActualDataPort shifts;
 
     @BeforeEach
     void setUp() {
         stoppages = mock(StoppageRepository.class);
+        shifts = mock(ActualDataPort.class);
         reports = new ReportQueryUseCase(stoppages, new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC)));
+                Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC)), shifts);
     }
 
     @Test
@@ -126,6 +131,72 @@ class ReportQueryUseCaseTest {
         when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-1"))).thenReturn(List.of(value));
         assertThat(reports.query(Map.of("sensorId", "sensor-1")).rows())
                 .extracting(ReportRow::author).containsExactly("Maria Ivanova");
+    }
+
+    @Test
+    void filtersRowsAndLossTotalsBySourceTypeReasonAndAuthor() {
+        when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-2")))
+                .thenReturn(List.of(authoredStoppage(41, "sensor-2", LossCategory.MATERIAL,
+                        "Kiwi wrapper jam", "Anton Nowak", 12, 120)));
+        when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-3")))
+                .thenReturn(List.of(authoredStoppage(42, "sensor-3", LossCategory.MATERIAL,
+                        "Kiwi wrapper jam", "Anton Nowak", 20, 200)));
+
+        ReportView view = reports.query(Map.of("sensorId", "sensor-5", "source", "sensor-2",
+                "type", "MATERIAL", "reason", "WRAPPER", "author", "anton"));
+
+        assertThat(view.rows()).extracting(ReportRow::source, ReportRow::reason, ReportRow::author)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(
+                        "sensor-2", "Kiwi wrapper jam", "Anton Nowak"));
+        assertThat(view.totalMinutes()).isEqualTo(12);
+        assertThat(view.totalCans()).isEqualTo(120);
+    }
+
+    @Test
+    void oneDayProductionAndUnexplainedPlanAreGroupedByIntervals() {
+        LocalDate date = LocalDate.of(2026, 8, 10);
+        Shift shift = new Shift(50L, date, "sensor-2", List.of(100, 120), 0,
+                List.of(80, 130), List.of("07:00", "08:00"));
+        when(shifts.findByDateAndSensorId(date, "sensor-2")).thenReturn(Optional.of(shift));
+
+        ReportView view = reports.query(Map.of("from", date.toString(), "to", date.toString(),
+                "sensorId", "sensor-2"));
+
+        assertThat(view.productionTotals()).containsExactly(
+                new ReportChartPoint("07:00", 80), new ReportChartPoint("08:00", 130));
+        assertThat(view.totalProduction()).isEqualTo(210);
+        assertThat(view.unexplainedPlanTotals()).containsExactly(
+                new ReportChartPoint("07:00", 20), new ReportChartPoint("08:00", 0));
+    }
+
+    @Test
+    void productionUsesWeeklyBucketsThroughThirtyOneDaysAndMonthlyBucketsAfterThat() {
+        LocalDate first = LocalDate.of(2026, 7, 1);
+        LocalDate eighth = first.plusDays(7);
+        when(shifts.findByDateAndSensorId(first, "sensor-1")).thenReturn(Optional.of(
+                new Shift(61L, first, "sensor-1", List.of(10), 0, List.of(4), List.of("07:00"))));
+        when(shifts.findByDateAndSensorId(eighth, "sensor-1")).thenReturn(Optional.of(
+                new Shift(62L, eighth, "sensor-1", List.of(10), 0, List.of(6), List.of("07:00"))));
+
+        ReportView weekly = reports.query(Map.of("from", first.toString(), "to", first.plusDays(30).toString(),
+                "sensorId", "sensor-1"));
+        ReportView monthly = reports.query(Map.of("from", first.toString(), "to", first.plusDays(31).toString(),
+                "sensorId", "sensor-1"));
+
+        assertThat(weekly.productionTotals()).extracting(ReportChartPoint::label, ReportChartPoint::value)
+                .startsWith(org.assertj.core.groups.Tuple.tuple("2026-07-01–2026-07-07", 4),
+                        org.assertj.core.groups.Tuple.tuple("2026-07-08–2026-07-14", 6));
+        assertThat(monthly.productionTotals()).containsExactly(
+                new ReportChartPoint("2026-07", 10), new ReportChartPoint("2026-08", 0));
+    }
+
+    private Stoppage authoredStoppage(long id, String sensorId, LossCategory category,
+                                      String reason, String author, int minutes, int cans) {
+        return new Stoppage(id, UUID.randomUUID(), id, sensorId, 0,
+                LocalDateTime.of(2026, 8, 10, 12, 0), Duration.ofMinutes(minutes), minutes, cans,
+                DetectionType.FIXED, StoppageState.ACTIVE, List.of(new LossExplanation(id, id,
+                category, reason, minutes, cans, UUID.randomUUID(), author,
+                Instant.EPOCH, Instant.EPOCH, null, 0L)), 0L);
     }
 
     private Stoppage stoppage(long id, String sensorId, int minutes, int cans, String reason) {

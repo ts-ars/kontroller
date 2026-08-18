@@ -2,18 +2,32 @@
     <h1>Shift Report</h1>
     <nav class="report-sensors" aria-label="Sensor">
         <th:block th:each="sensor, iteration : ${sensorOptions}">
-            <a th:href="@{/page/report(from=${startDate},to=${endDate},sensorId=${sensor.id.value})}" th:classappend="${sensor.id.value == sensorId} ? 'active'" th:text="${#strings.substringAfter(sensor.id.value, 'sensor-')}">1</a><span th:if="${!iteration.last}" aria-hidden="true"> | </span>
+            <a th:href="@{/page/report(from=${startDate},to=${endDate},sensorId=${sensor.id.value},source=${sourceFilter},type=${typeFilter},reason=${reasonFilter},author=${authorFilter})}" th:classappend="${sensor.id.value == sensorId} ? 'active'" th:text="${#strings.substringAfter(sensor.id.value, 'sensor-')}">1</a><span th:if="${!iteration.last}" aria-hidden="true"> | </span>
         </th:block>
     </nav>
-    <form method="get" class="report-filters">
+    <form method="get" class="report-filters" id="reportFilterForm">
         <label>From <input type="date" name="from" th:value="${startDate}" /></label>
         <label>To <input type="date" name="to" th:value="${endDate}" /></label>
         <input type="hidden" name="sensorId" th:value="${sensorId}" />
         <button type="submit">Filter</button><button type="submit" formaction="/report/export.xlsx">Export Excel</button>
     </form>
+    <div class="report-charts">
+        <section class="report-chart-card report-production-card"><canvas id="productionChart"></canvas><strong class="report-production-total" th:text="|Total production: ${totalProduction}|">Total production: 0</strong></section>
+        <section class="report-chart-card"><canvas id="lossChart"></canvas></section>
+        <section class="report-chart-card"><canvas id="cansChart"></canvas></section>
+        <section class="report-chart-card"><canvas id="unexplainedChart"></canvas></section>
+    </div>
+
     <div class="report-table-wrap"><table th:class="'report-table ' + (${sensorId == 'sensor-5'} ? 'report-table--with-source ' : 'report-table--without-source ') + (${canExclude} ? 'report-table--with-actions' : 'report-table--without-actions')">
         <colgroup><col th:if="${sensorId == 'sensor-5'}" class="report-source-column" /><col class="report-type-column" /><col class="report-number-column" /><col class="report-number-column" /><col class="report-reason-column" /><col class="report-author-column" /><col th:if="${canExclude}" class="report-actions-column" /></colgroup>
-        <thead><tr><th th:if="${sensorId == 'sensor-5'}">Source</th><th>Type</th><th>Minutes</th><th>Cans</th><th>Reason</th><th>Author</th><th th:if="${canExclude}">Actions</th></tr></thead>
+        <thead><tr>
+            <th th:if="${sensorId == 'sensor-5'}" class="report-filter-heading"><details><summary>Source<span class="report-filter-icon" aria-hidden="true">⌄</span></summary><div class="report-column-filter"><select name="source" form="reportFilterForm"><option value="">All</option><option th:each="source : ${sourceOptions}" th:value="${source}" th:text="${source}" th:selected="${source == sourceFilter}"></option></select><div><button type="button" class="report-filter-clear">Clear</button><button type="submit" form="reportFilterForm">Apply</button></div></div></details></th>
+            <th class="report-filter-heading"><details><summary>Type<span class="report-filter-icon" aria-hidden="true">⌄</span></summary><div class="report-column-filter"><select name="type" form="reportFilterForm"><option value="">All</option><option th:each="type : ${typeOptions}" th:value="${type}" th:text="${type}" th:selected="${type.name() == typeFilter}"></option></select><div><button type="button" class="report-filter-clear">Clear</button><button type="submit" form="reportFilterForm">Apply</button></div></div></details></th>
+            <th>Minutes</th><th>Cans</th>
+            <th class="report-filter-heading"><details><summary>Reason<span class="report-filter-icon" aria-hidden="true">⌄</span></summary><div class="report-column-filter report-text-filter"><input type="search" name="reason" form="reportFilterForm" th:value="${reasonFilter}" placeholder="Search reason…"><div><button type="button" class="report-filter-clear">Clear</button><button type="submit" form="reportFilterForm">Apply</button></div></div></details></th>
+            <th class="report-filter-heading"><details><summary>Author<span class="report-filter-icon" aria-hidden="true">⌄</span></summary><div class="report-column-filter report-text-filter"><input type="search" name="author" form="reportFilterForm" th:value="${authorFilter}" placeholder="Search author…"><div><button type="button" class="report-filter-clear">Clear</button><button type="submit" form="reportFilterForm">Apply</button></div></div></details></th>
+            <th th:if="${canExclude}">Actions</th>
+        </tr></thead>
         <tbody>
         <tr th:each="problem : ${problems}"><td th:if="${sensorId == 'sensor-5'}" th:text="${problem.source}"></td><td th:text="${problem.type}"></td><td th:text="${problem.minutes}"></td><td th:text="${problem.cans}"></td><td class="report-reason" th:text="${problem.reason}"></td><td class="report-author" th:text="${problem.author}"></td><td th:if="${canExclude}"><button th:if="${problem.stoppageId != null}" type="button" th:attr="data-id=${problem.stoppageId}" onclick="excludeReportRow(this)">Delete</button></td></tr>
         <tr th:if="${problems.isEmpty()}"><td th:colspan="${(sensorId == 'sensor-5' ? 6 : 5) + (canExclude ? 1 : 0)}" class="report-empty">No data for selected range</td></tr>
@@ -27,10 +41,10 @@
         <div id="report-delete-error" class="report-delete-error" aria-live="polite"></div>
         <div class="report-delete-actions"><button type="button" onclick="closeReportDeleteDialog()">Cancel</button><button id="report-delete-confirm" type="button" onclick="confirmReportRowDeletion()">Delete</button></div>
     </dialog>
-    <div class="report-charts"><section class="report-chart-card"><canvas id="lossChart"></canvas></section><section class="report-chart-card"><canvas id="cansChart"></canvas></section></div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script th:inline="javascript">
         const reportRows = /*[[${problems}]]*/ [], reportLossTotals = /*[[${lossTotals}]]*/ [], reportTimeTotals = /*[[${timeTotals}]]*/ [];
+        const productionTotals = /*[[${productionTotals}]]*/ [], unexplainedPlanTotals = /*[[${unexplainedPlanTotals}]]*/ [];
         let reportDeleteButton = null;
         function excludeReportRow(button) {
             reportDeleteButton = button;
@@ -64,24 +78,17 @@
         }
         const reportSensorId = /*[[${sensorId}]]*/ 'sensor-1', reportTimeGrouping = /*[[${timeGrouping}]]*/ 'daily';
         const lossTotalsByType = {}; reportRows.forEach(row => lossTotalsByType[row.type] = (lossTotalsByType[row.type] || 0) + Number(row.minutes || 0));
-        const compactDate = value => {
-            const [year, month, day] = value.split('-');
-            return day ? `${day}.${month}` : `${month}.${year}`;
-        };
-        const compactLabel = label => reportTimeGrouping === 'weekly'
-            ? label.split('–').map(compactDate).join('–')
-            : compactDate(label);
-        const chartOptions = {responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0}},y:{beginAtZero:true}}};
-        const blueDataset = (label,data) => ({
-            label,
-            data,
-            backgroundColor:'#3b82f6',
-            maxBarThickness:72,
-            categoryPercentage:0.72,
-            barPercentage:0.82
-        });
+        const compactLabel = label => reportTimeGrouping === 'daily' && label.length >= 10 ? label.slice(5).replace('-', '.') : label;
+        const chartFont = {size:12, family:'Arial'};
+        const chartOptions = {responsive:true, maintainAspectRatio:false, layout:{padding:{top:16}}, plugins:{legend:{position:'top',labels:{font:chartFont}}}, scales:{x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0,font:chartFont}},y:{beginAtZero:true,ticks:{font:chartFont}}}};
+        const blueDataset = (label,data) => ({label,data,backgroundColor:'#3b82f6'});
+        const productionValueLabels = {id:'productionValueLabels',afterDatasetsDraw(chart){const {ctx}=chart;ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>ctx.fillText(Number(chart.data.datasets[0].data[index]||0).toLocaleString(),bar.x,bar.y-5));ctx.restore();}};
+        new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Production',data:productionTotals.map(value=>Number(value.value||0)),backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[productionValueLabels]});
         new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:Object.keys(lossTotalsByType),datasets:[blueDataset('Lost minutes by type',Object.values(lossTotalsByType))]},options:chartOptions});
         const sensorFive = reportSensorId === 'sensor-5', cansValues = sensorFive ? reportLossTotals : reportTimeTotals;
         new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:cansValues.map(value => sensorFive ? value.sensorId : compactLabel(value.label)),datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',cansValues.map(value => Number(value.lostCans || 0)))]},options:chartOptions});
+        new Chart(document.getElementById('unexplainedChart'), {type:'bar',data:{labels:unexplainedPlanTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Unexplained plan difference',data:unexplainedPlanTotals.map(value=>Number(value.value||0)),backgroundColor:'#dc2626'}]},options:chartOptions});
+        document.querySelectorAll('.report-filter-heading details').forEach(details => details.addEventListener('toggle', () => { if (!details.open) return; document.querySelectorAll('.report-filter-heading details[open]').forEach(other => { if (other !== details) other.open = false; }); }));
+        document.querySelectorAll('.report-filter-clear').forEach(button => button.addEventListener('click', () => { const field = button.closest('.report-column-filter').querySelector('input,select'); field.value = ''; document.getElementById('reportFilterForm').requestSubmit(); }));
     </script>
 </div>
