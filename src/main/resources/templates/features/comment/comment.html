@@ -1,48 +1,80 @@
 <div th:fragment="content" id="comments-page">
   <style>
-    #comments-page { width: 100%; max-width: 1400px; margin: 0 auto; }
+    #comments-page { box-sizing: border-box; width: 100%; max-width: 1400px; min-width: 0; margin: 0 auto; }
     #comments-page h1 { margin-top: 0; }
     #comments-page .view-switches { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: .5rem; }
     #comments-page .view-switches a { color: #000; text-decoration: none; }
     #comments-page .view-switches a.active { color: #1d4ed8; text-decoration: underline; }
     #comments-page .loss-alert { color: #b91c1c; }
-    #comments-page .loss-card { margin-bottom: 2rem; }
+    #comments-page .loss-card { container-name: comment-card; container-type: inline-size; width: 100%; min-width: 0; margin-bottom: 2rem; }
     #comments-page .loss-card + .loss-card { padding-top: .5rem; border-top: 1px solid #ccc; }
     #comments-page .loss-card h2 { margin-bottom: .5rem; }
     #comments-page .loss-card p { margin: .5rem 0; }
     #comments-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
     #comments-page th, #comments-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; vertical-align: middle; }
-    #comments-page .editor-table th:nth-child(1) { width: 180px; }
-    #comments-page .editor-table th:nth-child(3) { width: 120px; }
-    #comments-page .editor-table th:nth-child(4) { width: 150px; }
-    #comments-page .editor-table th:nth-child(5) { width: 190px; }
+    #comments-page .table-wrap { display: block; width: 100%; max-width: 100%; min-width: 0; overflow: visible; }
+    #comments-page .editor-table th:nth-child(1) { width: 18%; }
+    #comments-page .editor-table th:nth-child(2) { width: 35%; }
+    #comments-page .editor-table th:nth-child(3) { width: 9%; }
+    #comments-page .editor-table th:nth-child(4) { width: 12%; }
+    #comments-page .editor-table th:nth-child(5) { width: 17%; }
+    #comments-page .editor-table th:nth-child(6) { width: 9%; }
+    #comments-page .author { text-align: left; white-space: nowrap; }
     #comments-page input[type="text"], #comments-page input[type="number"], #comments-page select {
       width: 100%; padding: 4px 6px; font-size: 14px; height: 34px; box-sizing: border-box;
       border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #000;
     }
     #comments-page input[type="number"] { text-align: center; }
-    #comments-page .actions { display: flex; justify-content: center; gap: .5rem; }
+    #comments-page .actions { display: flex; justify-content: center; flex-wrap: nowrap; gap: .5rem; }
+    #comments-page .actions button { flex: 0 0 auto; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+    #comments-page .editor-table th { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+    #comments-page .mobile-column-label { display: none; }
     #comments-page .add-reason { margin-top: .75rem; }
+    #comments-page .manual-interval { display: block; width: 180px; max-width: 100%; margin-top: .75rem; }
+    #comments-page .manual-loss { margin-top: 1rem; }
     #comments-page .inherited-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; }
+    #comments-page .source-comments { min-width: 0; max-width: 100%; }
     #comments-page .source-comments h3 { margin-bottom: .5rem; }
     #comments-page .source-comments p { margin-top: .5rem; }
-    #comments-page .inherited-table { table-layout: auto; }
-    #comments-page .inherited-table th:nth-child(1), #comments-page .inherited-table td:nth-child(1),
-    #comments-page .inherited-table th:nth-child(2), #comments-page .inherited-table td:nth-child(2),
-    #comments-page .inherited-table th:nth-child(4), #comments-page .inherited-table td:nth-child(4) { width: 1%; white-space: nowrap; }
+    #comments-page .inherited-table { table-layout: fixed; }
+    #comments-page .inherited-table th:nth-child(1) { width: 12%; }
+    #comments-page .inherited-table th:nth-child(2) { width: 24%; }
+    #comments-page .inherited-table th:nth-child(3) { width: 34%; }
+    #comments-page .inherited-table th:nth-child(4) { width: 14%; }
+    #comments-page .inherited-table th:nth-child(5) { width: 16%; }
     #comments-page .inherited-table td:nth-child(3) { text-align: left; }
-    @media (max-width: 900px) {
-      #comments-page .table-wrap { overflow-x: auto; }
-      #comments-page .editor-table { min-width: 850px; }
+    #comments-page .inherited-table th, #comments-page .inherited-table td { padding-inline: .5rem; overflow-wrap: anywhere; }
+    #comments-page .inherited-table .author { white-space: normal; }
+    @media (max-width: 1100px) {
       #comments-page .inherited-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      #comments-page .editor-table th:nth-child(1) { width: 18%; }
+      #comments-page .editor-table th:nth-child(2) { width: 37%; }
+      #comments-page .editor-table th:nth-child(3) { width: 8%; }
+      #comments-page .editor-table th:nth-child(4) { width: 11%; }
+      #comments-page .editor-table th:nth-child(5) { width: 18%; }
+      #comments-page .editor-table th:nth-child(6) { width: 8%; }
+      #comments-page .editor-table th, #comments-page .editor-table button { overflow-wrap: normal; word-break: normal; white-space: nowrap; }
+      #comments-page .desktop-column-label { display: none; }
+      #comments-page .mobile-column-label { display: inline; }
+      #comments-page .editor-table select { padding-inline: .2rem; font-size: clamp(.7rem, 3vw, .85rem); }
+      #comments-page .actions { flex-wrap: nowrap; gap: .25rem; }
+      #comments-page .actions button { padding: .35rem .3rem; }
     }
   </style>
 
   <h1>Loss explanations</h1>
+  <form method="get" class="comments-date-filter">
+    <label>Date <input type="date" name="date" th:value="${productionDate}"></label>
+    <input type="hidden" name="sensorId" th:value="${sensorId}">
+    <input type="hidden" name="shift" th:value="${shiftSlice}">
+    <button type="submit">Open</button>
+  </form>
   <div class="view-switches">
     <div aria-label="Sensor">
       <th:block th:each="sensor, status : ${sensors}">
-        <a th:href="@{/page/comment(sensorId=${sensor.id.value},shift=${shiftSlice})}"
+        <a th:href="@{/page/comment(sensorId=${sensor.id.value},shift=${shiftSlice},date=${productionDate})}"
            th:classappend="${sensorId == sensor.id.value} ? 'active'"
            th:text="${#strings.replace(sensor.id.value, 'sensor-', '')}">1</a>
         <span th:if="${!status.last}" aria-hidden="true"> | </span>
@@ -50,9 +82,9 @@
     </div>
     <div aria-label="Production shift">
       <span>Shift: </span>
-      <a th:href="@{/page/comment(sensorId=${sensorId},shift='day')}" th:classappend="${shiftSlice == 'day'} ? 'active'">07:00–15:00</a>
+      <a th:href="@{/page/comment(sensorId=${sensorId},shift='day',date=${productionDate})}" th:classappend="${shiftSlice == 'day'} ? 'active'">07:00–15:00</a>
       <span aria-hidden="true"> | </span>
-      <a th:href="@{/page/comment(sensorId=${sensorId},shift='evening')}" th:classappend="${shiftSlice == 'evening'} ? 'active'">15:00–23:00</a>
+      <a th:href="@{/page/comment(sensorId=${sensorId},shift='evening',date=${productionDate})}" th:classappend="${shiftSlice == 'evening'} ? 'active'">15:00–23:00</a>
     </div>
   </div>
 
@@ -65,12 +97,13 @@
         <p th:if="${#lists.isEmpty(source.rows)}">No comments for the selected shift.</p>
         <div class="table-wrap" th:unless="${#lists.isEmpty(source.rows)}">
           <table class="inherited-table">
-            <thead><tr><th>Time</th><th>Category</th><th>Comment</th><th>Minutes</th></tr></thead>
+            <thead><tr><th>Time</th><th>Category</th><th>Comment</th><th>Minutes</th><th>Author</th></tr></thead>
             <tbody><tr th:each="row : ${source.rows}">
               <td th:text="${row.time.toLocalTime()}">08:14:23</td>
               <td th:text="${row.category}">BREAKDOWN</td>
               <td th:text="${row.comment}">Comment</td>
               <td th:text="${row.minutes}">15</td>
+              <td class="author" th:text="${row.authorDisplayName}">Legacy</td>
             </tr></tbody>
           </table>
         </div>
@@ -80,7 +113,25 @@
 
   <section th:unless="${readOnlyAggregation}">
     <div th:each="alert : ${alerts}"><p class="loss-alert" th:text="${alert}"></p></div>
-    <div th:if="${#lists.isEmpty(losses)}">No system losses for the selected shift.</div>
+    <section id="manual-fallback">
+      <div th:if="${#lists.isEmpty(losses)}">No system losses for the selected shift.</div>
+      <button th:if="${#lists.isEmpty(losses)}" class="add-reason" type="button" onclick="openManualInterval()">Add reason</button>
+      <label id="manual-interval-step" class="manual-interval" hidden>Interval
+        <select id="manual-interval" onchange="openManualRow()"><option value="">Select interval</option><option th:each="interval : ${intervalOptions}" th:value="${interval.index}" th:text="${interval.label}" th:attr="data-plan=${interval.plan},data-duration=${interval.durationMinutes}"></option></select>
+      </label>
+      <section id="manual-row" class="loss-card manual-loss" hidden>
+        <h2>MANUAL · <span id="manual-time"></span></h2>
+        <p>Loss: <span id="manual-loss-minutes">0</span> min / <span id="manual-loss-cans">0</span> cans · Allocated: 0 min; remaining: <span id="manual-remaining">0</span> min</p>
+        <p>Status: UNEXPLAINED</p>
+        <div class="table-wrap"><table class="editor-table"><thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th><th>Author</th></tr></thead>
+          <tbody><tr><td><select id="manual-category"><option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}" th:value="${category}" th:text="${category}"></option></select></td>
+            <td><input id="manual-comment" type="text"></td><td><input id="manual-minutes" type="number" min="1" step="1" oninput="calculateManualCans()"></td>
+            <td><input id="manual-cans" type="number" readonly></td>
+            <td><div class="actions"><button type="button" onclick="createManualStoppage()">Save</button><button type="button" onclick="cancelManualStoppage()">Delete</button></div></td>
+            <td class="author" th:text="${#authentication.name}">User</td></tr></tbody></table></div>
+        <div id="manual-status" aria-live="polite"></div>
+      </section>
+    </section>
 
     <section class="loss-card" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
       <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00:00</h2>
@@ -88,7 +139,14 @@
         · <span class="allocation-summary" th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span></p>
       <p class="explanation-status" th:text="|Status: ${loss.explanationStatus}|">Status</p>
       <div class="table-wrap"><table class="editor-table">
-        <thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th></tr></thead>
+        <thead><tr>
+          <th><span class="desktop-column-label">Category</span><span class="mobile-column-label">Category</span></th>
+          <th><span class="desktop-column-label">Comment</span><span class="mobile-column-label">Comment</span></th>
+          <th><span class="desktop-column-label">Minutes</span><span class="mobile-column-label">Min</span></th>
+          <th><span class="desktop-column-label">Allocated cans</span><span class="mobile-column-label">Cans</span></th>
+          <th><span class="desktop-column-label">Actions</span><span class="mobile-column-label">Actions</span></th>
+          <th><span class="desktop-column-label">Author</span><span class="mobile-column-label">By</span></th>
+        </tr></thead>
         <tbody class="explanations">
         <tr th:each="explanation : ${loss.explanations}" th:attr="data-explanation-id=${explanation.id}">
           <td><select class="category"><option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}"
@@ -98,10 +156,12 @@
           <td><input class="allocated-cans" type="number" th:value="${explanation.allocatedCans}" readonly aria-label="Allocated cans"></td>
           <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
             <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
+          <td class="author" th:text="${explanation.authorDisplayName}">Legacy</td>
         </tr>
         </tbody>
       </table></div>
-      <button class="add-reason" type="button" onclick="addExplanation(this)">Add reason</button>
+      <button class="add-reason" type="button"
+              th:attr="onclick=${loss.detectionType == 'MANUAL'} ? 'openManualInterval()' : 'addExplanation(this)'">Add reason</button>
       <div class="save-status" aria-live="polite"></div>
     </section>
   </section>
@@ -111,6 +171,8 @@
   <script th:inline="javascript">
     const categories = ['ORGANIZATION', 'BREAKDOWN', 'MATERIAL', 'QUALITY'];
     const selectedCommentsSensor = /*[[${sensorId}]]*/ 'sensor-1';
+    const currentCommentsAuthor = /*[[${#authentication.name}]]*/ 'User';
+    const selectedCommentsDate = /*[[${productionDate}]]*/ '2026-01-01';
     function csrfHeaders() {
       const token = document.querySelector('meta[name="_csrf"]');
       const header = document.querySelector('meta[name="_csrf_header"]');
@@ -123,8 +185,50 @@
         <td><input class="comment" type="text"></td><td><input class="allocated-minutes" type="number" min="0" step="1" value="0"></td>
         <td><input class="allocated-cans" type="number" value="0" readonly aria-label="Allocated cans"></td>
         <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
-        <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>`;
+        <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
+        <td class="author">${currentCommentsAuthor}</td>`;
       card.querySelector('.explanations').appendChild(row);
+    }
+    function openManualInterval() {
+      document.getElementById('manual-interval-step').hidden = false;
+      document.getElementById('manual-interval').focus();
+    }
+    function openManualRow() {
+      const select = document.getElementById('manual-interval');
+      document.getElementById('manual-row').hidden = !select.value;
+      if (!select.value) return;
+      document.getElementById('manual-time').textContent = select.options[select.selectedIndex].text + ':00';
+      calculateManualCans();
+    }
+    function calculateManualCans() {
+      const select = document.getElementById('manual-interval');
+      const option = select.options[select.selectedIndex];
+      const minutes = Number(document.getElementById('manual-minutes').value);
+      const plan = Number(option?.dataset.plan);
+      const calculated = minutes > 0 && plan > 0 ? Math.round(plan * minutes / 60) : 0;
+      document.getElementById('manual-cans').value = calculated || '';
+      document.getElementById('manual-loss-minutes').textContent = minutes || 0;
+      document.getElementById('manual-loss-cans').textContent = calculated;
+      document.getElementById('manual-remaining').textContent = minutes || 0;
+    }
+    function cancelManualStoppage() {
+      document.getElementById('manual-row').hidden = true;
+      document.getElementById('manual-interval').value = '';
+      document.getElementById('manual-comment').value = '';
+      document.getElementById('manual-minutes').value = '';
+      document.getElementById('manual-cans').value = '';
+    }
+    async function createManualStoppage() {
+      const status = document.getElementById('manual-status');
+      const payload = {date:selectedCommentsDate,sensorId:selectedCommentsSensor,
+        intervalIndex:Number(document.getElementById('manual-interval').value),
+        category:document.getElementById('manual-category').value,
+        comment:document.getElementById('manual-comment').value,
+        minutes:Number(document.getElementById('manual-minutes').value),
+        cans:Number(document.getElementById('manual-cans').value)};
+      const response = await fetch('/api/stoppages/manual',{method:'POST',headers:{'Content-Type':'application/json',...csrfHeaders()},body:JSON.stringify(payload)});
+      if (!response.ok) { status.textContent=await errorText(response); status.style.color='red'; return; }
+      refreshComments();
     }
     async function saveExplanation(button) {
       const row = button.closest('tr'); const card = button.closest('.loss-card');
@@ -136,24 +240,83 @@
         {method: explanationId ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json', ...csrfHeaders()}, body: JSON.stringify(payload)});
       if (!response.ok) return showStatus(card, await errorText(response), true);
       const saved = await response.json(); row.dataset.explanationId = saved.id;
-      row.querySelector('.allocated-cans').value = saved.allocatedCans; window.location.reload();
+      row.querySelector('.allocated-cans').value = saved.allocatedCans;
+      row.querySelector('.author').textContent = saved.authorDisplayName;
+      showStatus(card, 'Saved', false);
+      refreshComments();
     }
     async function deleteExplanation(button) {
       const row = button.closest('tr'); const card = button.closest('.loss-card');
       if (!row.dataset.explanationId) return row.remove();
       const response = await fetch(`/api/stoppages/${card.dataset.stoppageId}/explanations/${row.dataset.explanationId}`,
         {method: 'DELETE', headers: csrfHeaders()});
-      if (!response.ok) return showStatus(card, await errorText(response), true); window.location.reload();
+      if (!response.ok) return showStatus(card, await errorText(response), true);
+      row.remove();
+      refreshComments();
     }
     async function errorText(response) { try { return (await response.json()).detail || 'Request failed'; } catch (_) { return 'Request failed'; } }
     function showStatus(card, text, error) { const status = card.querySelector('.save-status'); status.textContent = text; status.style.color = error ? 'red' : 'green'; }
 
+    function editorState() {
+      const active = document.activeElement;
+      return {
+        rows: Array.from(document.querySelectorAll('.loss-card')).flatMap(card =>
+          Array.from(card.querySelectorAll('.explanations tr')).map((row, index) => ({
+            key: `${card.dataset.stoppageId}:${row.dataset.explanationId || `new-${index}`}`,
+            category: row.querySelector('.category').value,
+            comment: row.querySelector('.comment').value,
+            minutes: row.querySelector('.allocated-minutes').value
+          }))),
+        focus: active && active.closest('.loss-card') ? {
+          stoppageId: active.closest('.loss-card').dataset.stoppageId,
+          explanationId: active.closest('tr')?.dataset.explanationId,
+          className: Array.from(active.classList).find(name => ['category', 'comment', 'allocated-minutes'].includes(name)),
+          start: active.selectionStart,
+          end: active.selectionEnd
+        } : null
+      };
+    }
+    function restoreEditorState(state) {
+      const saved = new Map(state.rows.map(row => [row.key, row]));
+      document.querySelectorAll('.loss-card').forEach(card => Array.from(card.querySelectorAll('.explanations tr')).forEach((row, index) => {
+        const value = saved.get(`${card.dataset.stoppageId}:${row.dataset.explanationId || `new-${index}`}`);
+        if (!value) return;
+        row.querySelector('.category').value = value.category;
+        row.querySelector('.comment').value = value.comment;
+        row.querySelector('.allocated-minutes').value = value.minutes;
+      }));
+      if (!state.focus?.className) return;
+      const card = document.querySelector(`.loss-card[data-stoppage-id="${state.focus.stoppageId}"]`);
+      const row = state.focus.explanationId
+        ? card?.querySelector(`tr[data-explanation-id="${state.focus.explanationId}"]`) : null;
+      const field = (row || card)?.querySelector(`.${state.focus.className}`);
+      field?.focus();
+      if (field?.setSelectionRange && state.focus.start != null) field.setSelectionRange(state.focus.start, state.focus.end);
+    }
+    let commentsRefresh;
+    function refreshComments() {
+      // A row without a server id is an operator draft. Replacing the section
+      // before Save would remove that row because it does not exist server-side yet.
+      if (document.querySelector('.explanations tr:not([data-explanation-id])')) return;
+      window.clearTimeout(commentsRefresh);
+      commentsRefresh = window.setTimeout(async () => {
+        const state = editorState();
+        const response = await fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+        if (!response.ok) return;
+        const copy = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const current = document.querySelector('#comments-page > section:last-of-type');
+        const fresh = copy.querySelector('#comments-page > section:last-of-type');
+        if (!current || !fresh) return;
+        current.replaceWith(fresh);
+        restoreEditorState(state);
+      }, 75);
+    }
+
     if (window.SockJS && window.Stomp) {
       const client = Stomp.over(new SockJS('/ws')); client.debug = () => {};
       client.connect({}, () => {
-        const refresh = () => window.location.reload();
-        client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refresh);
-        client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refresh);
+        client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refreshComments);
+        client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refreshComments);
       });
     }
   </script>

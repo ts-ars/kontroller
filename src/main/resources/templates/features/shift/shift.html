@@ -19,6 +19,17 @@
             #plan-fact-page .sensor-grid { grid-template-columns: 1fr; }
             #plan-fact-page .sensor-panel, #plan-fact-page .sensor-panel:nth-child(even) { justify-self: center; }
         }
+        @media (max-width: 700px) {
+            #plan-fact-page .view-switches { gap: .5rem 1rem; }
+            #plan-fact-page .chart-frame { width: 100%; height: 180px; }
+            #plan-fact-page table { table-layout: fixed; }
+            #plan-fact-page th, #plan-fact-page td { min-width: 0; padding: .3rem clamp(.2rem, 1.4vw, .5rem); }
+            #plan-fact-page th:nth-child(1), #plan-fact-page td:nth-child(1) { width: 14%; }
+            #plan-fact-page th:nth-child(2), #plan-fact-page td:nth-child(2) { width: 17%; }
+            #plan-fact-page th:nth-child(3), #plan-fact-page td:nth-child(3) { width: 17%; }
+            #plan-fact-page th:nth-child(4), #plan-fact-page td:nth-child(4) { width: 52%; }
+            #plan-fact-page td.comment-cell { overflow-wrap: anywhere; word-break: normal; }
+        }
     </style>
 
     <h1>Plan–Fact</h1>
@@ -49,9 +60,9 @@
                     <td th:text="${view.actual[i.index]}">0</td>
                     <td class="comment-cell">
                         <div class="comment-line" th:each="explanation : ${view.explanations[i.index]}"
-                             th:text="${view.sensorId == 'sensor-5'
-                                ? #strings.replace(explanation.sourceSensorId, 'sensor-', 'Sensor ') + ': ' + explanation.comment + ' — ' + explanation.minutes + ' min'
-                                : explanation.comment + ' — ' + explanation.minutes + ' min'}"></div>
+                             th:classappend="${explanation.status != 'EXPLAINED'} ? ' loss-alert'"
+                             th:text="${(view.sensorId == 'sensor-5' ? #strings.replace(explanation.sourceSensorId, 'sensor-', 'Sensor ') + ': ' : '')
+                                + explanation.comment + ' — ' + explanation.minutes + ' min / ' + explanation.cans + ' cans'}"></div>
                     </td>
                 </tr>
                 </tbody>
@@ -60,15 +71,16 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script src="/vendor/sockjs.min.js"></script>
+    <script src="/vendor/stomp.min.js"></script>
     <script th:inline="javascript">
         (() => {
             const views = /*[[${views}]]*/ [];
+            const charts = new Map();
             document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
                 const view = views.find(item => item.sensorId === panel.dataset.sensor);
                 if (!view || !window.Chart) return;
-                new Chart(panel.querySelector('canvas'), {
+                const chart = new Chart(panel.querySelector('canvas'), {
                     type: 'bar',
                     data: {labels: view.hours, datasets: [{label: 'Cans', data: view.actual, backgroundColor: '#3b82f6'}]},
                     options: {responsive: true, maintainAspectRatio: false,
@@ -77,21 +89,139 @@
                             y: {title: {display: true, text: 'Cans'}, beginAtZero: true,
                                 suggestedMax: 100, ticks: {stepSize: 20, maxTicksLimit: 10}}}}
                 });
+                charts.set(view.sensorId, chart);
             });
 
-            if (!window.SockJS || !window.Stomp) return;
-            const client = Stomp.over(new SockJS('/ws'));
-            client.debug = () => {};
-            let reloadScheduled = false;
-            const refresh = () => {
-                if (reloadScheduled) return;
-                reloadScheduled = true;
-                window.setTimeout(() => window.location.reload(), 50);
+            const renderExplanations = (cell, explanations, sensorId) => {
+                cell.replaceChildren(...explanations.map(explanation => {
+                    const line = document.createElement('div');
+                    line.className = `comment-line ${explanation.status !== 'EXPLAINED' ? 'loss-alert' : ''}`;
+                    const source = sensorId === 'sensor-5'
+                        ? `${explanation.sourceSensorId.replace('sensor-', 'Sensor ')}: ` : '';
+                    line.textContent = `${source}${explanation.comment} — ${explanation.minutes} min / ${explanation.cans || 0} cans`;
+                    return line;
+                }));
             };
-            client.connect({}, () => views.forEach(view => {
-                client.subscribe(`/topic/shift-updates/${view.sensorId}`, refresh);
-                client.subscribe(`/topic/comments/${view.sensorId}`, refresh);
-            }));
+            const updatePanel = nextView => {
+                const panel = document.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${nextView.sensorId}"]`);
+                const currentView = views.find(item => item.sensorId === nextView.sensorId);
+                if (!panel || !currentView) return;
+                const rows = panel.querySelectorAll('tbody tr');
+                const nextIndexByHour = new Map(nextView.hours.map((hour, index) => [hour, index]));
+                const visibleActual = [];
+                rows.forEach(row => {
+                    const index = nextIndexByHour.get(row.cells[0].textContent.trim());
+                    if (index === undefined) return;
+                    row.cells[1].textContent = nextView.planSupplied[index] ? nextView.plan[index] : 'Plan required';
+                    row.cells[2].textContent = nextView.actual[index];
+                    visibleActual.push(nextView.actual[index]);
+                    renderExplanations(row.querySelector('.comment-cell'), nextView.explanations[index], nextView.sensorId);
+                });
+                const chart = charts.get(nextView.sensorId);
+                const currentActual = chart?.data.datasets[0].data || [];
+                const actualChanged = currentActual.length !== visibleActual.length
+                    || currentActual.some((value, index) => Number(value) !== Number(visibleActual[index]));
+                if (chart && actualChanged) {
+                    chart.data.datasets[0].data = visibleActual;
+                    chart.update('none');
+                }
+                currentView.actual = visibleActual.slice();
+            };
+            const refreshComments = async sensorId => {
+                const response = await fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+                if (!response.ok) return;
+                const documentCopy = new DOMParser().parseFromString(await response.text(), 'text/html');
+                const current = document.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${sensorId}"] tbody`);
+                const fresh = documentCopy.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${sensorId}"] tbody`);
+                if (!current || !fresh || current.rows.length !== fresh.rows.length) return;
+                Array.from(current.rows).forEach((row, index) => {
+                    row.querySelector('.comment-cell').replaceWith(fresh.rows[index].querySelector('.comment-cell'));
+                });
+            };
+
+            const syncVisiblePanels = async () => {
+                const response = await fetch(window.location.href, {
+                    cache: 'no-store',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+                if (!response.ok) return;
+                const freshDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+                document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
+                    const freshPanel = freshDocument.querySelector(
+                        `#plan-fact-page .sensor-panel[data-sensor="${panel.dataset.sensor}"]`
+                    );
+                    if (!freshPanel) return;
+                    const rows = panel.querySelectorAll('tbody tr');
+                    const freshRows = freshPanel.querySelectorAll('tbody tr');
+                    if (rows.length !== freshRows.length) return;
+                    const actual = [];
+                    rows.forEach((row, index) => {
+                        row.cells[1].textContent = freshRows[index].cells[1].textContent;
+                        row.cells[2].textContent = freshRows[index].cells[2].textContent;
+                        row.querySelector('.comment-cell').replaceWith(
+                            freshRows[index].querySelector('.comment-cell')
+                        );
+                        actual.push(Number(freshRows[index].cells[2].textContent.trim()) || 0);
+                    });
+                    const chart = charts.get(panel.dataset.sensor);
+                    if (chart) {
+                        chart.data.datasets[0].data = actual;
+                        chart.update('none');
+                    }
+                });
+            };
+
+            if (!window.SockJS || !window.Stomp) return;
+            let client;
+            let socket;
+            let reconnectTimer;
+            let reconnecting = false;
+            const reconnect = () => {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = setTimeout(connect, 2000);
+            };
+            const disconnectAndReconnect = () => {
+                if (reconnecting) return;
+                reconnecting = true;
+                clearTimeout(reconnectTimer);
+                try {
+                    if (client?.connected) client.disconnect(() => {});
+                    else socket?.close();
+                } catch (_) {}
+                client = undefined;
+                socket = undefined;
+                setTimeout(() => {
+                    reconnecting = false;
+                    connect();
+                }, 100);
+            };
+            const connect = () => {
+                if (document.visibilityState === 'hidden' || client?.connected) return;
+                socket = new SockJS('/ws');
+                client = Stomp.over(socket);
+                client.debug = () => {};
+                client.heartbeat.outgoing = 10000;
+                client.heartbeat.incoming = 10000;
+                client.connect({}, async () => {
+                    views.forEach(view => {
+                        client.subscribe(`/topic/shift-updates/${view.sensorId}`, message => updatePanel(JSON.parse(message.body)));
+                        client.subscribe(`/topic/comments/${view.sensorId}`, () => refreshComments(view.sensorId));
+                    });
+                    await syncVisiblePanels();
+                }, reconnect);
+            };
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') disconnectAndReconnect();
+            });
+            window.addEventListener('pageshow', event => {
+                if (event.persisted || !client?.connected) disconnectAndReconnect();
+            });
+            window.addEventListener('online', disconnectAndReconnect);
+            window.addEventListener('beforeunload', () => {
+                clearTimeout(reconnectTimer);
+                try { socket?.close(); } catch (_) {}
+            }, {once: true});
+            connect();
         })();
     </script>
 </div>

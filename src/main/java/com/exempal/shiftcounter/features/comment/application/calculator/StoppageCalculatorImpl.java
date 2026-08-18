@@ -47,7 +47,11 @@ public class StoppageCalculatorImpl implements StoppageCalculator {
             diagnostics.add(ReconcileDiagnostic.fatal(ReconcileDiagnosticCode.BALANCE_MISMATCH,
                     "FIXED + TEMPO " + balance + " differs from total loss " + totalLoss));
         }
-        return new StoppageCalculation(result, diagnostics);
+        List<StoppageCandidate> persistent = result.stream()
+                .filter(value -> value.lostCans() > 0)
+                .filter(value -> Math.round(value.exactDuration().toNanos() / 60_000_000_000.0) >= 1)
+                .toList();
+        return new StoppageCalculation(persistent, diagnostics);
     }
 
     private List<StoppageCandidate> scaleFixed(List<StoppageCandidate> source, int target, int rawTotal) {

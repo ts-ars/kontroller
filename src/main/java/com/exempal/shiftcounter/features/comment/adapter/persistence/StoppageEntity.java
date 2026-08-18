@@ -69,6 +69,18 @@ public class StoppageEntity {
     @Column(name = "state", length = 16)
     private StoppageState state;
 
+    @Column(name = "excluded", nullable = false)
+    private boolean excluded;
+
+    @Column(name = "excluded_at")
+    private LocalDateTime excludedAt;
+
+    @Column(name = "excluded_by", length = 128)
+    private String excludedBy;
+
+    @Column(name = "exclusion_reason", length = 500)
+    private String exclusionReason;
+
     @Version
     @Column(name = "version", nullable = false)
     private long version;

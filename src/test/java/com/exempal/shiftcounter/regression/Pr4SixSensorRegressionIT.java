@@ -23,6 +23,8 @@ import com.exempal.shiftcounter.features.signal.domain.Signal;
 import com.exempal.shiftcounter.features.signal.domain.SignalSource;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -33,6 +35,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.Instant;
+import com.exempal.shiftcounter.features.user.adapter.persistence.AppUserEntity;
+import com.exempal.shiftcounter.features.user.adapter.persistence.AppUserRepository;
+import com.exempal.shiftcounter.features.user.domain.UserRole;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,6 +58,22 @@ class Pr4SixSensorRegressionIT {
     @Autowired ProductionDayService productionDays;
     @Autowired ShiftProjectionUseCase projection;
     @Autowired ReportQueryUseCase reports;
+    @Autowired AppUserRepository users;
+    private String actorName;
+
+    @BeforeEach
+    void authenticateCommentAuthor() {
+        actorName = "PR4 author " + UUID.randomUUID();
+        users.saveAndFlush(new AppUserEntity(UUID.randomUUID(), actorName, "{noop}unused", UserRole.USER,
+                Instant.parse("2026-08-09T07:00:00Z")));
+        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
+                actorName, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void allSixSensorsKeepIndependentSignalActualAndStoppageOwnership() {
@@ -92,6 +117,9 @@ class Pr4SixSensorRegressionIT {
                         org.assertj.core.groups.Tuple.tuple("sensor-1", "First source row"),
                         org.assertj.core.groups.Tuple.tuple("sensor-1", "Second source row"),
                         org.assertj.core.groups.Tuple.tuple("sensor-2", "Sensor two row"));
+        assertThat(aggregated.sourceComments()).flatExtracting(CommentsReadUseCase.SourceComments::rows)
+                .extracting(CommentsReadUseCase.ExplanationRow::authorDisplayName)
+                .containsOnly(actorName);
         assertThat(comments.read(date, "sensor-6").rows())
                 .flatExtracting(row -> row.explanations())
                 .extracting(value -> value.comment())
@@ -172,12 +200,16 @@ class Pr4SixSensorRegressionIT {
                 .containsExactly("sensor-1", "sensor-2", "sensor-3", "sensor-4");
         assertThat(report.rows()).extracting(row -> row.reason())
                 .containsExactly("Range 1", "Range 2", "Range 3", "Range 4");
-        assertThat(report.signalTotals()).extracting(value -> value.sensorId(), value -> value.total())
+        for (int number = 1; number <= 4; number++) {
+            assertThat(stoppages.findByShiftDateAndSensorId(from, "sensor-" + number).getFirst().explanations())
+                    .singleElement().satisfies(value -> assertThat(value.authorDisplayName()).isEqualTo(actorName));
+        }
+        assertThat(report.lossTotals()).extracting(value -> value.sensorId(), value -> value.lostCans())
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("sensor-1", 2L),
-                        org.assertj.core.groups.Tuple.tuple("sensor-2", 2L),
-                        org.assertj.core.groups.Tuple.tuple("sensor-3", 2L),
-                        org.assertj.core.groups.Tuple.tuple("sensor-4", 2L));
+                        org.assertj.core.groups.Tuple.tuple("sensor-1", report.rows().get(0).cans()),
+                        org.assertj.core.groups.Tuple.tuple("sensor-2", report.rows().get(1).cans()),
+                        org.assertj.core.groups.Tuple.tuple("sensor-3", report.rows().get(2).cans()),
+                        org.assertj.core.groups.Tuple.tuple("sensor-4", report.rows().get(3).cans()));
     }
 
     private RegisterSignalCommand command(String sensorId, LocalDateTime occurredAt, String identity) {

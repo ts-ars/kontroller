@@ -50,7 +50,7 @@ class CounterInputServiceTest {
         ArgumentCaptor<RegisterSignalCommand> commands = ArgumentCaptor.forClass(RegisterSignalCommand.class);
         verify(signals, times(3)).register(commands.capture());
         assertThat(commands.getAllValues()).extracting(RegisterSignalCommand::sourceIdentity)
-                .containsExactly("counter-41", "counter-42", "counter-43");
+                .containsExactly("counter-2026-08-10-41", "counter-2026-08-10-42", "counter-2026-08-10-43");
         assertThat(commands.getAllValues()).extracting(RegisterSignalCommand::occurredAt)
                 .containsOnly(currentRead);
         assertThat(result.delta()).isEqualTo(3);
@@ -71,6 +71,8 @@ class CounterInputServiceTest {
         verify(signals, times(2)).register(commands.capture());
         assertThat(commands.getAllValues()).extracting(RegisterSignalCommand::occurredAt)
                 .containsOnly(previousRead);
+        assertThat(commands.getAllValues()).extracting(RegisterSignalCommand::sourceIdentity)
+                .containsExactly("counter-2026-08-10-101", "counter-2026-08-10-102");
         assertThat(result.attributedProductionDate()).isEqualTo(LocalDate.of(2026, 8, 10));
         ArgumentCaptor<CounterState> saved = ArgumentCaptor.forClass(CounterState.class);
         verify(states).save(saved.capture());
@@ -79,7 +81,7 @@ class CounterInputServiceTest {
     }
 
     @Test
-    void lowerCounterMarksDiscontinuityWithoutReplacingBaselineOrApplyingDelta() {
+    void lowerCounterEstablishesNewBaselineWithoutApplyingDelta() {
         LocalDateTime previousRead = LocalDateTime.of(2026, 8, 10, 9, 0);
         LocalDateTime currentRead = previousRead.plusMinutes(1);
         when(states.getOrInitializeForUpdate(any(), anyLong(), any(), any()))
@@ -87,12 +89,12 @@ class CounterInputServiceTest {
 
         CounterProcessingResult result = service.process(new CounterReadingCommand(SENSOR, 12, currentRead));
 
-        assertThat(result.status()).isEqualTo(CounterProcessingStatus.COUNTER_DISCONTINUITY);
+        assertThat(result.status()).isEqualTo(CounterProcessingStatus.BASELINE_ESTABLISHED);
         verifyNoInteractions(signals);
         ArgumentCaptor<CounterState> saved = ArgumentCaptor.forClass(CounterState.class);
         verify(states).save(saved.capture());
-        assertThat(saved.getValue().lastCounterValue()).isEqualTo(200);
-        assertThat(saved.getValue().continuity()).isEqualTo(CounterContinuity.COUNTER_DISCONTINUITY);
+        assertThat(saved.getValue().lastCounterValue()).isEqualTo(12);
+        assertThat(saved.getValue().continuity()).isEqualTo(CounterContinuity.CONTINUOUS);
     }
 
     @Test

@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
@@ -13,8 +14,10 @@
     <ul>
         <li><a th:href="@{/page/shift}" th:classappend="${currentPage == 'shift'} ? 'active'">Plan–Fact</a></li>
         <li><a th:href="@{/page/comment}" th:classappend="${currentPage == 'comment'} ? 'active'">Comments</a></li>
-        <li><a th:href="@{/page/settings}" th:classappend="${currentPage == 'settings'} ? 'active'">Settings</a></li>
         <li><a th:href="@{/page/report}" th:classappend="${currentPage == 'report'} ? 'active'">Report</a></li>
+        <li th:if="${#authorization.expression('hasAnyRole(''ADMIN'',''OWNER'')')}"><a th:href="@{/page/settings}" th:classappend="${currentPage == 'settings'} ? 'active'">Settings</a></li>
+        <li th:if="${#authorization.expression('hasRole(''OWNER'')')}"><a th:href="@{/page/users}" th:classappend="${currentPage == 'users'} ? 'active'">Users</a></li>
+        <li class="session"><span th:text="${#authentication.name}">User</span><form th:action="@{/signout}" method="post"><button type="submit" class="link-button">Sign out</button></form></li>
     </ul>
 </nav>
 

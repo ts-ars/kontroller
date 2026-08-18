@@ -29,8 +29,11 @@ public class ShiftPage implements PageModel {
 
     @Override
     public void populateModel(Model model, Map<String, String> params) {
-        String sensorGroup = "5-6".equals(params.get("sensors")) ? "5-6" : "1-4";
-        ShiftSlice slice = ShiftSlice.from(params.get("shift"));
+        String sensorGroup = "1-4".equals(params.get("sensors")) ? "1-4" : "5-6";
+        String requestedShift = params.get("shift");
+        ShiftSlice slice = requestedShift == null || requestedShift.isBlank()
+                ? ShiftSlice.current(productionDays.now().toLocalTime())
+                : ShiftSlice.from(requestedShift);
         var date = productionDays.current().date();
         var views = SensorCatalog.all().stream()
                 .map(sensor -> projection.buildView(date, sensor.id().value(), slice))

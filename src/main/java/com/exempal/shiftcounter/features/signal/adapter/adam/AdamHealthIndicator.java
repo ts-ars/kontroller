@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component("adam")
-@Profile("prod")
+@Profile({"prod", "test-adam"})
 public final class AdamHealthIndicator implements HealthIndicator {
     private final AdamProperties properties;
     private final AdamModbusAdapter adapter;

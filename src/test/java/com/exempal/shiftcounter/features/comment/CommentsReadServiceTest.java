@@ -16,6 +16,40 @@ import static org.mockito.Mockito.*;
 
 class CommentsReadServiceTest {
     @Test
+    void keepsResolvedStoppageWithSavedCommentVisible() {
+        StoppageRepository repository = mock(StoppageRepository.class);
+        ActualDataPort shifts = mock(ActualDataPort.class);
+        LocalDate date = LocalDate.of(2026, 8, 7);
+        var shift = mock(com.exempal.shiftcounter.features.shift.domain.Shift.class);
+        when(shifts.findByDateAndSensorId(date, "sensor-3")).thenReturn(Optional.of(shift));
+        when(repository.findByShiftDateAndSensorId(date, "sensor-3"))
+                .thenReturn(List.of(stoppage("sensor-3", StoppageState.RESOLVED, "Evening comment")));
+
+        var data = new CommentsReadService(repository, shifts).read(date, "sensor-3");
+
+        assertThat(data.rows()).hasSize(1);
+        assertThat(data.rows().getFirst().explanations())
+                .extracting(LossExplanation::comment).containsExactly("Evening comment");
+        assertThat(data.missing()).isEmpty();
+    }
+
+    @Test
+    void keepsResolvedStoppageWithoutCommentVisibleAsUnexplained() {
+        StoppageRepository repository = mock(StoppageRepository.class);
+        ActualDataPort shifts = mock(ActualDataPort.class);
+        LocalDate date = LocalDate.of(2026, 8, 7);
+        var shift = mock(com.exempal.shiftcounter.features.shift.domain.Shift.class);
+        when(shifts.findByDateAndSensorId(date, "sensor-3")).thenReturn(Optional.of(shift));
+        when(repository.findByShiftDateAndSensorId(date, "sensor-3"))
+                .thenReturn(List.of(stoppage("sensor-3", StoppageState.RESOLVED)));
+
+        var data = new CommentsReadService(repository, shifts).read(date, "sensor-3");
+
+        assertThat(data.rows()).hasSize(1);
+        assertThat(data.missing()).hasSize(1);
+    }
+
+    @Test
     void sensorFiveReturnsFourReadOnlySourceBucketsAndNoOwnLosses() {
         StoppageRepository repository = mock(StoppageRepository.class);
         ActualDataPort shifts = mock(ActualDataPort.class);
@@ -51,12 +85,16 @@ class CommentsReadServiceTest {
     }
 
     private Stoppage stoppage(String sensorId, String... comments) {
+        return stoppage(sensorId, StoppageState.ACTIVE, comments);
+    }
+
+    private Stoppage stoppage(String sensorId, StoppageState state, String... comments) {
         long id = 101;
         List<LossExplanation> rows = java.util.stream.IntStream.range(0, comments.length)
                 .mapToObj(index -> new LossExplanation((long) index + 1, id, LossCategory.MATERIAL,
                         comments[index], 2, 4)).toList();
         return new Stoppage(id, UUID.randomUUID(), 10L, sensorId, 1,
                 LocalDateTime.of(2026, 8, 7, 8, 15), Duration.ofMinutes(10), 10, 20,
-                DetectionType.FIXED, StoppageState.ACTIVE, rows, 0);
+                DetectionType.FIXED, state, rows, 0);
     }
 }

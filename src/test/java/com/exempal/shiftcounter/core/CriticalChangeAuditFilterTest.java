@@ -23,12 +23,14 @@ class CriticalChangeAuditFilterTest {
             invoke(filter, "POST", "/api/settings/group-1");
             invoke(filter, "POST", "/api/stoppages/recalculate");
             invoke(filter, "PUT", "/api/stoppages/7/explanations/3");
+            invoke(filter, "POST", "/users/00000000-0000-0000-0000-000000000001/status");
             invoke(filter, "GET", "/api/stoppages/7/explanations");
 
             assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
                     .anyMatch(message -> message.contains("auditAction=settings-change"))
                     .anyMatch(message -> message.contains("auditAction=manual-reconcile"))
                     .anyMatch(message -> message.contains("auditAction=explanation-change"))
+                    .anyMatch(message -> message.contains("auditAction=user-security-change"))
                     .noneMatch(message -> message.contains("method=GET"));
         } finally {
             logger.detachAppender(appender);

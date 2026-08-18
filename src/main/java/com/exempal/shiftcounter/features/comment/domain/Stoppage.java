@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.time.Instant;
 
 public final class Stoppage {
     public static final String SENSOR_1 = com.exempal.shiftcounter.features.sensor.domain.SensorCatalog.SENSOR_1;
@@ -102,21 +103,33 @@ public final class Stoppage {
     }
 
     public Stoppage addExplanation(LossCategory category, String comment, int allocatedMinutes) {
+        return addExplanation(category, comment, allocatedMinutes, null, "", null);
+    }
+
+    public Stoppage addExplanation(LossCategory category, String comment, int allocatedMinutes,
+                                   UUID authorUserId, String authorDisplayName, Instant now) {
         validateNormalAllocation(allocatedMinutes, null);
         List<LossExplanation> updated = new ArrayList<>(explanations);
-        updated.add(new LossExplanation(null, requirePersistedId(), category, comment, allocatedMinutes, 0, 0L));
+        updated.add(new LossExplanation(null, requirePersistedId(), category, comment, allocatedMinutes, 0,
+                authorUserId, authorDisplayName, now, now, null, 0L));
         return copy(exactDuration, roundedMinutes, lostCans, state,
                 rebalanceExplanations(updated, roundedMinutes, lostCans));
     }
 
     public Stoppage updateExplanation(long explanationId, LossCategory category, String comment,
                                       int allocatedMinutes) {
+        return updateExplanation(explanationId, category, comment, allocatedMinutes, null, null);
+    }
+
+    public Stoppage updateExplanation(long explanationId, LossCategory category, String comment,
+                                      int allocatedMinutes, UUID modifiedBy, Instant now) {
         LossExplanation current = explanation(explanationId);
         validateNormalAllocation(allocatedMinutes, current.id());
         List<LossExplanation> updated = explanations.stream()
                 .map(value -> value.id().equals(explanationId)
                         ? new LossExplanation(value.id(), requirePersistedId(), category, comment,
-                        allocatedMinutes, 0, value.version())
+                        allocatedMinutes, 0, value.authorUserId(), value.authorDisplayName(),
+                        value.createdAt(), now == null ? value.updatedAt() : now, modifiedBy, value.version())
                         : value)
                 .toList();
         return copy(exactDuration, roundedMinutes, lostCans, state,
@@ -195,7 +208,8 @@ public final class Stoppage {
 
     private LossExplanation withAllocatedCans(LossExplanation value, int cans) {
         return new LossExplanation(value.id(), value.stoppageId(), value.category(), value.comment(),
-                value.allocatedMinutes(), cans, value.version());
+                value.allocatedMinutes(), cans, value.authorUserId(), value.authorDisplayName(),
+                value.createdAt(), value.updatedAt(), value.lastModifiedBy(), value.version());
     }
 
     private long requirePersistedId() {

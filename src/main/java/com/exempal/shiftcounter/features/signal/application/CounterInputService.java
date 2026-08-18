@@ -28,20 +28,21 @@ public class CounterInputService implements CounterInputPort {
         }
         if (previous.continuity() == CounterContinuity.COUNTER_DISCONTINUITY
                 || command.currentCounter() < previous.lastCounterValue()) {
-            states.save(new CounterState(previous.sensorId(), previous.lastCounterValue(), command.readAt(),
-                    previous.productionDate(), CounterContinuity.COUNTER_DISCONTINUITY));
-            return new CounterProcessingResult(CounterProcessingStatus.COUNTER_DISCONTINUITY, 0, 0,
-                    previous.productionDate());
+            states.save(new CounterState(previous.sensorId(), command.currentCounter(), command.readAt(),
+                    currentProductionDate, CounterContinuity.CONTINUOUS));
+            return new CounterProcessingResult(CounterProcessingStatus.BASELINE_ESTABLISHED, 0, 0,
+                    currentProductionDate);
         }
 
         long delta = command.currentCounter() - previous.lastCounterValue();
         boolean crossedProductionDay = !currentProductionDate.equals(previous.productionDate());
         LocalDateTime occurredAt = crossedProductionDay ? previous.lastReadAt() : command.readAt();
+        var identityDate = crossedProductionDay ? previous.productionDate() : currentProductionDate;
         long accepted = 0;
         for (long counterValue = previous.lastCounterValue() + 1;
              counterValue <= command.currentCounter(); counterValue++) {
             SignalRegistrationResult result = signals.register(new RegisterSignalCommand(command.sensorId(),
-                    occurredAt, SignalSource.ADAM, "counter-" + counterValue));
+                    occurredAt, SignalSource.ADAM, "counter-" + identityDate + "-" + counterValue));
             if (result.accepted()) accepted++;
         }
         states.save(new CounterState(command.sensorId(), command.currentCounter(), command.readAt(),

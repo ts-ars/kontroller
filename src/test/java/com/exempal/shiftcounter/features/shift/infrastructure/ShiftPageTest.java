@@ -11,6 +11,7 @@ import org.springframework.ui.ConcurrentModel;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -36,16 +37,25 @@ class ShiftPageTest {
     }
 
     @Test
-    void defaultsToFourIndependentDayViews() {
+    void defaultsToSensorFiveAndSixForCurrentDayShift() {
         ConcurrentModel model = new ConcurrentModel();
 
         page.populateModel(model);
 
         assertThat((List<ShiftView>) model.getAttribute("views"))
                 .extracting(ShiftView::sensorId)
-                .containsExactly("sensor-1", "sensor-2", "sensor-3", "sensor-4");
+                .containsExactly("sensor-5", "sensor-6");
         assertThat(model.getAttribute("shiftSlice")).isEqualTo("day");
         verify(projection, times(6)).buildView(eq(DATE), anyString(), eq(ShiftSlice.DAY));
+    }
+
+    @Test
+    void choosesCurrentShiftByProductionTime() {
+        assertThat(ShiftSlice.current(LocalTime.of(7, 0))).isEqualTo(ShiftSlice.DAY);
+        assertThat(ShiftSlice.current(LocalTime.of(14, 59))).isEqualTo(ShiftSlice.DAY);
+        assertThat(ShiftSlice.current(LocalTime.of(15, 0))).isEqualTo(ShiftSlice.EVENING);
+        assertThat(ShiftSlice.current(LocalTime.of(23, 0))).isEqualTo(ShiftSlice.EVENING);
+        assertThat(ShiftSlice.current(LocalTime.of(6, 59))).isEqualTo(ShiftSlice.EVENING);
     }
 
     @Test
@@ -69,6 +79,12 @@ class ShiftPageTest {
                 "backgroundColor: '#3b82f6'", "/topic/shift-updates/${view.sensorId}",
                 "/topic/comments/${view.sensorId}", "15:00–23:00");
         assertThat(template).doesNotContain("input[name=\"comment\"]", "/topic/shift-comments");
+        assertThat(template).contains("const charts = new Map()", "chart.update('none')",
+                "updatePanel(JSON.parse(message.body))", "const nextIndexByHour = new Map",
+                "currentView.actual = visibleActual.slice()", "reconnectTimer = setTimeout(connect, 2000)",
+                "@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere");
+        assertThat(template).doesNotContain("window.location.reload()",
+                "sameIntervals(currentView.hours, nextView.hours)");
     }
 
     private ShiftView view(String sensorId) {

@@ -19,6 +19,8 @@ public class ShiftProductRegistrar implements ProductRegistrationUseCase {
     private final ShiftExtenderService extender;
     private final ProductionDayService productionDays;
     private final ShiftIntervalService intervals;
+    // Kept as a constructor dependency for compatibility; reconciliation is now
+    // performed only by CompletedIntervalFinalizer after an interval has ended.
     private final ShiftReconcilePort reconciles;
 
     @Transactional
@@ -46,8 +48,5 @@ public class ShiftProductRegistrar implements ProductRegistrationUseCase {
         shiftPlanner.updateShift(updated);
         log.info("sensor={} productionDate={} interval={} result=actual-incremented",
                 sensorId, productionDay.date(), interval.index());
-        if (interval.planSupplied()) {
-            reconciles.reconcile(productionDay.date(), sensorId, interval.index(), timestamp);
-        }
     }
 }

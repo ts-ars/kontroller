@@ -2,11 +2,15 @@ package com.exempal.shiftcounter.features.comment.adapter.projection;
 
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.*;
+import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class StoppageShiftExplanationAdapterTest {
+    @Test
+    void resolvedStoppageKeepsSavedExplanationInPlanFact() {
+        StoppageRepository repository = mock(StoppageRepository.class);
+        LocalDate date = LocalDate.of(2026, 8, 7);
+        when(repository.findByShiftDateAndSensorId(date, "sensor-3"))
+                .thenReturn(List.of(stoppage("sensor-3", 8, "Evening").resolve()));
+
+        var result = adapter(repository).findByInterval(date, "sensor-3");
+
+        assertThat(result.get(8)).extracting("comment", "minutes", "status").containsExactly(
+                org.assertj.core.groups.Tuple.tuple("Evening", 2, "EXPLAINED"),
+                org.assertj.core.groups.Tuple.tuple("Unexplained stoppage", 8, "UNEXPLAINED"));
+    }
+
     @Test
     void sensorFiveAggregatesMultipleRowsFromSensorsOneToFourWithSources() {
         StoppageRepository repository = mock(StoppageRepository.class);
@@ -25,13 +43,15 @@ class StoppageShiftExplanationAdapterTest {
         when(repository.findByShiftDateAndSensorId(date, "sensor-3")).thenReturn(List.of());
         when(repository.findByShiftDateAndSensorId(date, "sensor-4")).thenReturn(List.of());
 
-        var result = new StoppageShiftExplanationAdapter(repository).findByInterval(date, "sensor-5");
+        var result = adapter(repository).findByInterval(date, "sensor-5");
 
         assertThat(result.get(2)).extracting("sourceSensorId", "comment", "minutes")
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("sensor-1", "First", 2),
                         org.assertj.core.groups.Tuple.tuple("sensor-1", "Second", 2),
-                        org.assertj.core.groups.Tuple.tuple("sensor-2", "Third", 2));
+                        org.assertj.core.groups.Tuple.tuple("sensor-1", "Unexplained stoppage", 6),
+                        org.assertj.core.groups.Tuple.tuple("sensor-2", "Third", 2),
+                        org.assertj.core.groups.Tuple.tuple("sensor-2", "Unexplained stoppage", 8));
         verify(repository, never()).findByShiftDateAndSensorId(date, "sensor-5");
     }
 
@@ -42,12 +62,13 @@ class StoppageShiftExplanationAdapterTest {
         when(repository.findByShiftDateAndSensorId(date, "sensor-6"))
                 .thenReturn(List.of(stoppage("sensor-6", 1, "Independent")));
 
-        var result = new StoppageShiftExplanationAdapter(repository).findByInterval(date, "sensor-6");
+        var result = adapter(repository).findByInterval(date, "sensor-6");
 
-        assertThat(result.get(1)).singleElement().satisfies(row -> {
+        assertThat(result.get(1).getFirst()).satisfies(row -> {
             assertThat(row.sourceSensorId()).isEqualTo("sensor-6");
             assertThat(row.comment()).isEqualTo("Independent");
         });
+        assertThat(result.get(1).get(1).status()).isEqualTo("UNEXPLAINED");
         verify(repository).findByShiftDateAndSensorId(date, "sensor-6");
         verifyNoMoreInteractions(repository);
     }
@@ -60,5 +81,10 @@ class StoppageShiftExplanationAdapterTest {
         return new Stoppage(id, UUID.randomUUID(), id, sensorId, interval,
                 LocalDateTime.of(2026, 8, 7, 9, 0), Duration.ofMinutes(10), 10, 20,
                 DetectionType.FIXED, StoppageState.ACTIVE, rows, 0);
+    }
+
+    private StoppageShiftExplanationAdapter adapter(StoppageRepository repository) {
+        return new StoppageShiftExplanationAdapter(repository, new ProductionDayService(
+                Clock.fixed(Instant.parse("2026-08-08T00:00:00Z"), ZoneOffset.UTC)));
     }
 }

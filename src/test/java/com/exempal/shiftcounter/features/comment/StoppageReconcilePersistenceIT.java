@@ -8,6 +8,8 @@ import com.exempal.shiftcounter.features.signal.domain.Signal;
 import com.exempal.shiftcounter.features.signal.application.SignalStoragePort;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,6 +19,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.*;
+import java.time.Instant;
+import java.util.UUID;
+import com.exempal.shiftcounter.features.user.adapter.persistence.AppUserEntity;
+import com.exempal.shiftcounter.features.user.adapter.persistence.AppUserRepository;
+import com.exempal.shiftcounter.features.user.domain.UserRole;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,6 +42,22 @@ class StoppageReconcilePersistenceIT {
     @Autowired ShiftJpaRepository shifts;
     @Autowired LossExplanationUseCase explanations;
     @Autowired SignalStoragePort signals;
+    @Autowired AppUserRepository users;
+    private String actorName;
+
+    @BeforeEach
+    void authenticateCommentAuthor() {
+        actorName = "Reconcile author " + UUID.randomUUID();
+        users.saveAndFlush(new AppUserEntity(UUID.randomUUID(), actorName, "{noop}unused", UserRole.USER,
+                Instant.parse("2026-08-09T07:00:00Z")));
+        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
+                actorName, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void repeatedIdenticalRunKeepsOneIdentityAndPerformsNoSecondWrite() {
@@ -78,6 +104,8 @@ class StoppageReconcilePersistenceIT {
         assertThat(updated.explanations()).extracting(LossExplanation::category,
                         LossExplanation::comment, LossExplanation::allocatedMinutes)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple(LossCategory.BREAKDOWN, "belt", 60));
+        assertThat(updated.explanations()).singleElement()
+                .satisfies(value -> assertThat(value.authorDisplayName()).isEqualTo(actorName));
         assertThat(updated.explanationStatus()).isEqualTo(ExplanationStatus.ALLOCATION_CONFLICT);
         assertThat(result.diagnostics()).extracting(ReconcileDiagnostic::code)
                 .contains(ReconcileDiagnosticCode.ALLOCATION_CONFLICT);

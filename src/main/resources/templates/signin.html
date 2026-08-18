@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" th:href="@{/css/styles.css}"><title>Sign in</title></head>
+<body class="signin-body"><main class="signin-card"><h1>Sign in</h1>
+<p class="signin-error" th:if="${param.error}">Invalid PIN or user is unavailable.</p>
+<form th:action="@{/signin}" method="post"><label for="userId">User</label>
+<select id="userId" name="userId" required><option value="" disabled selected>Select user</option><option th:each="user : ${users}" th:value="${user.id}" th:text="${user.displayName}"></option></select>
+<label for="pin">PIN</label><input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="current-password" required>
+<button type="submit">Sign in</button></form></main></body></html>

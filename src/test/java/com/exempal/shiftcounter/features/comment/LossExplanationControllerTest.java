@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 class LossExplanationControllerTest {
     private LossExplanationUseCase useCase;
@@ -39,13 +40,25 @@ class LossExplanationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"category":"MATERIAL","comment":"Roll change","allocatedMinutes":4,
-                                 "allocatedCans":999,"detectionType":"BREAKDOWN"}
+                                 "allocatedCans":999,"detectionType":"BREAKDOWN",
+                                 "authorUserId":"00000000-0000-0000-0000-000000000999",
+                                 "authorDisplayName":"Spoofed"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.allocatedCans").value(40))
                 .andExpect(jsonPath("$.stoppageId").value(7));
 
         verify(useCase).create(7L, LossCategory.MATERIAL, "Roll change", 4);
+    }
+
+    @Test
+    void reportsOwnershipViolationAsForbidden() throws Exception {
+        when(useCase.update(eq(7L), eq(3L), any(), any(), anyInt()))
+                .thenThrow(new com.exempal.shiftcounter.features.comment.application.CommentAccessDeniedException());
+        mvc.perform(put("/api/stoppages/7/explanations/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"category\":\"QUALITY\",\"comment\":\"x\",\"allocatedMinutes\":1}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

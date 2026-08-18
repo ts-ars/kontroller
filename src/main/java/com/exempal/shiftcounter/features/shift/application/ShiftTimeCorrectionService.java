@@ -56,8 +56,12 @@ public class ShiftTimeCorrectionService {
         Shift updated = current.withUpdatedStructure(labels, configuredPlans, actuals);
         Shift saved = shifts.save(updated);
         if (SensorCatalog.SENSOR_5.equals(saved.getSensorId())) return saved;
-        for (int index = 0; index < configuredPlans.size(); index++) {
-            reconcile.reconcile(saved.getDate(), saved.getSensorId(), index, calculationTime);
+        List<ShiftInterval> savedTimeline = intervals.resolve(saved.getDate(), saved.getHourlyLabels(),
+                saved.getHourlyPlanValues().size());
+        for (int index = 0; index < configuredPlans.size() && index < savedTimeline.size(); index++) {
+            if (!savedTimeline.get(index).end().isAfter(calculationTime)) {
+                reconcile.reconcile(saved.getDate(), saved.getSensorId(), index, calculationTime);
+            }
         }
         for (int index = configuredPlans.size(); index < current.getHourlyPlanValues().size(); index++) {
             reconcile.resolveRemovedInterval(saved.getDate(), saved.getSensorId(), index, calculationTime);

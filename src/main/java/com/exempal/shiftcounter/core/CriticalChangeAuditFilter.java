@@ -29,6 +29,7 @@ public final class CriticalChangeAuditFilter extends OncePerRequestFilter {
     private static String auditAction(HttpServletRequest request) {
         if ("GET".equals(request.getMethod())) return null;
         String path = request.getRequestURI();
+        if (path.equals("/users") || path.startsWith("/users/")) return "user-security-change";
         if (path.startsWith("/api/settings") || path.equals("/settings")) return "settings-change";
         if (path.equals("/api/stoppages/recalculate")) return "manual-reconcile";
         if (path.startsWith("/api/stoppages/") && path.contains("/explanations")) {

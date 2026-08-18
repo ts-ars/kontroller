@@ -22,7 +22,8 @@ appeared in Git history, logs or tickets.
 4. Verify required secrets and ADAM mappings for all six sensors without printing their values.
 5. Deploy the CI-produced immutable JAR/container. Do not build from a production checkout.
 6. Start with the explicit `prod` profile. Startup must reject the wrong database, role or missing
-   credentials/device configuration.
+   credentials/device configuration. Set `APP_TIME_ZONE` to the approved plant IANA zone
+   (`Europe/Warsaw` for the test deployment); do not rely on the container system timezone.
 7. Check `/actuator/health/liveness`, `/actuator/health/readiness` and
    `/actuator/health/adam` through the private management listener.
 8. Run one controlled counter increment per sensor and verify exactly one Signal, one Actual increment

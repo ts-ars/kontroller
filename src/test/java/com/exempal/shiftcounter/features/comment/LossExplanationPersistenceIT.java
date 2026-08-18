@@ -37,12 +37,16 @@ class LossExplanationPersistenceIT {
         Stoppage loss = stoppages.save(Stoppage.detected(UUID.randomUUID(), shift.getId(),
                 Stoppage.PRIMARY_SENSOR, 0, LocalDateTime.of(2026, 8, 7, 8, 0),
                 Duration.ofMinutes(10), 100, DetectionType.FIXED));
-        loss = loss.addExplanation(LossCategory.MATERIAL, "roll", 4)
-                .addExplanation(LossCategory.QUALITY, "quality", 6);
+        UUID legacy = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        java.time.Instant now = java.time.Instant.parse("2026-08-07T08:00:00Z");
+        loss = loss.addExplanation(LossCategory.MATERIAL, "roll", 4, legacy, "Legacy", now)
+                .addExplanation(LossCategory.QUALITY, "quality", 6, legacy, "Legacy", now);
         Stoppage saved = stoppages.save(loss);
 
         assertThat(saved.explanations()).extracting(LossExplanation::allocatedMinutes)
                 .containsExactly(4, 6);
+        assertThat(saved.explanations()).extracting(LossExplanation::authorDisplayName)
+                .containsExactly("Legacy", "Legacy");
         assertThat(saved.incidentKey()).isEqualTo(saved.detectionKey());
         assertThat(stoppages.findById(saved.id()).orElseThrow().explanationStatus())
                 .isEqualTo(ExplanationStatus.FULLY_EXPLAINED);

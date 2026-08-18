@@ -7,9 +7,10 @@
 <body>
 <div th:fragment="content" id="settings-page">
     <style>
-        #settings-page { box-sizing: border-box; width: 100%; padding: 1rem 2rem 2rem; font-family: sans-serif; }
+        #settings-page { box-sizing: border-box; width: min(100%, 1400px); margin: 0 auto; font-family: sans-serif; }
         #settings-page * { box-sizing: border-box; }
-        #settings-page .settings-content { width: 100%; max-width: 1000px; margin: 0 auto; }
+        #settings-page .settings-content { width: 100%; }
+        #settings-page form { width: min(100%, 1000px); }
         #settings-page h1 { margin-top: 0; }
         #settings-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
         #settings-page th, #settings-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; vertical-align: middle; }
@@ -26,9 +27,7 @@
         #settings-page .delete-row:hover { background: none; }
         #settings-page .settings-error { margin-left: .75rem; color: #b91c1c; }
         @media (max-width: 800px) {
-            #settings-page { padding-inline: 1rem; }
-            #settings-page .table-wrap { overflow-x: auto; }
-            #settings-page table { min-width: 760px; }
+            #settings-page .table-wrap { width: 100%; min-width: 0; overflow: visible; }
         }
     </style>
 
