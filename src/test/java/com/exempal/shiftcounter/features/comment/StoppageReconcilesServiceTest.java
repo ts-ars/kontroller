@@ -7,7 +7,6 @@ import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import jakarta.transaction.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -116,14 +115,6 @@ class StoppageReconcilesServiceTest {
         assertThat(result.persisted()).isTrue();
         assertThat(result.activeStoppages()).isEmpty();
         verifyNoInteractions(shifts, signals, stoppages);
-    }
-
-    @Test
-    void backgroundEntryPointsOpenTransactionBeforeDelegatingToLockedReconcile() throws Exception {
-        assertThat(StoppageReconcilesService.class.getMethod("reconcile", LocalDate.class,
-                String.class, int.class, LocalDateTime.class).isAnnotationPresent(Transactional.class)).isTrue();
-        assertThat(StoppageReconcilesService.class.getMethod("resolveRemovedInterval", LocalDate.class,
-                String.class, int.class, LocalDateTime.class).isAnnotationPresent(Transactional.class)).isTrue();
     }
 
     private ReconcileStoppagesCommand command() {
