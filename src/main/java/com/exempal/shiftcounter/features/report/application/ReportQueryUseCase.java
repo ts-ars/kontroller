@@ -38,7 +38,7 @@ public class ReportQueryUseCase {
         LocalDate current = productionDays.current().date();
         LocalDate from = parseDate(params.get("from"), current.minusDays(7));
         LocalDate to = parseDate(params.get("to"), current);
-        String sensorId = params.getOrDefault("sensorId", SensorCatalog.SENSOR_1);
+        String sensorId = params.getOrDefault("sensorId", SensorCatalog.SENSOR_5);
         SensorCatalog.require(sensorId);
         List<ReportRow> rows = new ArrayList<>();
         int minutes = 0;

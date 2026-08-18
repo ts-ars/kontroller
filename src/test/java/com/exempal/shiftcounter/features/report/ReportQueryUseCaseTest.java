@@ -190,6 +190,11 @@ class ReportQueryUseCaseTest {
                 new ReportChartPoint("2026-07", 10), new ReportChartPoint("2026-08", 0));
     }
 
+    @Test
+    void defaultsToSensorFive() {
+        assertThat(reports.query(Map.of()).sensorId()).isEqualTo("sensor-5");
+    }
+
     private Stoppage authoredStoppage(long id, String sensorId, LossCategory category,
                                       String reason, String author, int minutes, int cans) {
         return new Stoppage(id, UUID.randomUUID(), id, sensorId, 0,
