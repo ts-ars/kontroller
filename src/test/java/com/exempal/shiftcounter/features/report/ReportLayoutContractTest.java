@@ -65,14 +65,16 @@ class ReportLayoutContractTest {
     }
 
     @Test
-    void reservesFourStableSlotsForLossTypes() throws Exception {
+    void centrallyReservesFourStableSlotsForReportCharts() throws Exception {
         String template = Files.readString(Path.of(
                 "src/main/resources/templates/features/report/report.html"));
 
         assertThat(template)
-                .contains("while (displayedLossLabels.length < 4)")
-                .contains("displayedLossLabels.push('')")
-                .contains("displayedLossValues.push(null)")
+                .contains("stableChartSeries = (labels, values, minimumSlots = 4)")
+                .contains("lossTypeSeries = stableChartSeries")
+                .contains("productionSeries = stableChartSeries")
+                .contains("lostCansSeries = stableChartSeries")
+                .contains("unexplainedSeries = stableChartSeries")
                 .doesNotContain("singleLossType");
     }
 }
