@@ -16,6 +16,7 @@ class ReportLayoutContractTest {
         assertThat(css)
                 .contains(".feature-page")
                 .contains("max-width: 1632px")
+                .contains("--operational-chart-height: 214px")
                 .contains("main { container-type: inline-size; }")
                 .contains(".report-filters input[type=\"date\"]")
                 .contains("width: 130px")
@@ -27,7 +28,8 @@ class ReportLayoutContractTest {
                 .contains(".report-chart-card canvas")
                 .contains("#plan-fact-page .chart-frame canvas")
                 .contains("width: 100% !important")
-                .contains("height: 190px !important");
+                .contains("height: var(--operational-chart-height) !important")
+                .contains(".feature-page { --operational-chart-height: 200px; }");
         assertThat(css).doesNotContain("overflow-x", "min-width: 900px", "100vw");
     }
 

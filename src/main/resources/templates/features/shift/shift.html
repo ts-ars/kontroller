@@ -6,8 +6,8 @@
         #plan-fact-page .view-switches a.active { color: #1d4ed8; text-decoration: underline; }
         #plan-fact-page .sensor-panel { width: 100%; max-width: 800px; min-width: 0; }
         #plan-fact-page .sensor-panel:nth-child(even) { justify-self: end; }
-        #plan-fact-page .sensor-panel h2 { margin: .5em 0; }
-        #plan-fact-page .chart-frame { width: 600px; max-width: 100%; height: 190px; margin: 0 auto; }
+        #plan-fact-page .sensor-panel h2 { margin: .5em 0 0; }
+        #plan-fact-page .chart-frame { width: 600px; max-width: 100%; height: var(--operational-chart-height); margin: 0 auto; }
         #plan-fact-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
         #plan-fact-page th, #plan-fact-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; }
         #plan-fact-page th:nth-child(-n+3), #plan-fact-page td:nth-child(-n+3) { width: 88px; vertical-align: middle; }
@@ -18,7 +18,7 @@
         }
         @media (max-width: 700px) {
             #plan-fact-page .view-switches { gap: .5rem 1rem; }
-            #plan-fact-page .chart-frame { width: 100%; height: 180px; }
+            #plan-fact-page .chart-frame { width: 100%; height: var(--operational-chart-height); }
             #plan-fact-page table { table-layout: fixed; }
             #plan-fact-page th, #plan-fact-page td { min-width: 0; padding: .3rem clamp(.2rem, 1.4vw, .5rem); }
             #plan-fact-page th:nth-child(1), #plan-fact-page td:nth-child(1) { width: 14%; }
