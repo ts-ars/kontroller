@@ -42,6 +42,7 @@
         <div class="report-delete-actions"><button type="button" onclick="closeReportDeleteDialog()">Cancel</button><button id="report-delete-confirm" type="button" onclick="confirmReportRowDeletion()">Delete</button></div>
     </dialog>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="/js/operational-charts.js"></script>
     <script th:inline="javascript">
         const reportRows = /*[[${problems}]]*/ [], reportLossTotals = /*[[${lossTotals}]]*/ [], reportTimeTotals = /*[[${timeTotals}]]*/ [];
         const productionTotals = /*[[${productionTotals}]]*/ [], unexplainedPlanTotals = /*[[${unexplainedPlanTotals}]]*/ [];
@@ -79,14 +80,13 @@
         const reportSensorId = /*[[${sensorId}]]*/ 'sensor-1', reportTimeGrouping = /*[[${timeGrouping}]]*/ 'daily';
         const lossTotalsByType = {}; reportRows.forEach(row => lossTotalsByType[row.type] = (lossTotalsByType[row.type] || 0) + Number(row.minutes || 0));
         const compactLabel = label => reportTimeGrouping === 'daily' && label.length >= 10 ? label.slice(5).replace('-', '.') : label;
-        const chartFont = {size:12, family:'Arial'};
-        const chartOptions = {responsive:true, maintainAspectRatio:false, layout:{padding:{top:16}}, plugins:{legend:{position:'top',labels:{font:chartFont}}}, scales:{x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0,font:chartFont}},y:{beginAtZero:true,ticks:{font:chartFont}}}};
-        const categoricalChartOptions = {...chartOptions,scales:{...chartOptions.scales,x:{...chartOptions.scales.x,ticks:{...chartOptions.scales.x.ticks,autoSkip:false}}}};
+        const chartOptions = OperationalCharts.options();
+        const categoricalChartOptions = OperationalCharts.options({categorical:true});
         const blueDataset = (label,data) => ({label,data,backgroundColor:'#3b82f6'});
-        const stableChartSeries = (labels, values, minimumSlots = 4) => { const stableLabels=[...labels], stableValues=[...values]; while(stableLabels.length<minimumSlots){stableLabels.push('');stableValues.push(null);} return {labels:stableLabels,values:stableValues}; };
+        const stableChartSeries = OperationalCharts.stableSeries;
         const lossTypeLabels = Object.keys(lossTotalsByType), lossTypeValues = Object.values(lossTotalsByType);
         const lossTypeSeries = stableChartSeries(lossTypeLabels, lossTypeValues);
-        const positiveValueLabels = {id:'positiveValueLabels',afterDatasetsDraw(chart){const {ctx}=chart, occupied=[];ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>{const value=Number(chart.data.datasets[0].data[index]||0);if(value<=0)return;const text=value.toLocaleString(),halfWidth=ctx.measureText(text).width/2,makeBox=y=>({left:bar.x-halfWidth-3,right:bar.x+halfWidth+3,top:y-13,bottom:y+3});let y=bar.y-5,box=makeBox(y);if(occupied.some(other=>box.left<other.right&&box.right>other.left&&box.top<other.bottom&&box.bottom>other.top)){y=bar.base-bar.y>=22?bar.y+14:bar.y-19;box=makeBox(y);}occupied.push(box);ctx.fillText(text,bar.x,y);});ctx.restore();}};
+        const positiveValueLabels = OperationalCharts.positiveValueLabels;
         const sumValues = values => values.reduce((sum, value) => sum + Number(value || 0), 0);
         const productionValues = productionTotals.map(value=>Number(value.value||0)), productionSeries = stableChartSeries(productionTotals.map(value=>compactLabel(value.label)), productionValues);
         new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionSeries.labels,datasets:[{label:'Production',data:productionSeries.values,backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[positiveValueLabels]});

@@ -41,14 +41,14 @@ class ReportLayoutContractTest {
 
     @Test
     void reportValueLabelsAvoidCollisionsWithoutHidingPositiveValues() throws Exception {
-        String template = Files.readString(Path.of(
-                "src/main/resources/templates/features/report/report.html"));
+        String charts = Files.readString(Path.of(
+                "src/main/resources/static/js/operational-charts.js"));
 
-        assertThat(template)
-                .contains("ctx.measureText(text).width/2")
-                .contains("occupied.some(other=>")
-                .contains("bar.base-bar.y>=22?bar.y+14:bar.y-19")
-                .contains("if(value<=0)return");
+        assertThat(charts)
+                .contains("ctx.measureText(text).width / 2")
+                .contains("occupied.some(other =>")
+                .contains("bar.base-bar.y >= 22 ? bar.y+14 : bar.y-19")
+                .contains("if (value <= 0) return");
     }
 
     @Test
@@ -68,16 +68,36 @@ class ReportLayoutContractTest {
     void centrallyReservesFourStableSlotsForReportCharts() throws Exception {
         String template = Files.readString(Path.of(
                 "src/main/resources/templates/features/report/report.html"));
+        String charts = Files.readString(Path.of(
+                "src/main/resources/static/js/operational-charts.js"));
 
         assertThat(template)
-                .contains("stableChartSeries = (labels, values, minimumSlots = 4)")
+                .contains("/js/operational-charts.js")
+                .contains("OperationalCharts.stableSeries")
                 .contains("lossTypeSeries = stableChartSeries")
                 .contains("productionSeries = stableChartSeries")
                 .contains("lostCansSeries = stableChartSeries")
                 .contains("unexplainedSeries = stableChartSeries")
                 .contains("categoricalChartOptions")
-                .contains("autoSkip:false")
                 .contains("options:sensorFive ? categoricalChartOptions : chartOptions")
                 .doesNotContain("singleLossType");
+        assertThat(charts)
+                .contains("minimumSlots = 4")
+                .contains("autoSkip: !categorical")
+                .contains("positiveValueLabels");
+    }
+
+    @Test
+    void keepsSharedUiSettingsOutsideFeatureTemplates() throws Exception {
+        String report = Files.readString(Path.of("src/main/resources/templates/features/report/report.html"));
+        String planFact = Files.readString(Path.of("src/main/resources/templates/features/shift/shift.html"));
+        String comments = Files.readString(Path.of("src/main/resources/templates/features/comment/comment.html"));
+        String charts = Files.readString(Path.of("src/main/resources/static/js/operational-charts.js"));
+
+        assertThat(report).contains("/js/operational-charts.js");
+        assertThat(planFact).contains("/js/operational-charts.js");
+        assertThat(planFact).doesNotContain("<style>");
+        assertThat(comments).doesNotContain("<style>");
+        assertThat(charts).contains("autoSkip: !categorical", "minimumSlots = 4");
     }
 }

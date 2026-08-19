@@ -75,6 +75,8 @@ class ShiftPageTest {
     @Test
     void templateKeepsReferenceLayoutAndRemovesBrokenCommentInputPath() throws Exception {
         String template = Files.readString(Path.of("src/main/resources/templates/features/shift/shift.html"));
+        String css = Files.readString(Path.of("src/main/resources/static/css/styles.css"));
+        String charts = Files.readString(Path.of("src/main/resources/static/js/operational-charts.js"));
         assertThat(template).contains("class=\"sensor-grid adaptive-two-column-grid\"", "th:each=\"view : ${views}\"",
                 "backgroundColor: '#3b82f6'", "/topic/shift-updates/${view.sensorId}",
                 "/topic/comments/${view.sensorId}", "15:00–23:00");
@@ -82,8 +84,9 @@ class ShiftPageTest {
         assertThat(template).contains("const charts = new Map()", "chart.update('none')",
                 "updatePanel(JSON.parse(message.body))", "const nextIndexByHour = new Map",
                 "currentView.actual = visibleActual.slice()", "reconnectTimer = setTimeout(connect, 2000)",
-                "@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere",
-                "Total production:", "class=\"plan-total\"", "positiveValueLabels");
+                "Total production:", "class=\"plan-total\"", "OperationalCharts.positiveValueLabels");
+        assertThat(css).contains("@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere");
+        assertThat(charts).contains("positiveValueLabels", "autoSkip: !categorical");
         assertThat(template).doesNotContain("window.location.reload()",
                 "sameIntervals(currentView.hours, nextView.hours)");
     }

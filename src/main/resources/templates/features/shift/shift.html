@@ -1,33 +1,4 @@
 <div th:fragment="content" id="plan-fact-page" class="feature-page">
-    <style>
-        #plan-fact-page h1 { margin-top: 0; }
-        #plan-fact-page .view-switches { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: .5rem; }
-        #plan-fact-page .view-switches a { color: #000; text-decoration: none; }
-        #plan-fact-page .view-switches a.active { color: #1d4ed8; text-decoration: underline; }
-        #plan-fact-page .sensor-panel { width: 100%; max-width: 800px; min-width: 0; }
-        #plan-fact-page .sensor-panel:nth-child(even) { justify-self: end; }
-        #plan-fact-page .sensor-panel h2 { margin: .5em 0 0; }
-        #plan-fact-page .chart-frame { width: 600px; max-width: 100%; margin-right: auto; margin-left: auto; }
-        #plan-fact-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
-        #plan-fact-page th, #plan-fact-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; }
-        #plan-fact-page th:nth-child(-n+3), #plan-fact-page td:nth-child(-n+3) { width: 88px; vertical-align: middle; }
-        #plan-fact-page td.comment-cell { text-align: left; vertical-align: top; }
-        #plan-fact-page .comment-line + .comment-line { margin-top: .25rem; }
-        @container (max-width: 1100px) {
-            #plan-fact-page .sensor-panel, #plan-fact-page .sensor-panel:nth-child(even) { justify-self: center; }
-        }
-        @media (max-width: 700px) {
-            #plan-fact-page .view-switches { gap: .5rem 1rem; }
-            #plan-fact-page .chart-frame { width: 100%; }
-            #plan-fact-page table { table-layout: fixed; }
-            #plan-fact-page th, #plan-fact-page td { min-width: 0; padding: .3rem clamp(.2rem, 1.4vw, .5rem); }
-            #plan-fact-page th:nth-child(1), #plan-fact-page td:nth-child(1) { width: 14%; }
-            #plan-fact-page th:nth-child(2), #plan-fact-page td:nth-child(2) { width: 17%; }
-            #plan-fact-page th:nth-child(3), #plan-fact-page td:nth-child(3) { width: 17%; }
-            #plan-fact-page th:nth-child(4), #plan-fact-page td:nth-child(4) { width: 52%; }
-            #plan-fact-page td.comment-cell { overflow-wrap: anywhere; word-break: normal; }
-        }
-    </style>
 
     <h1>Plan–Fact</h1>
     <div class="view-switches">
@@ -70,24 +41,21 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="/js/operational-charts.js"></script>
     <script src="/vendor/sockjs.min.js"></script>
     <script src="/vendor/stomp.min.js"></script>
     <script th:inline="javascript">
         (() => {
             const views = /*[[${views}]]*/ [];
             const charts = new Map();
-            const positiveValueLabels = {id:'positiveValueLabels',afterDatasetsDraw(chart){const {ctx}=chart;ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>{const value=Number(chart.data.datasets[0].data[index]||0);if(value>0)ctx.fillText(value.toLocaleString(),bar.x,bar.y-5);});ctx.restore();}};
+            const positiveValueLabels = OperationalCharts.positiveValueLabels;
             document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
                 const view = views.find(item => item.sensorId === panel.dataset.sensor);
                 if (!view || !window.Chart) return;
                 const chart = new Chart(panel.querySelector('canvas'), {
                     type: 'bar',
                     data: {labels: view.hours, datasets: [{label: 'Cans', data: view.actual, backgroundColor: '#3b82f6'}]},
-                    options: {responsive: true, maintainAspectRatio: false, layout:{padding:{top:16}},
-                        plugins: {legend: {display: true, position: 'top'}, tooltip: {enabled: true}},
-                        scales: {x: {title: {display: true, text: 'Time'}},
-                            y: {title: {display: true, text: 'Cans'}, beginAtZero: true,
-                                suggestedMax: 100, ticks: {stepSize: 20, maxTicksLimit: 10}}}},
+                    options: OperationalCharts.options({xTitle:'Time', yTitle:'Cans', suggestedMax:100, stepSize:20, maxTicksLimit:10}),
                     plugins: [positiveValueLabels]
                 });
                 charts.set(view.sensorId, chart);
