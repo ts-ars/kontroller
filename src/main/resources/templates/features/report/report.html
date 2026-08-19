@@ -81,6 +81,7 @@
         const compactLabel = label => reportTimeGrouping === 'daily' && label.length >= 10 ? label.slice(5).replace('-', '.') : label;
         const chartFont = {size:12, family:'Arial'};
         const chartOptions = {responsive:true, maintainAspectRatio:false, layout:{padding:{top:16}}, plugins:{legend:{position:'top',labels:{font:chartFont}}}, scales:{x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0,font:chartFont}},y:{beginAtZero:true,ticks:{font:chartFont}}}};
+        const categoricalChartOptions = {...chartOptions,scales:{...chartOptions.scales,x:{...chartOptions.scales.x,ticks:{...chartOptions.scales.x.ticks,autoSkip:false}}}};
         const blueDataset = (label,data) => ({label,data,backgroundColor:'#3b82f6'});
         const stableChartSeries = (labels, values, minimumSlots = 4) => { const stableLabels=[...labels], stableValues=[...values]; while(stableLabels.length<minimumSlots){stableLabels.push('');stableValues.push(null);} return {labels:stableLabels,values:stableValues}; };
         const lossTypeLabels = Object.keys(lossTotalsByType), lossTypeValues = Object.values(lossTotalsByType);
@@ -89,11 +90,11 @@
         const sumValues = values => values.reduce((sum, value) => sum + Number(value || 0), 0);
         const productionValues = productionTotals.map(value=>Number(value.value||0)), productionSeries = stableChartSeries(productionTotals.map(value=>compactLabel(value.label)), productionValues);
         new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionSeries.labels,datasets:[{label:'Production',data:productionSeries.values,backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[positiveValueLabels]});
-        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:lossTypeSeries.labels,datasets:[blueDataset('Lost minutes by type',lossTypeSeries.values)]},options:chartOptions,plugins:[positiveValueLabels]});
+        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:lossTypeSeries.labels,datasets:[blueDataset('Lost minutes by type',lossTypeSeries.values)]},options:categoricalChartOptions,plugins:[positiveValueLabels]});
         document.getElementById('lossMinutesTotal').textContent = `Total lost minutes: ${sumValues(lossTypeValues).toLocaleString()}`;
         const sensorFive = reportSensorId === 'sensor-5', cansValues = sensorFive ? reportLossTotals : reportTimeTotals;
         const lostCansValues = cansValues.map(value => Number(value.lostCans || 0)), lostCansSeries = stableChartSeries(cansValues.map(value => sensorFive ? value.sensorId : compactLabel(value.label)), lostCansValues);
-        new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:lostCansSeries.labels,datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',lostCansSeries.values)]},options:chartOptions,plugins:[positiveValueLabels]});
+        new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:lostCansSeries.labels,datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',lostCansSeries.values)]},options:sensorFive ? categoricalChartOptions : chartOptions,plugins:[positiveValueLabels]});
         document.getElementById('lostCansTotal').textContent = `Total lost cans: ${sumValues(lostCansValues).toLocaleString()}`;
         const unexplainedValues = unexplainedPlanTotals.map(value=>Number(value.value||0)), unexplainedSeries = stableChartSeries(unexplainedPlanTotals.map(value=>compactLabel(value.label)), unexplainedValues);
         new Chart(document.getElementById('unexplainedChart'), {type:'bar',data:{labels:unexplainedSeries.labels,datasets:[{label:'Unexplained plan difference',data:unexplainedSeries.values,backgroundColor:'#dc2626'}]},options:chartOptions,plugins:[positiveValueLabels]});

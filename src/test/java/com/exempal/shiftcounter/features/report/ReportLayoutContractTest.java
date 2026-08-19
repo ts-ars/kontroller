@@ -75,6 +75,9 @@ class ReportLayoutContractTest {
                 .contains("productionSeries = stableChartSeries")
                 .contains("lostCansSeries = stableChartSeries")
                 .contains("unexplainedSeries = stableChartSeries")
+                .contains("categoricalChartOptions")
+                .contains("autoSkip:false")
+                .contains("options:sensorFive ? categoricalChartOptions : chartOptions")
                 .doesNotContain("singleLossType");
     }
 }
