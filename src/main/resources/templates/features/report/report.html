@@ -83,13 +83,12 @@
         const chartOptions = {responsive:true, maintainAspectRatio:false, layout:{padding:{top:16}}, plugins:{legend:{position:'top',labels:{font:chartFont}}}, scales:{x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0,font:chartFont}},y:{beginAtZero:true,ticks:{font:chartFont}}}};
         const blueDataset = (label,data) => ({label,data,backgroundColor:'#3b82f6'});
         const lossTypeLabels = Object.keys(lossTotalsByType), lossTypeValues = Object.values(lossTotalsByType);
-        const singleLossType = lossTypeLabels.length === 1;
-        const displayedLossLabels = singleLossType ? [...lossTypeLabels, '', '', ''] : lossTypeLabels;
-        const displayedLossValues = singleLossType ? [...lossTypeValues, null, null, null] : lossTypeValues;
+        const displayedLossLabels = [...lossTypeLabels], displayedLossValues = [...lossTypeValues];
+        while (displayedLossLabels.length < 4) { displayedLossLabels.push(''); displayedLossValues.push(null); }
         const positiveValueLabels = {id:'positiveValueLabels',afterDatasetsDraw(chart){const {ctx}=chart, occupied=[];ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>{const value=Number(chart.data.datasets[0].data[index]||0);if(value<=0)return;const text=value.toLocaleString(),halfWidth=ctx.measureText(text).width/2,makeBox=y=>({left:bar.x-halfWidth-3,right:bar.x+halfWidth+3,top:y-13,bottom:y+3});let y=bar.y-5,box=makeBox(y);if(occupied.some(other=>box.left<other.right&&box.right>other.left&&box.top<other.bottom&&box.bottom>other.top)){y=bar.base-bar.y>=22?bar.y+14:bar.y-19;box=makeBox(y);}occupied.push(box);ctx.fillText(text,bar.x,y);});ctx.restore();}};
         const sumValues = values => values.reduce((sum, value) => sum + Number(value || 0), 0);
         new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Production',data:productionTotals.map(value=>Number(value.value||0)),backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[positiveValueLabels]});
-        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:displayedLossLabels,datasets:[{...blueDataset('Lost minutes by type',displayedLossValues),...(singleLossType ? {maxBarThickness:58,categoryPercentage:.72,barPercentage:.82} : {})}]},options:chartOptions,plugins:[positiveValueLabels]});
+        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:displayedLossLabels,datasets:[blueDataset('Lost minutes by type',displayedLossValues)]},options:chartOptions,plugins:[positiveValueLabels]});
         document.getElementById('lossMinutesTotal').textContent = `Total lost minutes: ${sumValues(lossTypeValues).toLocaleString()}`;
         const sensorFive = reportSensorId === 'sensor-5', cansValues = sensorFive ? reportLossTotals : reportTimeTotals;
         const lostCansValues = cansValues.map(value => Number(value.lostCans || 0));

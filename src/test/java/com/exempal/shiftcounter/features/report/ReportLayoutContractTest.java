@@ -63,4 +63,16 @@ class ReportLayoutContractTest {
         assertThat(template.indexOf("id=\"lossChart\""))
                 .isLessThan(template.indexOf("id=\"cansChart\""));
     }
+
+    @Test
+    void reservesFourStableSlotsForLossTypes() throws Exception {
+        String template = Files.readString(Path.of(
+                "src/main/resources/templates/features/report/report.html"));
+
+        assertThat(template)
+                .contains("while (displayedLossLabels.length < 4)")
+                .contains("displayedLossLabels.push('')")
+                .contains("displayedLossValues.push(null)")
+                .doesNotContain("singleLossType");
+    }
 }
