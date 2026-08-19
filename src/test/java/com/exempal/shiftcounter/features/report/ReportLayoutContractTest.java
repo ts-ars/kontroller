@@ -30,4 +30,16 @@ class ReportLayoutContractTest {
                 .contains("height: 190px !important");
         assertThat(css).doesNotContain("overflow-x", "min-width: 900px", "100vw");
     }
+
+    @Test
+    void reportValueLabelsAvoidCollisionsWithoutHidingPositiveValues() throws Exception {
+        String template = Files.readString(Path.of(
+                "src/main/resources/templates/features/report/report.html"));
+
+        assertThat(template)
+                .contains("ctx.measureText(text).width/2")
+                .contains("occupied.some(other=>")
+                .contains("y-=14")
+                .contains("if(value<=0)return");
+    }
 }
