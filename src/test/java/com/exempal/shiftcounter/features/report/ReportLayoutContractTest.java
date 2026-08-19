@@ -50,4 +50,17 @@ class ReportLayoutContractTest {
                 .contains("bar.base-bar.y>=22?bar.y+14:bar.y-19")
                 .contains("if(value<=0)return");
     }
+
+    @Test
+    void keepsApprovedReportChartOrder() throws Exception {
+        String template = Files.readString(Path.of(
+                "src/main/resources/templates/features/report/report.html"));
+
+        assertThat(template.indexOf("id=\"productionChart\""))
+                .isLessThan(template.indexOf("id=\"unexplainedChart\""));
+        assertThat(template.indexOf("id=\"unexplainedChart\""))
+                .isLessThan(template.indexOf("id=\"lossChart\""));
+        assertThat(template.indexOf("id=\"lossChart\""))
+                .isLessThan(template.indexOf("id=\"cansChart\""));
+    }
 }
