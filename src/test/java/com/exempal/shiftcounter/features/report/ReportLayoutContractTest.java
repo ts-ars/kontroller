@@ -39,7 +39,7 @@ class ReportLayoutContractTest {
         assertThat(template)
                 .contains("ctx.measureText(text).width/2")
                 .contains("occupied.some(other=>")
-                .contains("y-=14")
+                .contains("bar.base-bar.y>=22?bar.y+14:bar.y-19")
                 .contains("if(value<=0)return");
     }
 }
