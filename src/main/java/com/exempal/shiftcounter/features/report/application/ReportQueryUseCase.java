@@ -206,6 +206,7 @@ public class ReportQueryUseCase {
     private List<ReportChartPoint> intervalTotals(Shift shift, boolean production,
                                                   Map<Integer, Integer> explainedCansByInterval) {
         List<ReportChartPoint> result = new ArrayList<>();
+        int lastProductionInterval = lastProductionInterval(shift);
         var resolvedIntervals = intervals.resolve(shift.getDate(), shift.getHourlyLabels(),
                 shift.getHourlyPlanValues().size());
         for (var interval : resolvedIntervals) {
@@ -213,7 +214,8 @@ public class ReportQueryUseCase {
             int actual = index < shift.getHourlyActualValues().size() ? shift.getHourlyActualValues().get(index) : 0;
             int plan = index < shift.getHourlyPlanValues().size() ? shift.getHourlyPlanValues().get(index) : 0;
             result.add(new ReportChartPoint(shift.getHourlyLabels().get(index),
-                    production ? actual : interval.end().isAfter(productionDays.now()) ? 0 : Math.max(0,
+                    production ? actual : index > lastProductionInterval
+                            || interval.end().isAfter(productionDays.now()) ? 0 : Math.max(0,
                             plan - actual - explainedCansByInterval.getOrDefault(index, 0))));
         }
         return List.copyOf(result);
@@ -221,15 +223,23 @@ public class ReportQueryUseCase {
 
     private int unexplained(Shift shift, Map<Integer, Integer> explainedCansByInterval) {
         int total = 0;
+        int lastProductionInterval = lastProductionInterval(shift);
         for (var interval : intervals.resolve(shift.getDate(), shift.getHourlyLabels(),
                 shift.getHourlyPlanValues().size())) {
-            if (interval.end().isAfter(productionDays.now())) continue;
             int index = interval.index();
+            if (index > lastProductionInterval || interval.end().isAfter(productionDays.now())) continue;
             int actual = index < shift.getHourlyActualValues().size() ? shift.getHourlyActualValues().get(index) : 0;
             total += Math.max(0, shift.getHourlyPlanValues().get(index) - actual
                     - explainedCansByInterval.getOrDefault(index, 0));
         }
         return total;
+    }
+
+    private int lastProductionInterval(Shift shift) {
+        for (int index = shift.getHourlyActualValues().size() - 1; index >= 0; index--) {
+            if (shift.getHourlyActualValues().get(index) > 0) return index;
+        }
+        return -1;
     }
 
     private String bucket(LocalDate date, LocalDate from, LocalDate to, String grouping) {

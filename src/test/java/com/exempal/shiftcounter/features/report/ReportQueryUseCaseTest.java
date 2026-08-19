@@ -193,6 +193,24 @@ class ReportQueryUseCaseTest {
     }
 
     @Test
+    void unexplainedPlanKeepsInternalStopsAndZerosIntervalsAfterProductionStopped() {
+        LocalDate date = LocalDate.of(2026, 8, 10);
+        Shift shift = new Shift(54L, date, "sensor-5", List.of(100, 100, 100, 100, 100), 0,
+                List.of(80, 0, 70, 0, 0), List.of("07:00", "08:00", "09:00", "10:00", "11:00"));
+        when(shifts.findByDateAndSensorId(date, "sensor-5")).thenReturn(Optional.of(shift));
+
+        ReportView view = reports.query(Map.of("from", date.toString(), "to", date.toString(),
+                "sensorId", "sensor-5"));
+
+        assertThat(view.unexplainedPlanTotals()).containsExactly(
+                new ReportChartPoint("07:00", 20),
+                new ReportChartPoint("08:00", 100),
+                new ReportChartPoint("09:00", 30),
+                new ReportChartPoint("10:00", 0),
+                new ReportChartPoint("11:00", 0));
+    }
+
+    @Test
     void productionUsesWeeklyBucketsThroughThirtyOneDaysAndMonthlyBucketsAfterThat() {
         LocalDate first = LocalDate.of(2026, 7, 1);
         LocalDate eighth = first.plusDays(7);
