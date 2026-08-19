@@ -210,11 +210,10 @@ public class ReportQueryUseCase {
                 shift.getHourlyPlanValues().size());
         for (var interval : resolvedIntervals) {
             int index = interval.index();
-            if (!production && interval.end().isAfter(productionDays.now())) continue;
             int actual = index < shift.getHourlyActualValues().size() ? shift.getHourlyActualValues().get(index) : 0;
             int plan = index < shift.getHourlyPlanValues().size() ? shift.getHourlyPlanValues().get(index) : 0;
             result.add(new ReportChartPoint(shift.getHourlyLabels().get(index),
-                    production ? actual : Math.max(0,
+                    production ? actual : interval.end().isAfter(productionDays.now()) ? 0 : Math.max(0,
                             plan - actual - explainedCansByInterval.getOrDefault(index, 0))));
         }
         return List.copyOf(result);

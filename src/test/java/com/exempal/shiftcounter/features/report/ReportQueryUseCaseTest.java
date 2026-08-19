@@ -172,7 +172,7 @@ class ReportQueryUseCaseTest {
     }
 
     @Test
-    void unexplainedPlanSubtractsSavedExplanationsAndOmitsUnfinishedIntervals() {
+    void unexplainedPlanSubtractsSavedExplanationsAndZerosUnfinishedIntervals() {
         LocalDate date = LocalDate.of(2026, 8, 11);
         Shift shift = new Shift(51L, date, "sensor-5", List.of(1800, 2400, 2000, 2400), 0,
                 List.of(0, 373, 0, 0), List.of("07:00", "08:00", "11:30", "12:30"));
@@ -187,7 +187,9 @@ class ReportQueryUseCaseTest {
 
         assertThat(view.unexplainedPlanTotals()).containsExactly(
                 new ReportChartPoint("07:00", 0),
-                new ReportChartPoint("08:00", 1527));
+                new ReportChartPoint("08:00", 1527),
+                new ReportChartPoint("11:30", 0),
+                new ReportChartPoint("12:30", 0));
     }
 
     @Test
