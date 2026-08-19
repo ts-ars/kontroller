@@ -5,6 +5,7 @@ import com.exempal.shiftcounter.features.comment.domain.LossCategory;
 import com.exempal.shiftcounter.features.sensor.domain.SensorCatalog;
 import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +26,14 @@ public class ReportQueryUseCase {
     private final StoppageRepository repository;
     private final ProductionDayService productionDays;
     private final ActualDataPort shifts;
+    private final ShiftIntervalService intervals;
 
     public ReportQueryUseCase(StoppageRepository repository, ProductionDayService productionDays,
-                              ActualDataPort shifts) {
+                              ActualDataPort shifts, ShiftIntervalService intervals) {
         this.repository = repository;
         this.productionDays = productionDays;
         this.shifts = shifts;
+        this.intervals = intervals;
     }
 
     @Transactional(readOnly = true)
@@ -52,19 +55,25 @@ public class ReportQueryUseCase {
         String reasonFilter = normalize(params.get("reason"));
         String authorFilter = normalize(params.get("author"));
         Map<String, Integer> lostCansBySource = new LinkedHashMap<>();
+        Map<LocalDate, Map<Integer, Integer>> explainedCansByInterval = new LinkedHashMap<>();
         explanationSources.forEach(source -> lostCansBySource.put(source, 0));
         for (String source : explanationSources) {
             for (var stoppage : repository.findByShiftDateBetweenAndSensorId(from, to, source)) {
+                LocalDate stoppageDate = productionDays.resolve(stoppage.startedAt()).date();
                 int explainedMinutes = 0;
                 int explainedCans = 0;
                 for (var explanation : stoppage.explanations()) {
                     explainedMinutes += explanation.allocatedMinutes();
                     explainedCans += explanation.allocatedCans();
+                    if (sourceFilter.isEmpty() || sourceFilter.equals(source)) {
+                        explainedCansByInterval.computeIfAbsent(stoppageDate, ignored -> new LinkedHashMap<>())
+                                .merge(stoppage.intervalIndex(), explanation.allocatedCans(), Integer::sum);
+                    }
                     if (matches(source, explanation.category(), explanation.comment(),
                             explanation.authorDisplayName(), sourceFilter, typeFilter, reasonFilter, authorFilter)) {
                         rows.add(new ReportRow(source, explanation.category().name(), explanation.allocatedMinutes(),
                                 explanation.allocatedCans(), explanation.comment(), explanation.authorDisplayName(),
-                                productionDays.resolve(stoppage.startedAt()).date(), stoppage.id()));
+                                stoppageDate, stoppage.id()));
                         minutes += explanation.allocatedMinutes();
                         cans += explanation.allocatedCans();
                         lostCansBySource.merge(source, explanation.allocatedCans(), Integer::sum);
@@ -77,11 +86,11 @@ public class ReportQueryUseCase {
                         rows.add(new ReportRow(source, "ALLOCATION_CONFLICT", 0, 0,
                                 "Allocated " + explainedMinutes + " min exceeds stoppage "
                                         + stoppage.roundedMinutes() + " min", "",
-                                productionDays.resolve(stoppage.startedAt()).date(), stoppage.id()));
+                                stoppageDate, stoppage.id()));
                     } else if (remainingMinutes > 0 || remainingCans > 0) {
                         rows.add(new ReportRow(source, "UNEXPLAINED", remainingMinutes, remainingCans,
                                 "No explanation provided", "",
-                                productionDays.resolve(stoppage.startedAt()).date(), stoppage.id()));
+                                stoppageDate, stoppage.id()));
                         minutes += remainingMinutes;
                         cans += remainingCans;
                         lostCansBySource.merge(source, remainingCans, Integer::sum);
@@ -100,8 +109,10 @@ public class ReportQueryUseCase {
                 : timeTotals(rows, from, to, grouping);
         String chartSensorId = sourceFilter.isEmpty() ? sensorId : sourceFilter;
         List<Shift> reportShifts = shifts(from, to, chartSensorId);
-        List<ReportChartPoint> productionTotals = chartTotals(reportShifts, from, to, grouping, true);
-        List<ReportChartPoint> unexplainedTotals = chartTotals(reportShifts, from, to, grouping, false);
+        List<ReportChartPoint> productionTotals = chartTotals(
+                reportShifts, from, to, grouping, true, Map.of());
+        List<ReportChartPoint> unexplainedTotals = chartTotals(
+                reportShifts, from, to, grouping, false, explainedCansByInterval);
         int totalProduction = productionTotals.stream().mapToInt(ReportChartPoint::value).sum();
         return new ReportView(rows, from, to, sensorId, minutes, cans, lossTotals, timeTotals, grouping,
                 productionTotals, totalProduction, unexplainedTotals);
@@ -165,9 +176,11 @@ public class ReportQueryUseCase {
     }
 
     private List<ReportChartPoint> chartTotals(List<Shift> values, LocalDate from, LocalDate to,
-                                               String grouping, boolean production) {
+                                               String grouping, boolean production,
+                                               Map<LocalDate, Map<Integer, Integer>> explainedCansByInterval) {
         if (from.equals(to)) {
-            return values.stream().findFirst().map(shift -> intervalTotals(shift, production)).orElse(List.of());
+            return values.stream().findFirst().map(shift -> intervalTotals(shift, production,
+                    explainedCansByInterval.getOrDefault(shift.getDate(), Map.of()))).orElse(List.of());
         }
         Map<String, Integer> totals = new LinkedHashMap<>();
         if ("daily".equals(grouping)) {
@@ -184,27 +197,38 @@ public class ReportQueryUseCase {
         }
         for (Shift shift : values) {
             String key = bucket(shift.getDate(), from, to, grouping);
-            totals.merge(key, production ? shift.getActual() : unexplained(shift), Integer::sum);
+            totals.merge(key, production ? shift.getActual() : unexplained(shift,
+                    explainedCansByInterval.getOrDefault(shift.getDate(), Map.of())), Integer::sum);
         }
         return totals.entrySet().stream().map(entry -> new ReportChartPoint(entry.getKey(), entry.getValue())).toList();
     }
 
-    private List<ReportChartPoint> intervalTotals(Shift shift, boolean production) {
+    private List<ReportChartPoint> intervalTotals(Shift shift, boolean production,
+                                                  Map<Integer, Integer> explainedCansByInterval) {
         List<ReportChartPoint> result = new ArrayList<>();
-        for (int index = 0; index < shift.getHourlyLabels().size(); index++) {
+        var resolvedIntervals = intervals.resolve(shift.getDate(), shift.getHourlyLabels(),
+                shift.getHourlyPlanValues().size());
+        for (var interval : resolvedIntervals) {
+            int index = interval.index();
+            if (!production && interval.end().isAfter(productionDays.now())) continue;
             int actual = index < shift.getHourlyActualValues().size() ? shift.getHourlyActualValues().get(index) : 0;
             int plan = index < shift.getHourlyPlanValues().size() ? shift.getHourlyPlanValues().get(index) : 0;
             result.add(new ReportChartPoint(shift.getHourlyLabels().get(index),
-                    production ? actual : Math.max(0, plan - actual)));
+                    production ? actual : Math.max(0,
+                            plan - actual - explainedCansByInterval.getOrDefault(index, 0))));
         }
         return List.copyOf(result);
     }
 
-    private int unexplained(Shift shift) {
+    private int unexplained(Shift shift, Map<Integer, Integer> explainedCansByInterval) {
         int total = 0;
-        for (int index = 0; index < shift.getHourlyPlanValues().size(); index++) {
+        for (var interval : intervals.resolve(shift.getDate(), shift.getHourlyLabels(),
+                shift.getHourlyPlanValues().size())) {
+            if (interval.end().isAfter(productionDays.now())) continue;
+            int index = interval.index();
             int actual = index < shift.getHourlyActualValues().size() ? shift.getHourlyActualValues().get(index) : 0;
-            total += Math.max(0, shift.getHourlyPlanValues().get(index) - actual);
+            total += Math.max(0, shift.getHourlyPlanValues().get(index) - actual
+                    - explainedCansByInterval.getOrDefault(index, 0));
         }
         return total;
     }

@@ -7,6 +7,7 @@ import com.exempal.shiftcounter.features.comment.domain.LossExplanation;
 import com.exempal.shiftcounter.features.comment.domain.Stoppage;
 import com.exempal.shiftcounter.features.comment.domain.StoppageState;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.shift.domain.Shift;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,8 @@ class ReportQueryUseCaseTest {
         stoppages = mock(StoppageRepository.class);
         shifts = mock(ActualDataPort.class);
         reports = new ReportQueryUseCase(stoppages, new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC)), shifts);
+                Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC)), shifts,
+                new ShiftIntervalService());
     }
 
     @Test
@@ -170,6 +172,25 @@ class ReportQueryUseCaseTest {
     }
 
     @Test
+    void unexplainedPlanSubtractsSavedExplanationsAndOmitsUnfinishedIntervals() {
+        LocalDate date = LocalDate.of(2026, 8, 11);
+        Shift shift = new Shift(51L, date, "sensor-5", List.of(1800, 2400, 2000, 2400), 0,
+                List.of(0, 373, 0, 0), List.of("07:00", "08:00", "11:30", "12:30"));
+        when(shifts.findByDateAndSensorId(date, "sensor-5")).thenReturn(Optional.of(shift));
+        when(stoppages.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-2")))
+                .thenReturn(List.of(
+                        stoppageAtInterval(52, "sensor-2", 0, 1800),
+                        stoppageAtInterval(53, "sensor-2", 1, 500)));
+
+        ReportView view = reports.query(Map.of("from", date.toString(), "to", date.toString(),
+                "sensorId", "sensor-5"));
+
+        assertThat(view.unexplainedPlanTotals()).containsExactly(
+                new ReportChartPoint("07:00", 0),
+                new ReportChartPoint("08:00", 1527));
+    }
+
+    @Test
     void productionUsesWeeklyBucketsThroughThirtyOneDaysAndMonthlyBucketsAfterThat() {
         LocalDate first = LocalDate.of(2026, 7, 1);
         LocalDate eighth = first.plusDays(7);
@@ -213,5 +234,13 @@ class ReportQueryUseCaseTest {
                 LocalDateTime.of(2026, 8, 10, 23, 30), Duration.ofMinutes(minutes), minutes, cans,
                 DetectionType.FIXED, StoppageState.ACTIVE,
                 List.of(new LossExplanation(id, id, LossCategory.BREAKDOWN, reason, minutes, cans)), 0L);
+    }
+
+    private Stoppage stoppageAtInterval(long id, String sensorId, int intervalIndex, int cans) {
+        return new Stoppage(id, UUID.randomUUID(), id, sensorId, intervalIndex,
+                LocalDateTime.of(2026, 8, 11, 7, 0), Duration.ofMinutes(60), 60, cans,
+                DetectionType.FIXED, StoppageState.RESOLVED,
+                List.of(new LossExplanation(id, id, LossCategory.ORGANIZATION,
+                        "explained", 60, cans)), 0L);
     }
 }

@@ -3,6 +3,7 @@ package com.exempal.shiftcounter.features.report.adapter;
 import com.exempal.shiftcounter.features.comment.application.StoppageRepository;
 import com.exempal.shiftcounter.features.comment.domain.*;
 import com.exempal.shiftcounter.features.shift.application.ProductionDayService;
+import com.exempal.shiftcounter.features.shift.application.ShiftIntervalService;
 import com.exempal.shiftcounter.features.shift.application.ActualDataPort;
 import com.exempal.shiftcounter.features.report.application.ReportQueryUseCase;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +37,8 @@ class ReportPageTest {
         when(repository.findByShiftDateBetweenAndSensorId(any(), any(), eq("sensor-1")))
                 .thenReturn(List.of(stoppage));
         page = new ReportPage(new ReportQueryUseCase(repository, new ProductionDayService(
-                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)), mock(ActualDataPort.class)));
+                Clock.fixed(Instant.parse("2026-08-07T08:00:00Z"), ZoneOffset.UTC)),
+                mock(ActualDataPort.class), new ShiftIntervalService()));
     }
 
     @Test
