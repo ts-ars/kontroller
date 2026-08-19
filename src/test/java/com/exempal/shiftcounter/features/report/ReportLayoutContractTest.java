@@ -14,12 +14,13 @@ class ReportLayoutContractTest {
         String css = Files.readString(Path.of("src/main/resources/static/css/styles.css"));
 
         assertThat(css)
-                .contains(".report-page")
-                .contains("width: min(100%, 1400px)")
+                .contains(".feature-page")
+                .contains("max-width: 1632px")
+                .contains("main { container-type: inline-size; }")
                 .contains(".report-filters input[type=\"date\"]")
                 .contains("width: 130px")
                 .contains(".report-charts")
-                .contains("width: calc(100vw - 120px)")
+                .contains("width: 100%")
                 .contains("grid-template-columns: repeat(4, minmax(0, 1fr))")
                 .contains(".report-filter-heading")
                 .contains(".report-filter-icon::before")
@@ -27,5 +28,6 @@ class ReportLayoutContractTest {
                 .contains("#plan-fact-page .chart-frame canvas")
                 .contains("width: 100% !important")
                 .contains("height: 190px !important");
+        assertThat(css).doesNotContain("overflow-x", "min-width: 900px", "100vw");
     }
 }

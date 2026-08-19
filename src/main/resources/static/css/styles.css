@@ -4,6 +4,24 @@ body {
     padding: 0 2rem 2rem;
 }
 
+main { container-type: inline-size; }
+
+.feature-page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1632px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.adaptive-two-column-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
+    row-gap: var(--adaptive-row-gap, 1rem);
+    align-items: start;
+}
+
 nav ul {
     list-style: none;
     padding: 0;
@@ -16,7 +34,7 @@ nav ul {
     position: relative;
     top: 10px;
     max-width: 100%;
-    overflow-x: auto;
+    flex-wrap: wrap;
 }
 
 nav ul li a {
@@ -86,11 +104,6 @@ button:hover {
 
 canvas {
     display: block;
-    margin: 0 auto;
-}
-
-.report-page {
-    width: min(100%, 1400px);
     margin: 0 auto;
 }
 
@@ -210,9 +223,8 @@ nav .session form { display: inline; }
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1.25rem;
-    width: calc(100vw - 120px);
-    margin: 2rem 0 .75rem 50%;
-    transform: translateX(-50%);
+    width: 100%;
+    margin: 2rem 0 .75rem;
 }
 
 .report-chart-card {
@@ -225,8 +237,9 @@ nav .session form { display: inline; }
     height: 190px !important;
 }
 
-.report-production-card { text-align: center; }
-.report-production-total { display: block; margin-top: .2rem; font-size: 12px; }
+.report-chart-card { text-align: center; }
+.report-chart-total, #plan-fact-page .chart-total { display: block; margin-top: .2rem; font-size: 12px; }
+#plan-fact-page .chart-total { text-align: center; }
 
 .report-filter-heading { padding: 0; position: relative; }
 .report-filter-heading details { position: relative; }
@@ -246,13 +259,40 @@ nav .session form { display: inline; }
     height: 190px !important;
 }
 
-@media (max-width: 800px) {
+@container (max-width: 1100px) {
+    .adaptive-two-column-grid { grid-template-columns: minmax(0, 1fr); }
     .report-charts {
-        grid-template-columns: minmax(0, 1fr);
-        width: 100%;
-        transform: none;
-        margin-left: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+
+@container (max-width: 700px) {
+    .report-charts { grid-template-columns: minmax(0, 1fr); }
+
+    .report-table colgroup, .report-table thead { display: none; }
+    .report-table, .report-table tbody, .report-table tfoot { display: block; }
+    .report-table tbody { display: grid; gap: .6rem; }
+    .report-table tbody tr:not(:has(.report-empty)) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem .5rem; padding: .65rem; border: 1px solid #ccc; }
+    .report-table tbody td { display: block; width: auto !important; padding: 0; border: 0; text-align: left; }
+    .report-table--with-source tbody td:nth-child(5), .report-table--without-source tbody td:nth-child(4) { grid-column: 1 / -1; }
+    .report-table tbody td:last-child button { width: auto; white-space: nowrap; }
+    .report-table tfoot tr { display: flex; align-items: center; gap: 1rem; margin-top: .65rem; padding: .5rem .65rem; border: 1px solid #ccc; }
+    .report-table tfoot th { display: none; width: auto !important; padding: 0; border: 0; }
+    .report-table tfoot .report-total-label, .report-table tfoot .report-total-minutes, .report-table tfoot .report-total-cans { display: block; }
+    .report-table tfoot .report-total-minutes::before { content: 'Minutes: '; }
+    .report-table tfoot .report-total-cans::before { content: 'Cans: '; }
+
+    #comments-page .inherited-table thead { display: none; }
+    #comments-page .inherited-table, #comments-page .inherited-table tbody, #comments-page .inherited-table tfoot { display: block; }
+    #comments-page .inherited-table tbody { display: grid; gap: .6rem; }
+    #comments-page .inherited-table tbody tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; padding: .65rem; border: 1px solid #ccc; }
+    #comments-page .inherited-table tbody td { display: block; width: auto !important; padding: 0; border: 0; text-align: left; }
+    #comments-page .inherited-table tbody td:nth-child(3) { grid-column: 1 / -1; }
+    #comments-page .inherited-table tfoot tr { display: flex; gap: .75rem; margin-top: .65rem; padding: .5rem .65rem; border: 1px solid #ccc; }
+    #comments-page .inherited-table tfoot th { display: none; width: auto !important; padding: 0; border: 0; }
+    #comments-page .inherited-table tfoot th:first-child,
+    #comments-page .inherited-table tfoot th:nth-child(2) { display: block; }
+    #comments-page .inherited-table tfoot th:nth-child(2)::before { content: 'minutes: '; }
 }
 
 /* Shared adaptive table behavior for every feature page. */

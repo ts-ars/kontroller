@@ -1,4 +1,4 @@
-<div th:fragment="content" class="report-page">
+<div th:fragment="content" class="feature-page report-page">
     <h1>Shift Report</h1>
     <nav class="report-sensors" aria-label="Sensor">
         <th:block th:each="sensor, iteration : ${sensorOptions}">
@@ -12,10 +12,10 @@
         <button type="submit">Filter</button><button type="submit" formaction="/report/export.xlsx">Export Excel</button>
     </form>
     <div class="report-charts">
-        <section class="report-chart-card report-production-card"><canvas id="productionChart"></canvas><strong class="report-production-total" th:text="|Total production: ${totalProduction}|">Total production: 0</strong></section>
-        <section class="report-chart-card"><canvas id="lossChart"></canvas></section>
-        <section class="report-chart-card"><canvas id="cansChart"></canvas></section>
-        <section class="report-chart-card"><canvas id="unexplainedChart"></canvas></section>
+        <section class="report-chart-card"><canvas id="productionChart"></canvas><strong class="report-chart-total" th:text="|Total production: ${totalProduction}|">Total production: 0</strong></section>
+        <section class="report-chart-card"><canvas id="lossChart"></canvas><strong id="lossMinutesTotal" class="report-chart-total"></strong></section>
+        <section class="report-chart-card"><canvas id="cansChart"></canvas><strong id="lostCansTotal" class="report-chart-total"></strong></section>
+        <section class="report-chart-card"><canvas id="unexplainedChart"></canvas><strong id="unexplainedTotal" class="report-chart-total"></strong></section>
     </div>
 
     <div class="report-table-wrap"><table th:class="'report-table ' + (${sensorId == 'sensor-5'} ? 'report-table--with-source ' : 'report-table--without-source ') + (${canExclude} ? 'report-table--with-actions' : 'report-table--without-actions')">
@@ -32,7 +32,7 @@
         <tr th:each="problem : ${problems}"><td th:if="${sensorId == 'sensor-5'}" th:text="${problem.source}"></td><td th:text="${problem.type}"></td><td th:text="${problem.minutes}"></td><td th:text="${problem.cans}"></td><td class="report-reason" th:text="${problem.reason}"></td><td class="report-author" th:text="${problem.author}"></td><td th:if="${canExclude}"><button th:if="${problem.stoppageId != null}" type="button" th:attr="data-id=${problem.stoppageId}" onclick="excludeReportRow(this)">Delete</button></td></tr>
         <tr th:if="${problems.isEmpty()}"><td th:colspan="${(sensorId == 'sensor-5' ? 6 : 5) + (canExclude ? 1 : 0)}" class="report-empty">No data for selected range</td></tr>
         </tbody>
-        <tfoot><tr><th th:if="${sensorId == 'sensor-5'}"></th><th>Total</th><th th:text="${totalMinutes}"></th><th th:text="${totalCans}"></th><th></th><th></th><th th:if="${canExclude}"></th></tr></tfoot>
+        <tfoot><tr><th th:if="${sensorId == 'sensor-5'}"></th><th class="report-total-label">Total</th><th class="report-total-minutes" th:text="${totalMinutes}"></th><th class="report-total-cans" th:text="${totalCans}"></th><th></th><th></th><th th:if="${canExclude}"></th></tr></tfoot>
     </table></div>
     <dialog id="report-delete-dialog" class="report-delete-dialog" aria-labelledby="report-delete-title">
         <h2 id="report-delete-title">Delete report row?</h2>
@@ -86,12 +86,18 @@
         const singleLossType = lossTypeLabels.length === 1;
         const displayedLossLabels = singleLossType ? [...lossTypeLabels, '', '', ''] : lossTypeLabels;
         const displayedLossValues = singleLossType ? [...lossTypeValues, null, null, null] : lossTypeValues;
-        const productionValueLabels = {id:'productionValueLabels',afterDatasetsDraw(chart){const {ctx}=chart;ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>ctx.fillText(Number(chart.data.datasets[0].data[index]||0).toLocaleString(),bar.x,bar.y-5));ctx.restore();}};
-        new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Production',data:productionTotals.map(value=>Number(value.value||0)),backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[productionValueLabels]});
-        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:displayedLossLabels,datasets:[{...blueDataset('Lost minutes by type',displayedLossValues),...(singleLossType ? {maxBarThickness:58,categoryPercentage:.72,barPercentage:.82} : {})}]},options:chartOptions});
+        const positiveValueLabels = {id:'positiveValueLabels',afterDatasetsDraw(chart){const {ctx}=chart;ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>{const value=Number(chart.data.datasets[0].data[index]||0);if(value>0)ctx.fillText(value.toLocaleString(),bar.x,bar.y-5);});ctx.restore();}};
+        const sumValues = values => values.reduce((sum, value) => sum + Number(value || 0), 0);
+        new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Production',data:productionTotals.map(value=>Number(value.value||0)),backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[positiveValueLabels]});
+        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:displayedLossLabels,datasets:[{...blueDataset('Lost minutes by type',displayedLossValues),...(singleLossType ? {maxBarThickness:58,categoryPercentage:.72,barPercentage:.82} : {})}]},options:chartOptions,plugins:[positiveValueLabels]});
+        document.getElementById('lossMinutesTotal').textContent = `Total lost minutes: ${sumValues(lossTypeValues).toLocaleString()}`;
         const sensorFive = reportSensorId === 'sensor-5', cansValues = sensorFive ? reportLossTotals : reportTimeTotals;
-        new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:cansValues.map(value => sensorFive ? value.sensorId : compactLabel(value.label)),datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',cansValues.map(value => Number(value.lostCans || 0)))]},options:chartOptions});
-        new Chart(document.getElementById('unexplainedChart'), {type:'bar',data:{labels:unexplainedPlanTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Unexplained plan difference',data:unexplainedPlanTotals.map(value=>Number(value.value||0)),backgroundColor:'#dc2626'}]},options:chartOptions});
+        const lostCansValues = cansValues.map(value => Number(value.lostCans || 0));
+        new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:cansValues.map(value => sensorFive ? value.sensorId : compactLabel(value.label)),datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',lostCansValues)]},options:chartOptions,plugins:[positiveValueLabels]});
+        document.getElementById('lostCansTotal').textContent = `Total lost cans: ${sumValues(lostCansValues).toLocaleString()}`;
+        const unexplainedValues = unexplainedPlanTotals.map(value=>Number(value.value||0));
+        new Chart(document.getElementById('unexplainedChart'), {type:'bar',data:{labels:unexplainedPlanTotals.map(value=>compactLabel(value.label)),datasets:[{label:'Unexplained plan difference',data:unexplainedValues,backgroundColor:'#dc2626'}]},options:chartOptions,plugins:[positiveValueLabels]});
+        document.getElementById('unexplainedTotal').textContent = `Total unexplained plan difference: ${sumValues(unexplainedValues).toLocaleString()}`;
         document.querySelectorAll('.report-filter-heading details').forEach(details => details.addEventListener('toggle', () => { if (!details.open) return; document.querySelectorAll('.report-filter-heading details[open]').forEach(other => { if (other !== details) other.open = false; }); }));
         document.querySelectorAll('.report-filter-clear').forEach(button => button.addEventListener('click', () => { const field = button.closest('.report-column-filter').querySelector('input,select'); field.value = ''; document.getElementById('reportFilterForm').requestSubmit(); }));
     </script>

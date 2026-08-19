@@ -1,11 +1,9 @@
-<div th:fragment="content" id="plan-fact-page">
+<div th:fragment="content" id="plan-fact-page" class="feature-page">
     <style>
-        #plan-fact-page { width: 100%; max-width: 1632px; margin: auto; }
         #plan-fact-page h1 { margin-top: 0; }
         #plan-fact-page .view-switches { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: .5rem; }
         #plan-fact-page .view-switches a { color: #000; text-decoration: none; }
         #plan-fact-page .view-switches a.active { color: #1d4ed8; text-decoration: underline; }
-        #plan-fact-page .sensor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; row-gap: 1rem; align-items: start; }
         #plan-fact-page .sensor-panel { width: 100%; max-width: 800px; min-width: 0; }
         #plan-fact-page .sensor-panel:nth-child(even) { justify-self: end; }
         #plan-fact-page .sensor-panel h2 { margin: .5em 0; }
@@ -15,8 +13,7 @@
         #plan-fact-page th:nth-child(-n+3), #plan-fact-page td:nth-child(-n+3) { width: 88px; vertical-align: middle; }
         #plan-fact-page td.comment-cell { text-align: left; vertical-align: top; }
         #plan-fact-page .comment-line + .comment-line { margin-top: .25rem; }
-        @media (max-width: 1000px) {
-            #plan-fact-page .sensor-grid { grid-template-columns: 1fr; }
+        @container (max-width: 1100px) {
             #plan-fact-page .sensor-panel, #plan-fact-page .sensor-panel:nth-child(even) { justify-self: center; }
         }
         @media (max-width: 700px) {
@@ -47,10 +44,11 @@
         </div>
     </div>
 
-    <div class="sensor-grid">
+    <div class="sensor-grid adaptive-two-column-grid">
         <section class="sensor-panel" th:each="view : ${views}" th:attr="data-sensor=${view.sensorId}">
             <h2 th:text="${#strings.replace(view.sensorId, 'sensor-', 'Sensor ')}">Sensor 1</h2>
             <div class="chart-frame"><canvas height="190" th:attr="aria-label=|${view.sensorId} cans chart|"></canvas></div>
+            <strong class="chart-total" th:text="|Total production: ${view.totalActual}|">Total production: 0</strong>
             <table th:attr="aria-label=|${view.sensorId} Plan–Fact|">
                 <thead><tr><th>Time</th><th>Plan</th><th>Actual</th><th>Comment</th></tr></thead>
                 <tbody>
@@ -66,6 +64,7 @@
                     </td>
                 </tr>
                 </tbody>
+                <tfoot><tr><th>Total</th><th class="plan-total" th:text="${view.totalPlan}">0</th><th class="actual-total" th:text="${view.totalActual}">0</th><th></th></tr></tfoot>
             </table>
         </section>
     </div>
@@ -77,17 +76,19 @@
         (() => {
             const views = /*[[${views}]]*/ [];
             const charts = new Map();
+            const positiveValueLabels = {id:'positiveValueLabels',afterDatasetsDraw(chart){const {ctx}=chart;ctx.save();ctx.font='bold 12px Arial';ctx.fillStyle='#111';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((bar,index)=>{const value=Number(chart.data.datasets[0].data[index]||0);if(value>0)ctx.fillText(value.toLocaleString(),bar.x,bar.y-5);});ctx.restore();}};
             document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
                 const view = views.find(item => item.sensorId === panel.dataset.sensor);
                 if (!view || !window.Chart) return;
                 const chart = new Chart(panel.querySelector('canvas'), {
                     type: 'bar',
                     data: {labels: view.hours, datasets: [{label: 'Cans', data: view.actual, backgroundColor: '#3b82f6'}]},
-                    options: {responsive: true, maintainAspectRatio: false,
+                    options: {responsive: true, maintainAspectRatio: false, layout:{padding:{top:16}},
                         plugins: {legend: {display: true, position: 'top'}, tooltip: {enabled: true}},
                         scales: {x: {title: {display: true, text: 'Time'}},
                             y: {title: {display: true, text: 'Cans'}, beginAtZero: true,
-                                suggestedMax: 100, ticks: {stepSize: 20, maxTicksLimit: 10}}}}
+                                suggestedMax: 100, ticks: {stepSize: 20, maxTicksLimit: 10}}}},
+                    plugins: [positiveValueLabels]
                 });
                 charts.set(view.sensorId, chart);
             });
@@ -117,6 +118,10 @@
                     visibleActual.push(nextView.actual[index]);
                     renderExplanations(row.querySelector('.comment-cell'), nextView.explanations[index], nextView.sensorId);
                 });
+                const actualTotal = visibleActual.reduce((sum, value) => sum + Number(value || 0), 0);
+                panel.querySelector('.actual-total').textContent = actualTotal;
+                panel.querySelector('.plan-total').textContent = Array.from(rows).reduce((sum, row) => sum + (Number(row.cells[1].textContent.trim()) || 0), 0);
+                panel.querySelector('.chart-total').textContent = `Total production: ${actualTotal}`;
                 const chart = charts.get(nextView.sensorId);
                 const currentActual = chart?.data.datasets[0].data || [];
                 const actualChanged = currentActual.length !== visibleActual.length
@@ -163,6 +168,8 @@
                         );
                         actual.push(Number(freshRows[index].cells[2].textContent.trim()) || 0);
                     });
+                    panel.querySelector('tfoot').replaceWith(freshPanel.querySelector('tfoot'));
+                    panel.querySelector('.chart-total').replaceWith(freshPanel.querySelector('.chart-total'));
                     const chart = charts.get(panel.dataset.sensor);
                     if (chart) {
                         chart.data.datasets[0].data = actual;

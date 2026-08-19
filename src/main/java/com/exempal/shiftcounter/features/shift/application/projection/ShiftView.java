@@ -40,6 +40,17 @@ public record ShiftView(
         }
     }
 
+    public int totalActual() {
+        return actual.stream().mapToInt(Integer::intValue).sum();
+    }
+
+    public int totalPlan() {
+        return java.util.stream.IntStream.range(0, plan.size())
+                .filter(index -> planSupplied.get(index))
+                .map(index -> plan.get(index))
+                .sum();
+    }
+
     private static List<List<IntervalExplanationView>> emptyExplanations(int size) {
         return java.util.stream.IntStream.range(0, size).mapToObj(index -> List.<IntervalExplanationView>of()).toList();
     }

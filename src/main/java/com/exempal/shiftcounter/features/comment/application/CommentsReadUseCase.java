@@ -24,7 +24,11 @@ public interface CommentsReadUseCase {
         }
     }
 
-    record SourceComments(String sensorId, List<ExplanationRow> rows) {}
+    record SourceComments(String sensorId, List<ExplanationRow> rows) {
+        public int totalMinutes() {
+            return rows.stream().mapToInt(ExplanationRow::minutes).sum();
+        }
+    }
 
     record Data(Shift shift, List<Stoppage> rows, List<Stoppage> missing,
                 List<SourceComments> sourceComments) {

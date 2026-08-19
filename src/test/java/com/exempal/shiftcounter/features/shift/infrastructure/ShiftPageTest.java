@@ -75,14 +75,15 @@ class ShiftPageTest {
     @Test
     void templateKeepsReferenceLayoutAndRemovesBrokenCommentInputPath() throws Exception {
         String template = Files.readString(Path.of("src/main/resources/templates/features/shift/shift.html"));
-        assertThat(template).contains("class=\"sensor-grid\"", "th:each=\"view : ${views}\"",
+        assertThat(template).contains("class=\"sensor-grid adaptive-two-column-grid\"", "th:each=\"view : ${views}\"",
                 "backgroundColor: '#3b82f6'", "/topic/shift-updates/${view.sensorId}",
                 "/topic/comments/${view.sensorId}", "15:00–23:00");
         assertThat(template).doesNotContain("input[name=\"comment\"]", "/topic/shift-comments");
         assertThat(template).contains("const charts = new Map()", "chart.update('none')",
                 "updatePanel(JSON.parse(message.body))", "const nextIndexByHour = new Map",
                 "currentView.actual = visibleActual.slice()", "reconnectTimer = setTimeout(connect, 2000)",
-                "@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere");
+                "@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere",
+                "Total production:", "class=\"plan-total\"", "positiveValueLabels");
         assertThat(template).doesNotContain("window.location.reload()",
                 "sameIntervals(currentView.hours, nextView.hours)");
     }
