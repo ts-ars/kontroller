@@ -7,7 +7,8 @@ body {
 main { container-type: inline-size; }
 
 .feature-page {
-    --operational-chart-height: 214px;
+    --operational-chart-height: 238px;
+    --operational-chart-lift: 24px;
     box-sizing: border-box;
     width: 100%;
     max-width: 1632px;
@@ -229,13 +230,19 @@ nav .session form { display: inline; }
 }
 
 .report-chart-card {
-    height: calc(var(--operational-chart-height) + 30px);
+    height: calc(var(--operational-chart-height) + 30px - var(--operational-chart-lift));
     min-width: 0;
 }
 
-.report-chart-card canvas {
+.operational-chart-frame {
+    height: var(--operational-chart-height);
+    min-width: 0;
+    margin-top: calc(0px - var(--operational-chart-lift));
+}
+
+.operational-chart-frame canvas {
     width: 100% !important;
-    height: var(--operational-chart-height) !important;
+    height: 100% !important;
 }
 
 .report-chart-card { text-align: center; }
@@ -255,11 +262,6 @@ nav .session form { display: inline; }
 .report-column-filter .report-filter-clear { color: #111; background: #eee; border: 1px solid #bbb; }
 .report-text-filter { min-width: 280px; }
 
-#plan-fact-page .chart-frame canvas {
-    width: 100% !important;
-    height: var(--operational-chart-height) !important;
-}
-
 @container (max-width: 1100px) {
     .adaptive-two-column-grid { grid-template-columns: minmax(0, 1fr); }
     .report-charts {
@@ -268,7 +270,10 @@ nav .session form { display: inline; }
 }
 
 @container (max-width: 700px) {
-    .feature-page { --operational-chart-height: 200px; }
+    .feature-page {
+        --operational-chart-height: 220px;
+        --operational-chart-lift: 20px;
+    }
     .report-charts { grid-template-columns: minmax(0, 1fr); }
 
     .report-table colgroup, .report-table thead { display: none; }

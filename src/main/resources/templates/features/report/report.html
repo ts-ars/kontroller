@@ -12,10 +12,10 @@
         <button type="submit">Filter</button><button type="submit" formaction="/report/export.xlsx">Export Excel</button>
     </form>
     <div class="report-charts">
-        <section class="report-chart-card"><canvas id="productionChart"></canvas><strong class="report-chart-total" th:text="|Total production: ${totalProduction}|">Total production: 0</strong></section>
-        <section class="report-chart-card"><canvas id="lossChart"></canvas><strong id="lossMinutesTotal" class="report-chart-total"></strong></section>
-        <section class="report-chart-card"><canvas id="cansChart"></canvas><strong id="lostCansTotal" class="report-chart-total"></strong></section>
-        <section class="report-chart-card"><canvas id="unexplainedChart"></canvas><strong id="unexplainedTotal" class="report-chart-total"></strong></section>
+        <section class="report-chart-card"><div class="operational-chart-frame"><canvas id="productionChart"></canvas></div><strong class="report-chart-total" th:text="|Total production: ${totalProduction}|">Total production: 0</strong></section>
+        <section class="report-chart-card"><div class="operational-chart-frame"><canvas id="lossChart"></canvas></div><strong id="lossMinutesTotal" class="report-chart-total"></strong></section>
+        <section class="report-chart-card"><div class="operational-chart-frame"><canvas id="cansChart"></canvas></div><strong id="lostCansTotal" class="report-chart-total"></strong></section>
+        <section class="report-chart-card"><div class="operational-chart-frame"><canvas id="unexplainedChart"></canvas></div><strong id="unexplainedTotal" class="report-chart-total"></strong></section>
     </div>
 
     <div class="report-table-wrap"><table th:class="'report-table ' + (${sensorId == 'sensor-5'} ? 'report-table--with-source ' : 'report-table--without-source ') + (${canExclude} ? 'report-table--with-actions' : 'report-table--without-actions')">

@@ -12,11 +12,14 @@ class ReportLayoutContractTest {
     @Test
     void keepsApprovedCompactReportAndPlanFactChartDimensions() throws Exception {
         String css = Files.readString(Path.of("src/main/resources/static/css/styles.css"));
+        String report = Files.readString(Path.of("src/main/resources/templates/features/report/report.html"));
+        String planFact = Files.readString(Path.of("src/main/resources/templates/features/shift/shift.html"));
 
         assertThat(css)
                 .contains(".feature-page")
                 .contains("max-width: 1632px")
-                .contains("--operational-chart-height: 214px")
+                .contains("--operational-chart-height: 238px")
+                .contains("--operational-chart-lift: 24px")
                 .contains("main { container-type: inline-size; }")
                 .contains(".report-filters input[type=\"date\"]")
                 .contains("width: 130px")
@@ -25,12 +28,15 @@ class ReportLayoutContractTest {
                 .contains("grid-template-columns: repeat(4, minmax(0, 1fr))")
                 .contains(".report-filter-heading")
                 .contains(".report-filter-icon::before")
-                .contains(".report-chart-card canvas")
-                .contains("#plan-fact-page .chart-frame canvas")
+                .contains(".operational-chart-frame")
                 .contains("width: 100% !important")
-                .contains("height: var(--operational-chart-height) !important")
-                .contains(".feature-page { --operational-chart-height: 200px; }");
+                .contains("height: 100% !important")
+                .contains("--operational-chart-height: 220px")
+                .contains("--operational-chart-lift: 20px");
         assertThat(css).doesNotContain("overflow-x", "min-width: 900px", "100vw");
+        assertThat(report).contains("class=\"operational-chart-frame\"");
+        assertThat(planFact).contains("class=\"chart-frame operational-chart-frame\"")
+                .doesNotContain("height=\"190\"");
     }
 
     @Test
