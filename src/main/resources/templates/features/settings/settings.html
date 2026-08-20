@@ -5,12 +5,12 @@
     <title>Settings Page</title>
 </head>
 <body>
-<div th:fragment="content" id="settings-page" class="feature-page">
-    <div class="settings-content">
+<div th:fragment="content" id="settings-page" class="feature-page ui-page ui-page--settings">
+  <div class="settings-content ui-section">
         <form th:action="@{/settings}" method="post">
             <input name="groupId" type="hidden" th:value="${groupId}">
             <div class="table-wrap">
-                <table aria-label="Production interval plans" th:attr="data-standard-row-count=${standardRowCount}">
+      <table class="ui-table ui-table--cards ui-table--settings" aria-label="Production interval plans" th:attr="data-standard-row-count=${standardRowCount}">
                     <thead><tr><th>Hour</th><th>Plan Sensors 1–4</th><th>Sensor 5</th><th>Plan Sensor 6</th><th></th></tr></thead>
                     <tbody>
                     <tr th:each="row, status : ${rows}" th:classappend="${status.index >= standardRowCount} ? 'extension-row'">
@@ -24,8 +24,8 @@
                     <tfoot><tr><th>Total</th><td data-total="shared" th:text="${sharedTotal}">8450</td><td data-total="sensor5" th:text="${sensor5Total}">33800</td><td data-total="sensor6" th:text="${sensor6Total}">27200</td><td></td></tr></tfoot>
                 </table>
             </div>
-            <button type="button" class="add-hour">Add Hour</button>
-            <button type="submit">Save</button>
+    <div class="ui-actions"><button type="button" class="add-hour">Add Hour</button>
+    <button type="submit">Save</button></div>
             <span class="settings-error" aria-live="polite"></span>
         </form>
     </div>

@@ -100,30 +100,24 @@ class CommentsPageTest {
     void templateContainsEditableReadonlyAndSensorFiveReferenceLayouts() throws Exception {
         String template = Files.readString(Path.of("src/main/resources/templates/features/comment/comment.html"));
         String styles = Files.readString(Path.of("src/main/resources/static/css/styles.css"));
-        assertThat(template).contains("class=\"inherited-grid adaptive-two-column-grid\"", "readonly aria-label=\"Allocated cans\"",
+        assertThat(template).contains("class=\"inherited-grid adaptive-two-column-grid ui-adaptive-grid\"", "readonly aria-label=\"Allocated cans\"",
                 "Category", "Comment", "Minutes", "Allocated cans", "sensor-5", "15:00–23:00");
         assertThat(template).doesNotContain("Reasons for Stoppages", "name=\"comment\"");
         assertThat(template).contains("function editorState()", "function restoreEditorState(state)",
                 "client.subscribe(`/topic/comments/${selectedCommentsSensor}`, refreshComments)",
                 "client.subscribe(`/topic/shift-updates/${selectedCommentsSensor}`, refreshComments)",
                 "document.querySelector('.explanations tr:not([data-explanation-id])')",
-                "max-width: 100%; min-width: 0; overflow: visible",
-                "adaptive-two-column-grid",
-                "@media (max-width: 700px)",
+                "adaptive-two-column-grid", "ui-table--cards",
                 "mobile-column-label", ">Min<", ">Cans<", ">By<",
-                "white-space: nowrap",
-                ".source-comments { min-width: 0; max-width: 100%; }",
-                ".inherited-table { table-layout: fixed; }",
-                "overflow-wrap: anywhere",
                 "th:text=\"${source.totalMinutes}\"",
-                "<section id=\"manual-fallback\">",
+                "<section id=\"manual-fallback\" class=\"ui-section\">",
                 "loss.detectionType == 'MANUAL'",
                 "'openManualInterval()' : 'addExplanation(this)'");
         assertThat(template).doesNotContain("window.location.reload()",
                 "width: 1100px; min-width: 1100px",
                 "grid-template-columns: 115px minmax(0, 1fr)");
-        assertThat(template).contains("container-name: comment-card", "container-type: inline-size");
-        assertThat(styles).contains("@container comment-card (max-width: 820px)",
+        assertThat(styles).contains("container-name: comment-card", "container-type: inline-size",
+                "@container comment-card (max-width: 820px)",
                 "@container (max-width: 1100px)",
                 "#comments-page .inherited-table thead { display: none; }",
                 "grid-template-areas: 'category minutes cans author actions' 'comment comment comment comment comment'",

@@ -1,6 +1,6 @@
-<div th:fragment="content" id="plan-fact-page" class="feature-page">
+<div th:fragment="content" id="plan-fact-page" class="feature-page ui-page ui-page--plan-fact">
 
-    <div class="view-switches">
+  <div class="view-switches ui-filter-bar">
         <div aria-label="Sensor range">
             <a th:href="@{/page/shift(sensors='1-4',shift=${shiftSlice})}" th:classappend="${sensorGroup == '1-4'} ? 'active'">1–4</a>
             <span aria-hidden="true"> | </span>
@@ -14,12 +14,12 @@
         </div>
     </div>
 
-    <div class="sensor-grid adaptive-two-column-grid">
-        <section class="sensor-panel" th:each="view : ${views}" th:attr="data-sensor=${view.sensorId}">
+  <div class="sensor-grid adaptive-two-column-grid ui-adaptive-grid">
+    <section class="sensor-panel ui-section" th:each="view : ${views}" th:attr="data-sensor=${view.sensorId}">
             <h2 th:text="${#strings.replace(view.sensorId, 'sensor-', 'Sensor ')}">Sensor 1</h2>
-            <div class="chart-frame operational-chart-frame"><canvas th:attr="aria-label=|${view.sensorId} cans chart|"></canvas></div>
+      <div class="chart-frame operational-chart-frame ui-chart-frame"><canvas th:attr="aria-label=|${view.sensorId} cans chart|"></canvas></div>
             <strong class="chart-total" th:text="|Total production: ${view.totalActual}|">Total production: 0</strong>
-            <table th:attr="aria-label=|${view.sensorId} Plan–Fact|">
+      <table class="ui-table ui-table--cards ui-table--plan-fact" th:attr="aria-label=|${view.sensorId} Plan–Fact|">
                 <thead><tr><th>Time</th><th>Plan</th><th>Actual</th><th>Comment</th></tr></thead>
                 <tbody>
                 <tr th:each="hour, i : ${view.hours}">
@@ -27,10 +27,12 @@
                     <td th:text="${view.planSupplied[i.index] ? view.plan[i.index] : 'Plan required'}">450</td>
                     <td th:text="${view.actual[i.index]}">0</td>
                     <td class="comment-cell">
-                        <div class="comment-line" th:each="explanation : ${view.explanations[i.index]}"
-                             th:classappend="${explanation.status != 'EXPLAINED'} ? ' loss-alert'"
-                             th:text="${(view.sensorId == 'sensor-5' ? #strings.replace(explanation.sourceSensorId, 'sensor-', 'Sensor ') + ': ' : '')
-                                + explanation.comment + ' — ' + explanation.minutes + ' min / ' + explanation.cans + ' cans'}"></div>
+                        <div class="comment-grid">
+                            <div class="comment-line" th:each="explanation : ${view.explanations[i.index]}"
+                                 th:classappend="${explanation.status != 'EXPLAINED'} ? ' loss-alert'"
+                                 th:text="${(view.sensorId == 'sensor-5' ? #strings.replace(explanation.sourceSensorId, 'sensor-', 'Sensor ') + ': ' : '')
+                                    + explanation.comment + ' — ' + explanation.minutes + ' min / ' + explanation.cans + ' cans'}"></div>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -55,15 +57,20 @@
             });
 
             const renderExplanations = (cell, explanations, sensorId) => {
-                cell.replaceChildren(...explanations.map(explanation => {
+                const grid = document.createElement('div');
+                grid.className = 'comment-grid';
+                grid.replaceChildren(...explanations.map(explanation => {
                     const line = document.createElement('div');
                     line.className = `comment-line ${explanation.status !== 'EXPLAINED' ? 'loss-alert' : ''}`;
                     const source = sensorId === 'sensor-5'
                         ? `${explanation.sourceSensorId.replace('sensor-', 'Sensor ')}: ` : '';
                     line.textContent = `${source}${explanation.comment} — ${explanation.minutes} min / ${explanation.cans || 0} cans`;
+                    line.title = line.textContent;
                     return line;
                 }));
+                cell.replaceChildren(grid);
             };
+            document.querySelectorAll('#plan-fact-page .comment-line').forEach(line => line.title = line.textContent.trim());
             const updatePanel = nextView => {
                 const panel = document.querySelector(`#plan-fact-page .sensor-panel[data-sensor="${nextView.sensorId}"]`);
                 const currentView = views.find(item => item.sensorId === nextView.sensorId);
@@ -88,8 +95,7 @@
                 const actualChanged = currentActual.length !== visibleActual.length
                     || currentActual.some((value, index) => Number(value) !== Number(visibleActual[index]));
                 if (chart && actualChanged) {
-                    chart.data.datasets[0].data = visibleActual;
-                    chart.update('none');
+                    OperationalCharts.update(chart, visibleActual);
                 }
                 currentView.actual = visibleActual.slice();
             };
@@ -133,8 +139,7 @@
                     panel.querySelector('.chart-total').replaceWith(freshPanel.querySelector('.chart-total'));
                     const chart = charts.get(panel.dataset.sensor);
                     if (chart) {
-                        chart.data.datasets[0].data = actual;
-                        chart.update('none');
+                        OperationalCharts.update(chart, actual);
                     }
                 });
             };
@@ -187,6 +192,7 @@
             window.addEventListener('online', disconnectAndReconnect);
             window.addEventListener('beforeunload', () => {
                 clearTimeout(reconnectTimer);
+                charts.forEach(chart => OperationalCharts.destroy(chart));
                 try { socket?.close(); } catch (_) {}
             }, {once: true});
             connect();

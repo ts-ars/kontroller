@@ -77,15 +77,22 @@ class ShiftPageTest {
         String template = Files.readString(Path.of("src/main/resources/templates/features/shift/shift.html"));
         String css = Files.readString(Path.of("src/main/resources/static/css/styles.css"));
         String charts = Files.readString(Path.of("src/main/resources/static/js/operational-charts.js"));
-        assertThat(template).contains("class=\"sensor-grid adaptive-two-column-grid\"", "th:each=\"view : ${views}\"",
+        assertThat(template).contains("class=\"sensor-grid adaptive-two-column-grid ui-adaptive-grid\"", "th:each=\"view : ${views}\"",
                 "'planFactProduction'", "/topic/shift-updates/${view.sensorId}",
                 "/topic/comments/${view.sensorId}", "15:00–23:00");
         assertThat(template).doesNotContain("input[name=\"comment\"]", "/topic/shift-comments");
-        assertThat(template).contains("const charts = new Map()", "chart.update('none')",
+        assertThat(template).contains("const charts = new Map()", "OperationalCharts.update(chart",
                 "updatePanel(JSON.parse(message.body))", "const nextIndexByHour = new Map",
                 "currentView.actual = visibleActual.slice()", "reconnectTimer = setTimeout(connect, 2000)",
-                "Total production:", "class=\"plan-total\"", "OperationalCharts.create");
+                "Total production:", "class=\"plan-total\"", "OperationalCharts.create",
+                "class=\"comment-grid\"", "line.title = line.textContent");
+        assertThat(css).contains("grid-template-columns: repeat(2, minmax(0, 1fr));",
+                "#plan-fact-page .comment-line:last-child:nth-child(odd)",
+                "text-overflow: ellipsis;");
         assertThat(css).contains("@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere");
+        assertThat(css).contains(".ui-table--plan-fact tbody tr:not(:has(.report-empty))",
+                "grid-template-columns: repeat(3, minmax(0, 1fr));",
+                ".ui-table--plan-fact tfoot th:nth-child(4) { display: none; }");
         assertThat(charts).contains("positiveValueLabels", "profile.axis !== 'category'", "planFactProduction:");
         assertThat(template).doesNotContain("window.location.reload()",
                 "sameIntervals(currentView.hours, nextView.hours)");

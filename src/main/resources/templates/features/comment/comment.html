@@ -1,12 +1,12 @@
-<div th:fragment="content" id="comments-page" class="feature-page">
+<div th:fragment="content" id="comments-page" class="feature-page ui-page ui-page--comments">
 
-  <form method="get" class="comments-date-filter">
+  <form method="get" class="comments-date-filter ui-filter-bar">
     <label>Date <input type="date" name="date" th:value="${productionDate}"></label>
     <input type="hidden" name="sensorId" th:value="${sensorId}">
     <input type="hidden" name="shift" th:value="${shiftSlice}">
     <button type="submit">Open</button>
   </form>
-  <div class="view-switches">
+  <div class="view-switches ui-filter-bar">
     <div aria-label="Sensor">
       <th:block th:each="sensor, status : ${sensors}">
         <a th:href="@{/page/comment(sensorId=${sensor.id.value},shift=${shiftSlice},date=${productionDate})}"
@@ -26,12 +26,12 @@
   <section th:if="${readOnlyAggregation}" data-readonly-sensor="sensor-5">
     <h2>Comments inherited from Sensors 1–4</h2>
     <p>Read only. Edit these explanations in the source sensor.</p>
-    <div class="inherited-grid adaptive-two-column-grid">
-      <section class="source-comments" th:each="source : ${sourceComments}">
+    <div class="inherited-grid adaptive-two-column-grid ui-adaptive-grid">
+      <section class="source-comments ui-section" th:each="source : ${sourceComments}">
         <h3 th:text="${#strings.replace(source.sensorId, 'sensor-', 'Sensor ')}">Sensor 1</h3>
         <p th:if="${#lists.isEmpty(source.rows)}">No comments for the selected shift.</p>
         <div class="table-wrap" th:unless="${#lists.isEmpty(source.rows)}">
-          <table class="inherited-table">
+          <table class="inherited-table ui-table ui-table--cards ui-table--inherited">
             <thead><tr><th>Time</th><th>Category</th><th>Comment</th><th>Minutes</th><th>Author</th></tr></thead>
             <tbody><tr th:each="row : ${source.rows}">
               <td th:text="${row.time.toLocalTime()}">08:14:23</td>
@@ -49,32 +49,32 @@
 
   <section th:unless="${readOnlyAggregation}">
     <div th:each="alert : ${alerts}"><p class="loss-alert" th:text="${alert}"></p></div>
-    <section id="manual-fallback">
+      <section id="manual-fallback" class="ui-section">
       <div th:if="${#lists.isEmpty(losses)}">No system losses for the selected shift.</div>
       <button th:if="${#lists.isEmpty(losses)}" class="add-reason" type="button" onclick="openManualInterval()">Add reason</button>
       <label id="manual-interval-step" class="manual-interval" hidden>Interval
         <select id="manual-interval" onchange="openManualRow()"><option value="">Select interval</option><option th:each="interval : ${intervalOptions}" th:value="${interval.index}" th:text="${interval.label}" th:attr="data-plan=${interval.plan},data-duration=${interval.durationMinutes}"></option></select>
       </label>
-      <section id="manual-row" class="loss-card manual-loss" hidden>
+        <section id="manual-row" class="loss-card manual-loss ui-section" hidden>
         <h2>MANUAL · <span id="manual-time"></span></h2>
         <p>Loss: <span id="manual-loss-minutes">0</span> min / <span id="manual-loss-cans">0</span> cans · Allocated: 0 min; remaining: <span id="manual-remaining">0</span> min</p>
         <p>Status: UNEXPLAINED</p>
-        <div class="table-wrap"><table class="editor-table"><thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th><th>Author</th></tr></thead>
+          <div class="table-wrap"><table class="editor-table ui-table ui-table--cards ui-table--editor"><thead><tr><th>Category</th><th>Comment</th><th>Minutes</th><th>Allocated cans</th><th>Actions</th><th>Author</th></tr></thead>
           <tbody><tr><td><select id="manual-category"><option th:each="category : ${T(com.exempal.shiftcounter.features.comment.domain.LossCategory).values()}" th:value="${category}" th:text="${category}"></option></select></td>
             <td><input id="manual-comment" type="text"></td><td><input id="manual-minutes" type="number" min="1" step="1" oninput="calculateManualCans()"></td>
             <td><input id="manual-cans" type="number" readonly></td>
-            <td><div class="actions"><button type="button" onclick="createManualStoppage()">Save</button><button type="button" onclick="cancelManualStoppage()">Delete</button></div></td>
+          <td><div class="actions ui-actions"><button type="button" onclick="createManualStoppage()">Save</button><button type="button" onclick="cancelManualStoppage()">Delete</button></div></td>
             <td class="author" th:text="${#authentication.name}">User</td></tr></tbody></table></div>
         <div id="manual-status" aria-live="polite"></div>
       </section>
     </section>
 
-    <section class="loss-card" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
+      <section class="loss-card ui-section" th:each="loss : ${losses}" th:attr="data-stoppage-id=${loss.id}">
       <h2 th:text="|${loss.detectionType} · ${loss.time}|">FIXED · 08:00:00</h2>
       <p><span th:text="|Loss: ${loss.roundedMinutes} min / ${loss.lostCans} cans|">Loss</span>
         · <span class="allocation-summary" th:text="|Allocated: ${loss.allocatedMinutes} min; remaining: ${loss.remainingMinutes} min|">Allocation</span></p>
       <p class="explanation-status" th:text="|Status: ${loss.explanationStatus}|">Status</p>
-      <div class="table-wrap"><table class="editor-table">
+        <div class="table-wrap"><table class="editor-table ui-table ui-table--cards ui-table--editor">
         <thead><tr>
           <th><span class="desktop-column-label">Category</span><span class="mobile-column-label">Category</span></th>
           <th><span class="desktop-column-label">Comment</span><span class="mobile-column-label">Comment</span></th>
@@ -90,7 +90,7 @@
           <td><input class="comment" type="text" th:value="${explanation.comment}"></td>
           <td><input class="allocated-minutes" type="number" min="0" step="1" th:value="${explanation.allocatedMinutes}"></td>
           <td><input class="allocated-cans" type="number" th:value="${explanation.allocatedCans}" readonly aria-label="Allocated cans"></td>
-          <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
+              <td><div class="actions ui-actions"><button type="button" onclick="saveExplanation(this)">Save</button>
             <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
           <td class="author" th:text="${explanation.authorDisplayName}">Legacy</td>
         </tr>
@@ -120,7 +120,7 @@
       row.innerHTML = `<td><select class="category">${categories.map(c => `<option>${c}</option>`).join('')}</select></td>
         <td><input class="comment" type="text"></td><td><input class="allocated-minutes" type="number" min="0" step="1" value="0"></td>
         <td><input class="allocated-cans" type="number" value="0" readonly aria-label="Allocated cans"></td>
-        <td><div class="actions"><button type="button" onclick="saveExplanation(this)">Save</button>
+      <td><div class="actions ui-actions"><button type="button" onclick="saveExplanation(this)">Save</button>
         <button type="button" onclick="deleteExplanation(this)">Delete</button></div></td>
         <td class="author">${currentCommentsAuthor}</td>`;
       card.querySelector('.explanations').appendChild(row);

@@ -17,9 +17,9 @@ class ReportLayoutContractTest {
 
         assertThat(css)
                 .contains(".feature-page")
-                .contains("max-width: 1632px")
-                .contains("--operational-chart-height: 238px")
-                .contains("--operational-chart-lift: 24px")
+                .contains("--ui-page-max: 1740px")
+                .contains("--ui-chart-height: 238px")
+                .contains("--ui-chart-lift: 24px")
                 .contains("main { container-type: inline-size; }")
                 .contains(".report-filters input[type=\"date\"]")
                 .contains("width: 130px")
@@ -31,11 +31,11 @@ class ReportLayoutContractTest {
                 .contains(".operational-chart-frame")
                 .contains("width: 100% !important")
                 .contains("height: 100% !important")
-                .contains("--operational-chart-height: 220px")
-                .contains("--operational-chart-lift: 20px");
+                .contains("--ui-chart-height-compact: 220px")
+                .contains("--ui-chart-lift-compact: 20px");
         assertThat(css).doesNotContain("overflow-x", "min-width: 900px", "100vw");
-        assertThat(report).contains("class=\"operational-chart-frame\"");
-        assertThat(planFact).contains("class=\"chart-frame operational-chart-frame\"")
+        assertThat(report).contains("class=\"operational-chart-frame ui-chart-frame\"");
+        assertThat(planFact).contains("class=\"chart-frame operational-chart-frame ui-chart-frame\"")
                 .doesNotContain("height=\"190\"");
     }
 

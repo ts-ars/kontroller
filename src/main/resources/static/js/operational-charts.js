@@ -83,6 +83,32 @@
         return chart;
     };
 
+    const update = (chart, values, labels) => {
+        if (!chart) return;
+        const entry = [...charts].find(candidate => candidate.chart === chart);
+        if (!entry) throw new Error('Chart is not managed by OperationalCharts');
+        if (labels) {
+            const renderedLabels = entry.profile.axis === 'time' ? labels.map(compactDateLabel) : [...labels];
+            const series = stableSeries(renderedLabels, values, entry.profile.stableSlots);
+            chart.data.labels = series.labels;
+            chart.data.datasets[0].data = series.values;
+        } else {
+            chart.data.datasets[0].data = [...values];
+        }
+        chart.update('none');
+    };
+
+    const destroy = chart => {
+        const entry = [...charts].find(candidate => candidate.chart === chart);
+        if (!entry) return;
+        charts.delete(entry);
+        chart.destroy();
+    };
+
+    global.addEventListener?.('pagehide', () => {
+        [...charts].forEach(({chart}) => destroy(chart));
+    });
+
     global.matchMedia?.('(max-width: 600px)').addEventListener?.('change', () => {
         charts.forEach(({chart, profile}) => {
             const rotation = profile.mobileRotation && isMobile() ? profile.mobileRotation : 0;
@@ -92,5 +118,5 @@
         });
     });
 
-    global.OperationalCharts = {font, profiles, positiveValueLabels, stableSeries, compactDateLabel, create};
+    global.OperationalCharts = {font, profiles, positiveValueLabels, stableSeries, compactDateLabel, create, update, destroy};
 })(window);
