@@ -1,5 +1,4 @@
 <div th:fragment="content" class="feature-page report-page">
-    <h1>Shift Report</h1>
     <nav class="report-sensors" aria-label="Sensor">
         <th:block th:each="sensor, iteration : ${sensorOptions}">
             <a th:href="@{/page/report(from=${startDate},to=${endDate},sensorId=${sensor.id.value},source=${sourceFilter},type=${typeFilter},reason=${reasonFilter},author=${authorFilter})}" th:classappend="${sensor.id.value == sensorId} ? 'active'" th:text="${#strings.substringAfter(sensor.id.value, 'sensor-')}">1</a><span th:if="${!iteration.last}" aria-hidden="true"> | </span>
@@ -77,27 +76,20 @@
                 confirm.disabled = false;
             }
         }
-        const reportSensorId = /*[[${sensorId}]]*/ 'sensor-1', reportTimeGrouping = /*[[${timeGrouping}]]*/ 'daily';
+        const reportSensorId = /*[[${sensorId}]]*/ 'sensor-1';
         const lossTotalsByType = {}; reportRows.forEach(row => lossTotalsByType[row.type] = (lossTotalsByType[row.type] || 0) + Number(row.minutes || 0));
-        const compactLabel = label => reportTimeGrouping === 'daily' && label.length >= 10 ? label.slice(5).replace('-', '.') : label;
-        const chartOptions = OperationalCharts.options();
-        const categoricalChartOptions = OperationalCharts.options({categorical:true});
-        const blueDataset = (label,data) => ({label,data,backgroundColor:'#3b82f6'});
-        const stableChartSeries = OperationalCharts.stableSeries;
         const lossTypeLabels = Object.keys(lossTotalsByType), lossTypeValues = Object.values(lossTotalsByType);
-        const lossTypeSeries = stableChartSeries(lossTypeLabels, lossTypeValues);
-        const positiveValueLabels = OperationalCharts.positiveValueLabels;
         const sumValues = values => values.reduce((sum, value) => sum + Number(value || 0), 0);
-        const productionValues = productionTotals.map(value=>Number(value.value||0)), productionSeries = stableChartSeries(productionTotals.map(value=>compactLabel(value.label)), productionValues);
-        new Chart(document.getElementById('productionChart'), {type:'bar',data:{labels:productionSeries.labels,datasets:[{label:'Production',data:productionSeries.values,backgroundColor:'#16a34a'}]},options:chartOptions,plugins:[positiveValueLabels]});
-        new Chart(document.getElementById('lossChart'), {type:'bar',data:{labels:lossTypeSeries.labels,datasets:[blueDataset('Lost minutes by type',lossTypeSeries.values)]},options:categoricalChartOptions,plugins:[positiveValueLabels]});
+        const productionValues = productionTotals.map(value=>Number(value.value||0));
+        OperationalCharts.create(document.getElementById('productionChart'), 'production', productionTotals.map(value=>value.label), productionValues);
+        OperationalCharts.create(document.getElementById('lossChart'), 'lossTypes', lossTypeLabels, lossTypeValues);
         document.getElementById('lossMinutesTotal').textContent = `Total lost minutes: ${sumValues(lossTypeValues).toLocaleString()}`;
         const sensorFive = reportSensorId === 'sensor-5', cansValues = sensorFive ? reportLossTotals : reportTimeTotals;
-        const lostCansValues = cansValues.map(value => Number(value.lostCans || 0)), lostCansSeries = stableChartSeries(cansValues.map(value => sensorFive ? value.sensorId : compactLabel(value.label)), lostCansValues);
-        new Chart(document.getElementById('cansChart'), {type:'bar',data:{labels:lostCansSeries.labels,datasets:[blueDataset(sensorFive ? 'Lost cans by sensor' : 'Lost cans over time',lostCansSeries.values)]},options:sensorFive ? categoricalChartOptions : chartOptions,plugins:[positiveValueLabels]});
+        const lostCansValues = cansValues.map(value => Number(value.lostCans || 0));
+        OperationalCharts.create(document.getElementById('cansChart'), sensorFive ? 'lossSensors' : 'lossTime', cansValues.map(value => sensorFive ? value.sensorId : value.label), lostCansValues);
         document.getElementById('lostCansTotal').textContent = `Total lost cans: ${sumValues(lostCansValues).toLocaleString()}`;
-        const unexplainedValues = unexplainedPlanTotals.map(value=>Number(value.value||0)), unexplainedSeries = stableChartSeries(unexplainedPlanTotals.map(value=>compactLabel(value.label)), unexplainedValues);
-        new Chart(document.getElementById('unexplainedChart'), {type:'bar',data:{labels:unexplainedSeries.labels,datasets:[{label:'Unexplained plan difference',data:unexplainedSeries.values,backgroundColor:'#dc2626'}]},options:chartOptions,plugins:[positiveValueLabels]});
+        const unexplainedValues = unexplainedPlanTotals.map(value=>Number(value.value||0));
+        OperationalCharts.create(document.getElementById('unexplainedChart'), 'unexplained', unexplainedPlanTotals.map(value=>value.label), unexplainedValues);
         document.getElementById('unexplainedTotal').textContent = `Total unexplained plan difference: ${sumValues(unexplainedValues).toLocaleString()}`;
         document.querySelectorAll('.report-filter-heading details').forEach(details => details.addEventListener('toggle', () => { if (!details.open) return; document.querySelectorAll('.report-filter-heading details[open]').forEach(other => { if (other !== details) other.open = false; }); }));
         document.querySelectorAll('.report-filter-clear').forEach(button => button.addEventListener('click', () => { const field = button.closest('.report-column-filter').querySelector('input,select'); field.value = ''; document.getElementById('reportFilterForm').requestSubmit(); }));

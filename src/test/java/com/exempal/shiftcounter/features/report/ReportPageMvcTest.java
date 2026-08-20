@@ -73,7 +73,7 @@ class ReportPageMvcTest {
                 .andExpect(model().attribute("problems", hasSize(1)))
                 .andExpect(model().attribute("lossTotals", hasSize(4)))
                 .andExpect(model().attribute("sensorOptions", hasSize(6)))
-                .andExpect(content().string(containsString("Shift Report")))
+                .andExpect(content().string(not(containsString("<h1>Shift Report</h1>"))))
                 .andExpect(content().string(containsString(">Filter</button>")))
                 .andExpect(content().string(allOf(
                         containsString("aria-label=\"Sensor\""),
@@ -96,7 +96,7 @@ class ReportPageMvcTest {
                 .andExpect(content().string(containsString("sensor-2")))
                 .andExpect(content().string(containsString("id=\"lossChart\"")))
                 .andExpect(content().string(containsString("id=\"cansChart\"")))
-                .andExpect(content().string(containsString("Lost cans by sensor")));
+                .andExpect(content().string(containsString("sensorFive ? 'lossSensors' : 'lossTime'")));
     }
 
     @Test
@@ -113,6 +113,6 @@ class ReportPageMvcTest {
                 .andExpect(content().string(containsString("id=\"cansChart\"")))
                 .andExpect(content().string(containsString("id=\"productionChart\"")))
                 .andExpect(content().string(containsString("id=\"unexplainedChart\"")))
-                .andExpect(content().string(containsString("Lost cans over time")));
+                .andExpect(content().string(containsString("sensorFive ? 'lossSensors' : 'lossTime'")));
     }
 }

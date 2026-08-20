@@ -1,6 +1,5 @@
 <div th:fragment="content" id="plan-fact-page" class="feature-page">
 
-    <h1>Plan–Fact</h1>
     <div class="view-switches">
         <div aria-label="Sensor range">
             <a th:href="@{/page/shift(sensors='1-4',shift=${shiftSlice})}" th:classappend="${sensorGroup == '1-4'} ? 'active'">1–4</a>
@@ -48,16 +47,10 @@
         (() => {
             const views = /*[[${views}]]*/ [];
             const charts = new Map();
-            const positiveValueLabels = OperationalCharts.positiveValueLabels;
             document.querySelectorAll('#plan-fact-page .sensor-panel').forEach(panel => {
                 const view = views.find(item => item.sensorId === panel.dataset.sensor);
                 if (!view || !window.Chart) return;
-                const chart = new Chart(panel.querySelector('canvas'), {
-                    type: 'bar',
-                    data: {labels: view.hours, datasets: [{label: 'Cans', data: view.actual, backgroundColor: '#3b82f6'}]},
-                    options: OperationalCharts.options({xTitle:'Time', yTitle:'Cans', suggestedMax:100, stepSize:20, maxTicksLimit:10}),
-                    plugins: [positiveValueLabels]
-                });
+                const chart = OperationalCharts.create(panel.querySelector('canvas'), 'planFactProduction', view.hours, view.actual);
                 charts.set(view.sensorId, chart);
             });
 

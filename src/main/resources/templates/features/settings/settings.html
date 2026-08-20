@@ -5,34 +5,8 @@
     <title>Settings Page</title>
 </head>
 <body>
-<div th:fragment="content" id="settings-page">
-    <style>
-        #settings-page { box-sizing: border-box; width: min(100%, 1400px); margin: 0 auto; font-family: sans-serif; }
-        #settings-page * { box-sizing: border-box; }
-        #settings-page .settings-content { width: 100%; }
-        #settings-page form { width: min(100%, 1000px); }
-        #settings-page h1 { margin-top: 0; }
-        #settings-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: .5rem; }
-        #settings-page th, #settings-page td { padding: .3rem 1rem; border: 1px solid #ccc; text-align: center; vertical-align: middle; }
-        #settings-page th:first-child, #settings-page td:first-child { width: 160px; }
-        #settings-page th:last-child, #settings-page td:last-child { width: 50px; padding-inline: .25rem; }
-        #settings-page input[type="text"], #settings-page input[type="number"] {
-            width: 100%; height: 34px; padding: 4px 6px; font-size: 14px; border: 1px solid #ccc;
-            border-radius: 4px; background: #fff; color: #000; text-align: center;
-        }
-        #settings-page tfoot th, #settings-page tfoot td { font-weight: bold; }
-        #settings-page button { margin-top: 1rem; padding: .5rem 1rem; background: #1d4ed8; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
-        #settings-page button:hover { background: #2563eb; }
-        #settings-page .delete-row { margin: 0; padding: 0; color: #dc2626; background: none; font-size: 20px; }
-        #settings-page .delete-row:hover { background: none; }
-        #settings-page .settings-error { margin-left: .75rem; color: #b91c1c; }
-        @media (max-width: 800px) {
-            #settings-page .table-wrap { width: 100%; min-width: 0; overflow: visible; }
-        }
-    </style>
-
+<div th:fragment="content" id="settings-page" class="feature-page">
     <div class="settings-content">
-        <h1>Settings Page</h1>
         <form th:action="@{/settings}" method="post">
             <input name="groupId" type="hidden" th:value="${groupId}">
             <div class="table-wrap">

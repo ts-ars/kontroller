@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"><body><div th:fragment="content" class="users-page">
-<h1>Users</h1><p class="success" th:if="${message}" th:text="${message}"></p><p class="signin-error" th:if="${error}" th:text="${error}"></p>
+<html xmlns:th="http://www.thymeleaf.org"><body><div th:fragment="content" class="feature-page users-page">
+<p class="success" th:if="${message}" th:text="${message}"></p><p class="signin-error" th:if="${error}" th:text="${error}"></p>
 <section class="user-create"><h2>Add user</h2><form th:action="@{/users}" method="post">
 <label>Display name<input type="text" name="displayName" maxlength="120" required></label>
 <label>PIN<input type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required></label>
