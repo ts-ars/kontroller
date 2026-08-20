@@ -649,7 +649,7 @@ nav .session form { display: inline; }
     .ui-table--plan-fact tbody td:nth-child(2)::before { content: 'Plan'; }
     .ui-table--plan-fact tbody td:nth-child(3)::before { content: 'Fact'; }
     .ui-table--plan-fact tbody td:nth-child(4)::before { content: 'Comments'; }
-    .ui-table--plan-fact tbody tr:not(:has(.report-empty)) {
+    .ui-table--cards.ui-table--plan-fact:not(.ui-table--editor) tbody tr:not(:has(.report-empty)) {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: .4rem;
         padding: .5rem;

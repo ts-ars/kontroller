@@ -84,13 +84,14 @@ class ShiftPageTest {
         assertThat(template).contains("const charts = new Map()", "OperationalCharts.update(chart",
                 "updatePanel(JSON.parse(message.body))", "const nextIndexByHour = new Map",
                 "currentView.actual = visibleActual.slice()", "reconnectTimer = setTimeout(connect, 2000)",
+                "const liveSyncTimer = window.setInterval", "clearInterval(liveSyncTimer)",
                 "Total production:", "class=\"plan-total\"", "OperationalCharts.create",
                 "class=\"comment-grid\"", "line.title = line.textContent");
         assertThat(css).contains("grid-template-columns: repeat(2, minmax(0, 1fr));",
                 "#plan-fact-page .comment-line:last-child:nth-child(odd)",
                 "text-overflow: ellipsis;");
         assertThat(css).contains("@media (max-width: 700px)", "width: 52%", "overflow-wrap: anywhere");
-        assertThat(css).contains(".ui-table--plan-fact tbody tr:not(:has(.report-empty))",
+        assertThat(css).contains(".ui-table--cards.ui-table--plan-fact:not(.ui-table--editor) tbody tr:not(:has(.report-empty))",
                 "grid-template-columns: repeat(3, minmax(0, 1fr));",
                 ".ui-table--plan-fact tfoot th:nth-child(4) { display: none; }");
         assertThat(charts).contains("positiveValueLabels", "profile.axis !== 'category'", "planFactProduction:");

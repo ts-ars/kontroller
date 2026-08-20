@@ -143,6 +143,9 @@
                     }
                 });
             };
+            const liveSyncTimer = window.setInterval(() => {
+                if (document.visibilityState === 'visible') syncVisiblePanels();
+            }, 3000);
 
             if (!window.SockJS || !window.Stomp) return;
             let client;
@@ -192,6 +195,7 @@
             window.addEventListener('online', disconnectAndReconnect);
             window.addEventListener('beforeunload', () => {
                 clearTimeout(reconnectTimer);
+                clearInterval(liveSyncTimer);
                 charts.forEach(chart => OperationalCharts.destroy(chart));
                 try { socket?.close(); } catch (_) {}
             }, {once: true});
