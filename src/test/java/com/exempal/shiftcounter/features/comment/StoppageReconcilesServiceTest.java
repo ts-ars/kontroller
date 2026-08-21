@@ -45,6 +45,8 @@ class StoppageReconcilesServiceTest {
 
     @Test
     void createsOneResidualTempoThroughAggregateWriteBoundary() {
+        when(signals.findTimestamps(eq("sensor-1"), any(), any()))
+                .thenReturn(List.of(end.minusMinutes(30)));
         when(stoppages.findActiveByShiftSensorAndIntervalRange(1L, Stoppage.PRIMARY_SENSOR, 0, 1))
                 .thenReturn(List.of());
         when(stoppages.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -61,6 +63,8 @@ class StoppageReconcilesServiceTest {
 
     @Test
     void repeatedIdenticalReconcileDoesNotWriteOrChangeIdentity() {
+        when(signals.findTimestamps(eq("sensor-1"), any(), any()))
+                .thenReturn(List.of(end.minusMinutes(30)));
         Stoppage existing = new Stoppage(10L, UUID.randomUUID(), 1L, Stoppage.PRIMARY_SENSOR, 0,
                 LocalDateTime.of(date, java.time.LocalTime.of(8, 0)), Duration.ofMinutes(48), 48, 80,
                 DetectionType.TEMPO, StoppageState.ACTIVE, List.of(), 3L);
@@ -73,6 +77,17 @@ class StoppageReconcilesServiceTest {
         assertThat(result.activeStoppages()).singleElement()
                 .extracting(Stoppage::detectionKey).isEqualTo(existing.detectionKey());
         verify(stoppages, never()).saveAll(anyList());
+    }
+
+    @Test
+    void doesNotCreateStoppagesWhenSensorHasNoSignalsForInterval() {
+        ReconcileResult result = service.reconcile(command());
+
+        assertThat(result.persisted()).isTrue();
+        assertThat(result.activeStoppages()).isEmpty();
+        assertThat(result.changedRows()).isZero();
+        verify(stoppages, never()).saveAll(anyList());
+        verify(stoppages, never()).findActiveByShiftSensorAndIntervalRange(anyLong(), anyString(), anyInt(), anyInt());
     }
 
     @Test

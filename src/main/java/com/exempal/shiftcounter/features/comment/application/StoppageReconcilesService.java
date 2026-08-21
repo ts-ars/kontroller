@@ -72,6 +72,11 @@ public class StoppageReconcilesService implements ReconcileStoppagesUseCase, Shi
         LocalDateTime end = interval.end();
         if (!end.isAfter(start)) return invalid(intervalIndex, "interval end must be after start");
         List<LocalDateTime> signalTimestamps = signals.findTimestamps(command.sensorKey(), start, end);
+        if (signalTimestamps.isEmpty()) {
+            log.info("Skipping stoppage reconciliation without signals: date={}, sensor={}, interval={}",
+                    command.shiftDate(), command.sensorKey(), intervalIndex);
+            return new ReconcileResult(intervalIndex, List.of(), List.of(), 0, true);
+        }
         int plan = shift.getHourlyPlanValues().get(intervalIndex);
         int actual = shift.getHourlyActualValues().get(intervalIndex);
         double minutes = Duration.between(start, end).toNanos() / 60_000_000_000.0;
